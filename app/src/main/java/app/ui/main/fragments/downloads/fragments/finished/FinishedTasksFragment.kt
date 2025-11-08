@@ -20,6 +20,7 @@ import app.ui.main.guides.GuidePlatformPicker
 import com.aio.R
 import com.airbnb.lottie.LottieAnimationView
 import lib.device.SecureFileUtil.authenticate
+import lib.process.LogHelperUtils
 import lib.ui.ViewUtility.hideView
 import lib.ui.ViewUtility.showView
 import java.lang.ref.WeakReference
@@ -35,6 +36,8 @@ import java.lang.ref.WeakReference
  * It integrates with [downloadSystem], and updates UI based on changes in finished downloads.
  */
 open class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimerListener {
+
+	private val logger = LogHelperUtils.from(javaClass)
 
 	/** Safe reference to the parent activity (MotherActivity). */
 	open val safeMotherActivityRef by lazy { WeakReference(safeBaseActivityRef as MotherActivity).get() }
@@ -54,6 +57,7 @@ open class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIO
 
 	/** Adapter for listing finished download tasks. */
 	open lateinit var finishedTasksListAdapter: FinishedTasksListAdapter
+	private var lastCheckedFinishedTasks = 0
 
 	/** Returns the layout resource ID to be inflated. */
 	override fun getLayoutResId(): Int {
@@ -93,6 +97,7 @@ open class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIO
 	 */
 	override fun onAIOTimerTick(loopCount: Double) {
 		safeFinishTasksFragment?.let {
+			updateDownloadFragmentTitle(parentFragment as? DownloadsFragment)
 			toggleEmptyDownloadListviewVisibility(emptyDownloadContainer, taskListView)
 			toggleOpenActiveTasksButtonVisibility(buttonOpenActiveTasks)
 		}
@@ -209,10 +214,19 @@ open class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIO
 		safeFinishTasksFragment?.let { safeFinishedDownloadFragmentRef ->
 			val downloadFragment = parentFragment as? DownloadsFragment
 			downloadFragment?.finishedTasksFragment = safeFinishedDownloadFragmentRef
-			downloadFragment?.safeFragmentLayoutRef?.let {
-				val title = it.findViewById<TextView>(R.id.txt_current_frag_name)
-				title?.setText(R.string.title_downloaded_files)
-			}
+			updateDownloadFragmentTitle(downloadFragment)
+		}
+	}
+
+	fun updateDownloadFragmentTitle(downloadsFragment: DownloadsFragment?) {
+		downloadsFragment?.safeFragmentLayoutRef?.let { fragmentLayout ->
+			if (isFragmentRunning == false) return
+			val totalDownloadedFiles = downloadSystem.finishedDownloadDataModels.size
+			if (totalDownloadedFiles == lastCheckedFinishedTasks) return
+			val title = fragmentLayout.findViewById<TextView>(R.id.txt_current_frag_name)
+			val fixedTitleName = getText(R.string.title_downloaded_files)
+			val titleText = "$fixedTitleName ($totalDownloadedFiles)"
+			title?.text = titleText
 		}
 	}
 
