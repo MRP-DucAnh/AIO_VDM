@@ -33,6 +33,8 @@ import lib.files.FileSystemUtility.endsWithExtension
 import lib.files.FileSystemUtility.isWritableFile
 import lib.files.FileSystemUtility.saveStringToInternalStorage
 import lib.networks.DownloaderUtils.getHumanReadableFormat
+import lib.networks.DownloaderUtils.renameIfDownloadFileExistsWithSameName
+import lib.networks.DownloaderUtils.updateSmartCatalogDownloadDir
 import lib.process.CopyObjectUtils.deepCopy
 import lib.process.LogHelperUtils
 import lib.process.ThreadsUtility
@@ -1309,6 +1311,36 @@ class DownloadDataModel : Serializable {
 		// Log completion of reset operation with current settings
 		logger.d("Reset completed for download ID: $downloadId " +
 				"with settings: ${globalSettings.defaultDownloadLocation}")
+	}
+
+	fun moveToPrivateFolder(onError: (String) -> Unit, onSuccess: () -> Unit) {
+		ThreadsUtility.executeInBackground(codeBlock = {
+			if (status != DownloadStatus.COMPLETE) {
+				ThreadsUtility.executeOnMain { onError.invoke("Download is not completed.") }
+				return@executeInBackground
+			}
+
+			globalSettings.defaultDownloadLocation = PRIVATE_FOLDER
+			val oldDestinationFile = getDestinationFile()
+			// Attempt to use external storage first for private app data
+			val externalDataFolderPath = INSTANCE.getExternalDataFolder()?.getAbsolutePath(INSTANCE)
+			if (!externalDataFolderPath.isNullOrEmpty()) {
+				fileDirectory = externalDataFolderPath
+				logger.d("Set file directory to external: $externalDataFolderPath")
+			} else {
+				// Fall back to internal storage if external is unavailable
+				val internalDataFolderPath = INSTANCE.dataDir.absolutePath
+				fileDirectory = internalDataFolderPath
+				logger.d("Set file directory to internal: $internalDataFolderPath")
+			}
+			updateSmartCatalogDownloadDir(downloadModel = this)
+			renameIfDownloadFileExistsWithSameName(downloadModel = this)
+			val newDestinationFile = getDestinationFile()
+			oldDestinationFile.copyTo(newDestinationFile, overwrite = true)
+			oldDestinationFile.delete()
+			updateInStorage()
+			ThreadsUtility.executeOnMain { onSuccess.invoke() }
+		})
 	}
 
 	/**

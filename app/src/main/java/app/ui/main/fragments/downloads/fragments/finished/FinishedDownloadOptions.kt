@@ -1026,14 +1026,47 @@ class FinishedDownloadOptions(finishedTasksFragment: FinishedTasksFragment?) : O
 	 * app-managed private storage for improved privacy.
 	 */
 	fun moveToPrivate() {
-		logger.d("Move to private option selected (upcoming feature)")
-		safeFinishedTasksFragmentRef?.let { _ ->
+		logger.d("moveToPrivate: Starting private storage migration")
+		safeFinishedTasksFragmentRef?.let { safeFinishedFragmentRef ->
 			safeMotherActivityRef?.let { safeMotherActivityRef ->
-				close()
-				safeMotherActivityRef.doSomeVibration(50)
-				safeMotherActivityRef.showUpcomingFeatures()
-			}
-		}
+				downloadDataModel?.let { downloadDataModel ->
+					// Show progress dialog
+					val waitingDialog = WaitingDialog(
+						baseActivityInf = safeMotherActivityRef,
+						loadingMessage = getText(R.string.title_moving_to_private_folder_wait),
+						shouldHideOkayButton = true,
+						isCancelable = false
+					)
+					waitingDialog.dialogBuilder?.setOnClickForPositiveButton { waitingDialog.close() }
+					waitingDialog.show()
+
+					// Execute file migration
+					downloadDataModel.moveToPrivateFolder(
+						onError = {
+							logger.e("moveToPrivate: Migration failed for ${downloadDataModel.fileName}")
+							waitingDialog.close()
+							showToast(
+								activityInf = safeMotherActivityRef,
+								msgId = R.string.title_something_went_wrong)
+						},
+						onSuccess = {
+							logger.i("moveToPrivate: Successfully migrated " +
+									"${downloadDataModel.fileName} to private storage")
+
+							// Refresh UI
+							safeFinishedFragmentRef.finishedTasksListAdapter.notifyDataSetChangedOnSort(true)
+							safeMotherActivityRef.homeFragment?.refreshRecentDownloadListUI()
+
+							waitingDialog.close()
+							showToast(
+								activityInf = safeMotherActivityRef,
+								msgId = R.string.title_move_to_private_successfuly)
+						}
+					)
+
+				} ?: logger.d("moveToPrivate: No download model available")
+			} ?: logger.d("moveToPrivate: No activity reference")
+		} ?: logger.d("moveToPrivate: No fragment reference")
 	}
 
 	/**
