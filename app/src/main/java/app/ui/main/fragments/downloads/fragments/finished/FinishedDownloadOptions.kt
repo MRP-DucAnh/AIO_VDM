@@ -1030,6 +1030,8 @@ class FinishedDownloadOptions(finishedTasksFragment: FinishedTasksFragment?) : O
 		safeFinishedTasksFragmentRef?.let { safeFinishedFragmentRef ->
 			safeMotherActivityRef?.let { safeMotherActivityRef ->
 				downloadDataModel?.let { downloadDataModel ->
+					// Close the main dialog
+					close()
 					// Show progress dialog
 					val waitingDialog = WaitingDialog(
 						baseActivityInf = safeMotherActivityRef,

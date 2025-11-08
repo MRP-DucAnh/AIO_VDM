@@ -1313,32 +1313,89 @@ class DownloadDataModel : Serializable {
 				"with settings: ${globalSettings.defaultDownloadLocation}")
 	}
 
+	/**
+	 * Moves completed download to app-private storage location.
+	 * Copies file to secure directory and updates database records.
+	 */
 	fun moveToPrivateFolder(onError: (String) -> Unit, onSuccess: () -> Unit) {
 		ThreadsUtility.executeInBackground(codeBlock = {
+			logger.d("moveToPrivateFolder: Starting migration for $fileName")
+
+			// Validate download is complete
 			if (status != DownloadStatus.COMPLETE) {
+				logger.d("moveToPrivateFolder: Download not complete - status: $status")
 				ThreadsUtility.executeOnMain { onError.invoke("Download is not completed.") }
 				return@executeInBackground
 			}
 
+			// Update storage location to private
 			globalSettings.defaultDownloadLocation = PRIVATE_FOLDER
 			val oldDestinationFile = getDestinationFile()
-			// Attempt to use external storage first for private app data
+
+			// Select private storage path (external preferred, internal fallback)
 			val externalDataFolderPath = INSTANCE.getExternalDataFolder()?.getAbsolutePath(INSTANCE)
-			if (!externalDataFolderPath.isNullOrEmpty()) {
-				fileDirectory = externalDataFolderPath
-				logger.d("Set file directory to external: $externalDataFolderPath")
+			fileDirectory = if (!externalDataFolderPath.isNullOrEmpty()) {
+				logger.d("moveToPrivateFolder: Using external storage: $externalDataFolderPath")
+				externalDataFolderPath
 			} else {
-				// Fall back to internal storage if external is unavailable
-				val internalDataFolderPath = INSTANCE.dataDir.absolutePath
-				fileDirectory = internalDataFolderPath
-				logger.d("Set file directory to internal: $internalDataFolderPath")
+				logger.d("moveToPrivateFolder: Using internal storage: ${INSTANCE.dataDir.absolutePath}")
+				INSTANCE.dataDir.absolutePath
 			}
+
+			// Update database and handle file naming conflicts
 			updateSmartCatalogDownloadDir(downloadModel = this)
 			renameIfDownloadFileExistsWithSameName(downloadModel = this)
+
+			// Perform file migration
 			val newDestinationFile = getDestinationFile()
 			oldDestinationFile.copyTo(newDestinationFile, overwrite = true)
 			oldDestinationFile.delete()
+
+			// Update storage records
 			updateInStorage()
+
+			logger.d("moveToPrivateFolder: Successfully migrated $fileName to private storage")
+			ThreadsUtility.executeOnMain { onSuccess.invoke() }
+		})
+	}
+
+	/**
+	 * Moves completed download to system gallery folder for public access.
+	 * Copies file to system downloads/gallery directory and updates records.
+	 */
+	fun moveToSysGalleryFolder(onError: (String) -> Unit, onSuccess: () -> Unit) {
+		ThreadsUtility.executeInBackground(codeBlock = {
+			logger.d("moveToSysGalleryFolder: Starting migration for $fileName")
+
+			// Validate download is complete
+			if (status != DownloadStatus.COMPLETE) {
+				logger.d("moveToSysGalleryFolder: Download not complete - status: $status")
+				ThreadsUtility.executeOnMain { onError.invoke("Download is not completed.") }
+				return@executeInBackground
+			}
+
+			// Update storage location to system gallery
+			globalSettings.defaultDownloadLocation = SYSTEM_GALLERY
+			val oldDestinationFile = getDestinationFile()
+
+			// Use system gallery/downloads folder for public access
+			val externalDataFolderPath = getText(string.text_default_aio_download_folder_path)
+			fileDirectory = externalDataFolderPath
+			logger.d("moveToSysGalleryFolder: Set directory to system gallery: $externalDataFolderPath")
+
+			// Update database and handle file naming conflicts
+			updateSmartCatalogDownloadDir(downloadModel = this)
+			renameIfDownloadFileExistsWithSameName(downloadModel = this)
+
+			// Perform file migration
+			val newDestinationFile = getDestinationFile()
+			oldDestinationFile.copyTo(newDestinationFile, overwrite = true)
+			oldDestinationFile.delete()
+
+			// Update storage records
+			updateInStorage()
+
+			logger.i("moveToSysGalleryFolder: Successfully migrated $fileName to system gallery")
 			ThreadsUtility.executeOnMain { onSuccess.invoke() }
 		})
 	}
