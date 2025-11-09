@@ -26,7 +26,7 @@ android {
         applicationId "com.aio.video_downloader"       // Unique app ID for publishing
         minSdk 28                                      // Minimum supported Android API
         targetSdk 36                                   // Target Android API level
-        versionCode 81                                 // Internal version (for Play Store updates)
+        versionCode 82                                 // Internal version (for Play Store updates)
         versionName '2025.11.11'                       // User-visible version
         vectorDrawables.useSupportLibrary = true        // Enables vector drawable backward compatibility
         multiDexEnabled true                            // Allow multiple DEX files for large apps
@@ -49,8 +49,8 @@ android {
         }
 
         release {
-            minifyEnabled true                            // Enable code shrinking (R8)
-            shrinkResources true                          // Remove unused resources
+            minifyEnabled false                            // Enable code shrinking (R8)
+            shrinkResources false                          // Remove unused resources
             debuggable false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
                     'proguard-rules.pro'                  // ProGuard rules for code obfuscation

@@ -314,10 +314,11 @@ class DownloaderRowUIManager(private val downloadRowView: View) {
 
 		// Load thumbnail if not cached or if settings changed
 		if (thumbnailView.tag == null || isThumbnailSettingsChanged) {
-			if (shouldHideThumbnail) {
+			val imageUri = downloadModel.getThumbnailURI()
+			if (shouldHideThumbnail && imageUri != null) {
 				// Show actual thumbnail from file URI when hiding is disabled
 				logger.d("Setting actual thumbnail URI for id=${downloadModel.downloadId}")
-				thumbnailView.setImageURI(downloadModel.getThumbnailURI())
+				thumbnailView.setImageURI(imageUri)
 				thumbnailView.tag = true
 				isThumbnailSettingsChanged = shouldHideThumbnail
 			} else {

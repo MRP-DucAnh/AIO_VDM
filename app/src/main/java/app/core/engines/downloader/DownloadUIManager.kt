@@ -27,6 +27,11 @@ import lib.process.ThreadsUtility
  * the UI remains synchronized with the current state of each download,
  * including progress, completion status, and user interactions.
  *
+ * Key Improvements in this version:
+ * - Uses view tags instead of resource IDs for reliable view identification
+ * - Works consistently in both debug and release builds
+ * - Avoids R8/proguard issues with resource ID obfuscation
+ *
  * Responsibilities include:
  * 1. Creating and initializing UI rows for new downloads.
  * 2. Updating existing download UI elements as progress or status changes.
@@ -100,6 +105,15 @@ class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 	 */
 	var loadingDownloadModelTextview: TextView? = null
 
+	/**
+	 * Constant tag ID used for storing download IDs in view tags.
+	 *
+	 * Using a constant tag ID instead of resource IDs ensures reliable
+	 * view identification across both debug and release builds, as
+	 * resource IDs can be obfuscated during R8 optimization.
+	 *
+	 * Value: 1290111211 (arbitrary unique integer)
+	 */
 	private val constantRowTagId = 1290111211
 
 	/**
@@ -160,8 +174,11 @@ class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 	/**
 	 * Updates the UI for an existing active download item.
 	 *
-	 * This method searches for the view corresponding to the given download model.
-	 * If found, it reconfigures the view to reflect the latest download data.
+	 * This method searches for the view corresponding to the given download model
+	 * using view tags instead of resource IDs, ensuring reliable operation in
+	 * both debug and release builds. If found, it reconfigures the view to reflect
+	 * the latest download data.
+	 *
 	 * The update runs asynchronously in the background but ensures UI changes
 	 * occur on the main thread. Thread-safe via synchronization.
 	 *
@@ -176,10 +193,8 @@ class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 			// Get the container holding all active download rows
 			val activeDownloadsListContainer = activeTasksFragment?.activeTasksListContainer
 
-			// Try to find the existing row corresponding to this download
-			val resultedRow = activeDownloadsListContainer?.children?.firstOrNull {
-				it.getTag(constantRowTagId) == downloadModel.downloadId
-			}
+			// Find view by tag instead of resource ID for release build compatibility
+			val resultedRow = findViewByDownloadId(activeDownloadsListContainer, downloadModel.downloadId)
 
 			if (resultedRow != null) {
 				// Row exists: configure it with updated download data
@@ -196,8 +211,8 @@ class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 	 * Creates and configures a new view representing an active download item.
 	 *
 	 * This method inflates the layout for a single download row and sets up
-	 * the basic properties such as ID, clickability, click and long-click listeners,
-	 * and layout margins. The view is prepared to be added to the active downloads container.
+	 * the basic properties using view tags for identification (instead of
+	 * resource IDs which can be obfuscated in release builds).
 	 *
 	 * @param downloadModel The download model for which to generate the UI row.
 	 * @return A fully initialized View representing the download item.
@@ -219,7 +234,7 @@ class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 		}
 
 		rowUI.apply {
-			// Assign unique ID to the row for easy reference later
+			// Use tag instead of resource ID for reliable identification in release builds
 			setTag(constantRowTagId, downloadModel.downloadId)
 			isClickable = true
 
@@ -252,8 +267,9 @@ class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 	/**
 	 * Removes the UI element corresponding to a specific active download.
 	 *
-	 * This method performs a safe removal of the download row:
-	 * - Finds the row by download ID
+	 * This method performs a safe removal of the download row using tag-based
+	 * identification for reliable operation in release builds:
+	 * - Finds the row by download ID using view tags
 	 * - Removes it from its parent ViewGroup if present
 	 * - Ensures the row is fully removed from the activeTasksListContainer
 	 * - Handles thread safety by using background and main thread execution
@@ -268,11 +284,9 @@ class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 
 		val activeDownloadListContainer = activeTasksFragment?.activeTasksListContainer
 
-		activeDownloadListContainer?.let {
-			// Attempt to find the row corresponding to this download
-			val resultedRow = activeDownloadListContainer.children.firstOrNull {
-				it.getTag(constantRowTagId) == downloadModel.downloadId
-			}
+		activeDownloadListContainer?.let { container ->
+			// Find view by tag instead of resource ID for release build compatibility
+			val resultedRow = findViewByDownloadId(container, downloadModel.downloadId)
 
 			if (resultedRow != null) {
 				logger.d("Found row to remove for: ${downloadModel.fileName}")
@@ -285,16 +299,14 @@ class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 				}
 
 				// Remove from the container
-				activeDownloadListContainer.removeView(resultedRow)
+				container.removeView(resultedRow)
 				logger.d("Removed row from activeTasksListContainer")
 
 				// Background task to ensure no leftover views remain
 				ThreadsUtility.executeInBackground(codeBlock = {
 					ThreadsUtility.executeOnMain {
-						// Try to find the existing row corresponding to this download
-						val leftOverView = activeDownloadListContainer.children.firstOrNull {
-							it.getTag(constantRowTagId) == downloadModel.downloadId
-						}
+						// Double-check for any leftover views
+						val leftOverView = findViewByDownloadId(container, downloadModel.downloadId)
 						if (leftOverView != null) {
 							logger.d("Cleaning up remaining view for: ${downloadModel.fileName}")
 							if (leftOverView.parent != null) {
@@ -309,6 +321,24 @@ class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 				// No row found for this download ID
 				logger.d("No row found to remove for: ${downloadModel.fileName}")
 			}
+		}
+	}
+
+	/**
+	 * Helper method to find a view by download ID using tag-based identification.
+	 *
+	 * This method searches through all child views of the container to find
+	 * the view that has the specified download ID stored in its tag.
+	 * This approach works reliably in both debug and release builds, unlike
+	 * resource ID-based findViewById.
+	 *
+	 * @param container The ViewGroup container to search in
+	 * @param downloadId The download ID to search for
+	 * @return The View with matching download ID, or null if not found
+	 */
+	private fun findViewByDownloadId(container: ViewGroup?, downloadId: Int): View? {
+		return container?.children?.firstOrNull {
+			it.getTag(constantRowTagId) == downloadId
 		}
 	}
 
