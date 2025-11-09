@@ -554,6 +554,7 @@
 					tools:ignore="TouchTargetSizeCheck">
 
 					<TextView
+						android:id="@+id/txt_move_to_private"
 						android:layout_width="match_parent"
 						android:layout_height="match_parent"
 						android:layout_margin="@dimen/_8"

@@ -197,7 +197,7 @@ class FinishedDownloadOptions(finishedTasksFragment: FinishedTasksFragment?) : O
 				R.id.btn_delete_download -> deleteFile()
 				R.id.btn_rename_download -> renameFile()
 				R.id.btn_discover_more -> discoverMore()
-				R.id.btn_move_to_private -> moveToPrivate()
+				R.id.btn_move_to_private -> toggleMoveToPrivateOrGallery()
 				R.id.btn_remove_thumbnail -> toggleThumbnail()
 				R.id.btn_fix_unseekable_mp4_file -> fixUnseekableMp4s()
 				R.id.btn_mp4_to_mp3_convert -> convertMp4ToAudio()
@@ -240,6 +240,7 @@ class FinishedDownloadOptions(finishedTasksFragment: FinishedTasksFragment?) : O
 				val imgFileThumbnail = findViewById<ImageView>(R.id.img_file_thumbnail)
 				val imgFileFavicon = findViewById<ImageView>(R.id.img_site_favicon)
 				val btnToggleThumbnail = findViewById<TextView>(R.id.txt_remove_thumbnail)
+				val txtMoveToPrivate = findViewById<TextView>(R.id.txt_move_to_private)
 				val btnConvertMp4ToAudio = findViewById<View>(R.id.btn_mp4_to_mp3_convert)
 				val btnFixUnseekableMp4VideoFiles = findViewById<View>(R.id.container_mp4_file_fix)
 				val containerMediaDuration = findViewById<View>(R.id.container_media_duration)
@@ -283,6 +284,16 @@ class FinishedDownloadOptions(finishedTasksFragment: FinishedTasksFragment?) : O
 					isAudioByName(downloadModel.fileName) -> getText(R.string.title_play_the_audio)
 					isVideoByName(downloadModel.fileName) -> getText(R.string.title_play_the_video)
 					else -> getText(R.string.title_open_the_file)
+				}
+
+				val globalSettings = downloadModel.globalSettings
+				val downloadLocation = globalSettings.defaultDownloadLocation
+				if (downloadLocation == PRIVATE_FOLDER) {
+					txtMoveToPrivate.setLeftSideDrawable(R.drawable.ic_button_folder)
+					txtMoveToPrivate.text = getText(R.string.title_move_to_gallery)
+				} else {
+					txtMoveToPrivate.setLeftSideDrawable(R.drawable.ic_button_private_folder)
+					txtMoveToPrivate.text = getText(R.string.title_move_to_private)
 				}
 
 				// 🔹 Media-specific controls
@@ -1015,6 +1026,18 @@ class FinishedDownloadOptions(finishedTasksFragment: FinishedTasksFragment?) : O
 		}
 	}
 
+	fun toggleMoveToPrivateOrGallery() {
+		safeFinishedTasksFragmentRef?.let { safeFinishedFragmentRef ->
+			safeMotherActivityRef?.let { safeMotherActivityRef ->
+				downloadDataModel?.let { downloadDataModel ->
+					val globalSettings = downloadDataModel.globalSettings
+					val downloadLocation = globalSettings.defaultDownloadLocation
+					if (downloadLocation == PRIVATE_FOLDER) moveToGallery() else moveToPrivate()
+				}
+			}
+		}
+	}
+
 	/**
 	 * Moves the file to private storage (placeholder implementation).
 	 *
@@ -1062,7 +1085,53 @@ class FinishedDownloadOptions(finishedTasksFragment: FinishedTasksFragment?) : O
 							waitingDialog.close()
 							showToast(
 								activityInf = safeMotherActivityRef,
-								msgId = R.string.title_move_to_private_successfuly)
+								msgId = R.string.title_move_to_private_successfully)
+						}
+					)
+
+				} ?: logger.d("moveToPrivate: No download model available")
+			} ?: logger.d("moveToPrivate: No activity reference")
+		} ?: logger.d("moveToPrivate: No fragment reference")
+	}
+
+	fun moveToGallery() {
+		logger.d("moveToPrivate: Starting private storage migration")
+		safeFinishedTasksFragmentRef?.let { safeFinishedFragmentRef ->
+			safeMotherActivityRef?.let { safeMotherActivityRef ->
+				downloadDataModel?.let { downloadDataModel ->
+					// Close the main dialog
+					close()
+					// Show progress dialog
+					val waitingDialog = WaitingDialog(
+						baseActivityInf = safeMotherActivityRef,
+						loadingMessage = getText(R.string.title_moving_to_gallery_folder_wait),
+						shouldHideOkayButton = true,
+						isCancelable = false
+					)
+					waitingDialog.dialogBuilder?.setOnClickForPositiveButton { waitingDialog.close() }
+					waitingDialog.show()
+
+					// Execute file migration
+					downloadDataModel.moveToSysGalleryFolder(
+						onError = {
+							logger.e("moveToPrivate: Migration failed for ${downloadDataModel.fileName}")
+							waitingDialog.close()
+							showToast(
+								activityInf = safeMotherActivityRef,
+								msgId = R.string.title_something_went_wrong)
+						},
+						onSuccess = {
+							logger.i("moveToPrivate: Successfully migrated " +
+									"${downloadDataModel.fileName} to private storage")
+
+							// Refresh UI
+							safeFinishedFragmentRef.finishedTasksListAdapter.notifyDataSetChangedOnSort(true)
+							safeMotherActivityRef.homeFragment?.refreshRecentDownloadListUI()
+
+							waitingDialog.close()
+							showToast(
+								activityInf = safeMotherActivityRef,
+								msgId = R.string.title_move_to_gallery_successfully)
 						}
 					)
 

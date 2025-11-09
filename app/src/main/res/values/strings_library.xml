@@ -591,7 +591,10 @@
 	<string name="title_1_75_fastest">Fastest</string>
 	<string name="title_2_lighting">Lightning</string>
 	<string name="title_zoom_d">Zoom: %1$d%</string>
-	<string name="title_moving_to_private_folder_wait">Moving To Private Folder, Wait...</string>
-	<string name="title_move_to_private_successfuly">Successfully Moved To Private</string>
+	<string name="title_moving_to_private_folder_wait">Moving To Private Folder, Wait…</string>
+	<string name="title_moving_to_gallery_folder_wait">Moving To Gallery Folder, Wait…</string>
+	<string name="title_move_to_private_successfully">Successfully Moved To Private</string>
+	<string name="title_move_to_gallery_successfully">Successfully Moved To Gallery</string>
+	<string name="title_move_to_gallery">Move To Gallery</string>
 
 </resources>
