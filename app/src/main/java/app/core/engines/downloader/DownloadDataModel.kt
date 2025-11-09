@@ -20,10 +20,8 @@ import com.aio.R.string
 import com.anggrayudi.storage.file.getAbsolutePath
 import com.dslplatform.json.CompiledJson
 import com.dslplatform.json.JsonAttribute
-import io.objectbox.annotation.Convert
 import io.objectbox.annotation.Entity
 import io.objectbox.annotation.Id
-import io.objectbox.converter.StringMapConverter
 import lib.files.FileExtensions.ARCHIVE_EXTENSIONS
 import lib.files.FileExtensions.DOCUMENT_EXTENSIONS
 import lib.files.FileExtensions.IMAGE_EXTENSIONS
@@ -144,7 +142,6 @@ class DownloadDataModel : Serializable {
 
 	/** Custom HTTP headers to include in download requests */
 	@JvmField @JsonAttribute(name = "additionalWebHeaders")
-	@Convert(converter = StringMapConverter::class, dbType = String::class)
 	var additionalWebHeaders: Map<String, String>? = null
 
 	/** Name of the target file being downloaded */
