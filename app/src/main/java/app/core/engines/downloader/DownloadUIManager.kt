@@ -9,6 +9,7 @@ import android.widget.LinearLayout.LayoutParams.MATCH_PARENT
 import android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
 import android.widget.TextView
 import androidx.appcompat.view.ContextThemeWrapper
+import androidx.core.view.children
 import app.core.AIOApp
 import app.ui.main.MotherActivity
 import app.ui.main.fragments.downloads.fragments.active.ActiveTasksFragment
@@ -99,6 +100,8 @@ class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 	 */
 	var loadingDownloadModelTextview: TextView? = null
 
+	private val constantRowTagId = 1290111211
+
 	/**
 	 * Redraws all active download items in the UI.
 	 *
@@ -174,7 +177,9 @@ class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 			val activeDownloadsListContainer = activeTasksFragment?.activeTasksListContainer
 
 			// Try to find the existing row corresponding to this download
-			val resultedRow = activeDownloadsListContainer?.findViewById<View>(downloadModel.downloadId)
+			val resultedRow = activeDownloadsListContainer?.children?.firstOrNull {
+				it.getTag(constantRowTagId) == downloadModel.downloadId
+			}
 
 			if (resultedRow != null) {
 				// Row exists: configure it with updated download data
@@ -215,7 +220,7 @@ class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 
 		rowUI.apply {
 			// Assign unique ID to the row for easy reference later
-			id = downloadModel.downloadId
+			setTag(constantRowTagId, downloadModel.downloadId)
 			isClickable = true
 
 			// Click listener to handle normal clicks
@@ -265,7 +270,9 @@ class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 
 		activeDownloadListContainer?.let {
 			// Attempt to find the row corresponding to this download
-			val resultedRow = activeDownloadListContainer.findViewById<View>(downloadModel.downloadId)
+			val resultedRow = activeDownloadListContainer.children.firstOrNull {
+				it.getTag(constantRowTagId) == downloadModel.downloadId
+			}
 
 			if (resultedRow != null) {
 				logger.d("Found row to remove for: ${downloadModel.fileName}")
@@ -284,14 +291,17 @@ class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 				// Background task to ensure no leftover views remain
 				ThreadsUtility.executeInBackground(codeBlock = {
 					ThreadsUtility.executeOnMain {
-						val view = activeDownloadListContainer.findViewById<View>(downloadModel.downloadId)
-						if (view != null) {
+						// Try to find the existing row corresponding to this download
+						val leftOverView = activeDownloadListContainer.children.firstOrNull {
+							it.getTag(constantRowTagId) == downloadModel.downloadId
+						}
+						if (leftOverView != null) {
 							logger.d("Cleaning up remaining view for: ${downloadModel.fileName}")
-							if (view.parent != null) {
-								val parent = view.parent as ViewGroup
-								parent.removeView(view)
+							if (leftOverView.parent != null) {
+								val parent = leftOverView.parent as ViewGroup
+								parent.removeView(leftOverView)
 							}
-							activeTasksFragment?.activeTasksListContainer?.removeView(view)
+							activeTasksFragment?.activeTasksListContainer?.removeView(leftOverView)
 						}
 					}
 				})
