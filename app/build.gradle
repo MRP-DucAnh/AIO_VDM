@@ -27,7 +27,7 @@ android {
         minSdk 28                                      // Minimum supported Android API
         targetSdk 36                                   // Target Android API level
         versionCode 81                                 // Internal version (for Play Store updates)
-        versionName '2025.10.03'                       // User-visible version
+        versionName '2025.11.11'                       // User-visible version
         vectorDrawables.useSupportLibrary = true        // Enables vector drawable backward compatibility
         multiDexEnabled true                            // Allow multiple DEX files for large apps
 
@@ -47,8 +47,8 @@ android {
             shrinkResources false
             buildConfigField "boolean", "IS_DEBUG_MODE_ON", "true"
         }
+
         release {
-            applicationIdSuffix ".release"                // Becomes: com.aio.video_downloader.release
             minifyEnabled true                            // Enable code shrinking (R8)
             shrinkResources true                          // Remove unused resources
             debuggable false

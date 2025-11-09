@@ -108,7 +108,7 @@ class AIOApp : LanguageAwareApplication(), LifecycleObserver {
 		 * Cloud backup functionality flag for user data synchronization.
 		 * When enabled, supports automatic backup and restore of user preferences and data.
 		 */
-		const val IS_CLOUD_BACKUP_ENABLED = false
+		const val IS_CLOUD_BACKUP_ENABLED = true
 
 		/**
 		 * Ultimate version unlock flag for premium feature access.
