@@ -746,7 +746,7 @@ class FinishedDownloadOptions(finishedTasksFragment: FinishedTasksFragment?) : O
 	 * - If the user confirms, it processes the destination file by moving the `moov` atom to the start.
 	 * - Provides user feedback with a waiting dialog and success/failure toasts.
 	 *
-	 * ⚠️ Warning: This process can sometimes corrupt the video file if interrupted.
+	 * Warning: This process can sometimes corrupt the video file if interrupted.
 	 */
 	fun fixUnseekableMp4s() {
 		logger.d("Fix unseekable MP4 option selected")
@@ -861,7 +861,7 @@ class FinishedDownloadOptions(finishedTasksFragment: FinishedTasksFragment?) : O
 	 * - Uses the current activity reference and the associated
 	 *   [downloadDataModel] for context and file details.
 	 *
-	 * ⚠️ Note: The actual conversion logic is handled inside
+	 * Note: The actual conversion logic is handled inside
 	 * [showMp4ToAudioConverterDialog].
 	 */
 	fun convertMp4ToAudio() {
@@ -1046,8 +1046,7 @@ class FinishedDownloadOptions(finishedTasksFragment: FinishedTasksFragment?) : O
 						showView(imgFavicon, true)
 						imgFavicon.setImageURI(faviconImgURI)
 					} catch (error: Exception) {
-						logger.d("Error setting favicon: ${error.message}")
-						error.printStackTrace()
+						logger.e("Error setting favicon: ${error.message}", error)
 						showView(imgFavicon, true)
 						imgFavicon.setImageResource(defaultFaviconResId)
 					}
@@ -1224,8 +1223,7 @@ class FinishedDownloadOptions(finishedTasksFragment: FinishedTasksFragment?) : O
 			val imgURI = File(thumbFilePath).toUri()
 			thumbImageView.setImageURI(imgURI)
 		} catch (error: Exception) {
-			logger.d("Error loading thumbnail with Glide: ${error.message}")
-			error.printStackTrace()
+			logger.e("Error loading thumbnail with Glide: ${error.message}", error)
 
 			// Fallback: use default thumbnail resource
 			thumbImageView.setImageResource(defaultThumb)
@@ -1296,8 +1294,7 @@ class FinishedDownloadOptions(finishedTasksFragment: FinishedTasksFragment?) : O
 							false
 						}
 					} catch (error: Exception) {
-						logger.d("Error loading APK thumbnail: ${error.message}")
-						error.printStackTrace()
+						logger.e("Error loading APK thumbnail: ${error.message}", error)
 
 						// Fallback: reset ImageView to safe defaults with the fallback thumbnail
 						imageViewHolder.apply {
@@ -1319,8 +1316,9 @@ class FinishedDownloadOptions(finishedTasksFragment: FinishedTasksFragment?) : O
 	 * @param downloadModel The [DownloadDataModel] representing the downloaded file.
 	 * @return `true` if the file is audio or video based on its name; otherwise `false`.
 	 */
-	private fun isMediaFile(downloadModel: DownloadDataModel): Boolean =
-		isAudioByName(downloadModel.fileName) || isVideoByName(downloadModel.fileName)
+	private fun isMediaFile(downloadModel: DownloadDataModel): Boolean {
+		return isAudioByName(downloadModel.fileName) || isVideoByName(downloadModel.fileName)
+	}
 
 	/**
 	 * Copies the site referrer link (if valid) to the clipboard.
