@@ -3,7 +3,7 @@
 
 # AIO Video Downloader
 
-### 📥 Simple Yet Powerful Video Player & Downloader for Android — Free, Open Source, and Built with Speed, Privacy, and Flexibility in Mind
+### 🚀 All-in-One Video Solution: Download, Play, Protect - Simple, Fast & Private
 
 [![Download AIO Video Downloader](https://a.fsdn.com/con/app/sf-download-button)](https://sourceforge.net/projects/aio-video-downloader/files/latest/download)
 ----
@@ -16,83 +16,104 @@
 ![AIO Video Downloader Logo](others/graphics/feature_cover.png)
 </div>
 
----
-
 ## 📌 Introduction
 
-**AIO Video Downloader** is a simple yet **full-featured video player and downloader** for Android — built for speed, privacy, and efficiency.  
-Powered by the robust **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** backend (via [youtubedl-android](https://github.com/yausername/youtubedl-android)), it can grab and download **almost any video that plays online**, supporting **over 1000 websites**.
+**AIO Video Downloader** is your ultimate all-in-one media companion - combining powerful video downloading, a full-featured video player, and secure private file protection in one simple, elegant app.
 
-Unlike bloated alternatives filled with ads or restrictions, AIO is completely **ad-free**, **open-source**, and designed for users who value performance, transparency, and control.
+Built on the robust **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** engine, AIO delivers **super-fast download speeds** and can grab virtually any video that plays online. With support for **1000+ websites**, you'll never miss your favorite content again.
 
-It’s not just a downloader — it’s your **private media center** with built-in file locking, fast background downloads, and a powerful integrated video player.
-
----
-
-## ⚡ What Makes It Special
-
-- **Super Fast Downloads** – Optimized connection handling for maximum speed
-- **Grab Almost Any Video** – Works on 1000+ websites thanks to yt-dlp integration
-- **Private File Lock** – Keep sensitive videos and downloads hidden and secure
-- **Full-Feature Video Player** – Smooth playback with gesture controls and background play
-- **Smart Download Manager** – Pause, resume, reorder, or delete downloads easily
-- **Adaptive Streaming Support** – Seamless playback for multi-quality video sources
-- **Audio Normalization** – Keeps your sound levels consistent across media
-- **Modern UI with Dark Mode** – Sleek interface that adapts to your theme
-- **Completely Ad-Free** – No trackers, no popups, no nonsense
-- **Lightweight and Stable** – Designed to perform smoothly even on older devices
-- **Open Source** – 100% transparent code; community-driven and auditable
-
----
+No more switching between multiple apps - download, play, and protect your media files all in one place!
 
 ## 📱 Screenshots
 
 <div align="center">
 <div>
-<img src="others/graphics/screenshots/1.0.jpg" width="30%" alt="Screenshot 1"/>
-<img src="others/graphics/screenshots/2.0.jpg" width="30%" alt="Screenshot 2"/>
-<img src="others/graphics/screenshots/3.0.jpg" width="30%" alt="Screenshot 3"/>
-<img src="others/graphics/screenshots/4.0.jpg" width="30%" alt="Screenshot 4"/>
-<img src="others/graphics/screenshots/5.0.jpg" width="30%" alt="Screenshot 5"/>
-<img src="others/graphics/screenshots/6.0.jpg" width="30%" alt="Screenshot 6"/>
-<img src="others/graphics/screenshots/7.0.jpg" width="30%" alt="Screenshot 7"/>
-<img src="others/graphics/screenshots/8.0.jpg" width="30%" alt="Screenshot 8"/>
-<img src="others/graphics/screenshots/9.0.jpg" width="30%" alt="Screenshot 9"/>
+<img src="others/graphics/screenshots/1.0.jpg" width="30%" alt="AIO Video Downloader Screenshot"/>
+<img src="others/graphics/screenshots/2.0.jpg" width="30%" alt="AIO Video Downloader Screenshot"/>
+<img src="others/graphics/screenshots/3.0.jpg" width="30%" alt="AIO Video Downloader Screenshot"/>
+<img src="others/graphics/screenshots/4.0.jpg" width="30%" alt="AIO Video Downloader Screenshot"/>
+<img src="others/graphics/screenshots/5.0.jpg" width="30%" alt="AIO Video Downloader Screenshot"/>
+<img src="others/graphics/screenshots/6.0.jpg" width="30%" alt="AIO Video Downloader Screenshot"/>
+<img src="others/graphics/screenshots/7.0.jpg" width="30%" alt="AIO Video Downloader Screenshot"/>
+<img src="others/graphics/screenshots/8.0.jpg" width="30%" alt="AIO Video Downloader Screenshot"/>
+<img src="others/graphics/screenshots/9.0.jpg" width="30%" alt="AIO Video Downloader Screenshot"/>
 </div>
 </div>
 
+## ✨ Key Features
+
+### 🎯 **Simple & Intuitive**
+- **Clean, User-Friendly Interface**: No complicated menus or confusing options
+- **One-Tap Downloads**: Grab videos with a single click
+- **Smart Suggestions**: Automatically detects downloadable content
+- **Easy File Management**: Organize your downloads effortlessly
+
+### ⚡ **Super Fast Downloads**
+- **Lightning-First Speed**: Optimized download engine for maximum speed
+- **Multi-Connection Downloads**: Faster downloads using parallel connections
+- **Background Processing**: Continue using your phone while downloading
+- **Resume Support**: Never lose progress with resume capability
+
+### 🎬 **Full-Featured Video Player**
+- **Built-in Media Player**: Play your downloads instantly without leaving the app
+- **Multiple Format Support**: MP4, MKV, AVI, 3GP, and more
+- **Hardware Acceleration**: Smooth playback for HD and 4K videos
+- **Playback Controls**: Gesture controls, brightness, volume, and seek
+- **Background Play**: Keep audio playing while using other apps
+- **Subtitle Support**: Load external subtitle files
+- **Playlist Management**: Create and manage video playlists
+
+### 🔒 **Private File Lock**
+- **Secure Private Folder**: Hide sensitive videos and files from gallery
+- **App-Locked Storage**: Protected by app security - only accessible within AIO
+- **Move Files Privately**: Easily move downloads between gallery and private storage
+- **Privacy Protection**: Keep personal content away from prying eyes
+- **No System Permissions**: Private folder doesn't require special permissions
+
+### 🌐 **Universal Video Grabber**
+- **1000+ Websites Supported**: YouTube, Instagram, Facebook, Twitter, TikTok, and countless more
+- **Virtually Any Online Video**: If it plays in your browser, you can download it
+- **Auto-Detection**: Smart recognition of video content on webpages
+- **Built-in Browser**: Secure browsing within the app
+- **Custom Headers**: Support for sites requiring login or special headers
+
+### 🎵 **Audio & Video Flexibility**
+- **Multiple Quality Options**: 144p to 4K (when available)
+- **Audio Extraction**: Save videos as MP3 audio files
+- **Format Selection**: Choose your preferred video/audio format
+- **Batch Downloads**: Queue multiple videos at once
+
+### 🛡️ **Safe & Transparent**
+- **No Ads**: Completely ad-free experience
+- **Open Source**: Transparent codebase you can audit and trust
+- **No Tracking**: We don't collect your personal data
+- **Regular Updates**: Continuous improvements and new features
+
+### 📁 **Smart File Management**
+- **Download Manager**: Pause, resume, or cancel downloads
+- **Organized Library**: Automatic sorting by date, name, or size
+- **Storage Management**: Monitor and manage your device storage
+- **Quick Search**: Find your downloads instantly
+
 ---
 
-## 🚀 Key Features Summary
+## 🚀 How to Use
 
-- 🔗 **1000+ Website Support** – Download from nearly any platform
-- 🎥 **Built-in Video Player** – Full playback control, gesture support, and background play
-- 🔒 **Private File Lock** – Secure access to personal or private downloads
-- ⚙️ **Smart Download Engine** – Parallel threads, resume support, and adaptive retries
-- 🎧 **Audio Extraction** – Convert video to MP3 or M4A directly
-- 💡 **Simple Yet Powerful UI** – Focused on usability and efficiency
-- 🌙 **Dark Mode** – Easy on the eyes and battery-friendly
-- 🧭 **In-App Browser** – Browse and download without switching apps
-- 📂 **Download Organizer** – Sort, rename, or share your media effortlessly
-- 🇮🇳 **Made with ❤️ in India** – Built proudly by independent developers
+1. **Download**: Copy any video URL or use the built-in browser
+2. **Grab**: AIO automatically detects downloadable content
+3. **Choose**: Select your preferred quality and format
+4. **Download**: Enjoy super-fast download speeds
+5. **Play**: Use the built-in player or move to private storage
 
----
+## 🔧 Technical Details
 
-## 🧩 Tech Stack
-
-- **Kotlin + Jetpack Components**
-- **ExoPlayer** for advanced media playback
-- **yt-dlp + youtubedl-android** for multi-site extraction
-- **Foreground Service Architecture** for stable background downloads
+- **Backend**: Powered by yt-dlp with youtubedl-android integration
+- **Platform**: Android 8.0+ (Oreo and above)
+- **Architecture**: Modern Android development with Kotlin
+- **License**: Open Source - Custom License
 
 ---
 
-## ⚠️ Note
+**Made with ❤️ in India** 🇮🇳
 
-AIO Video Downloader is not affiliated with **VidMate**, **SnapTube**, or any other proprietary downloader.  
-It’s a **community-driven, non-commercial** project built to keep the web open and accessible.
-
----
-
-**Made with ❤️ in India** 🇮🇳  
-Open source. Ad-free. Forever.
+*AIO Video Downloader is not affiliated with any proprietary video downloader apps. We believe in open, transparent software that respects your privacy.*
