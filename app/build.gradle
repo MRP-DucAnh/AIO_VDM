@@ -48,6 +48,7 @@ android {
             buildConfigField "boolean", "IS_DEBUG_MODE_ON", "true"
         }
         release {
+            applicationIdSuffix ".release"                // Becomes: com.aio.video_downloader.release
             minifyEnabled true                            // Enable code shrinking (R8)
             shrinkResources true                          // Remove unused resources
             debuggable false
