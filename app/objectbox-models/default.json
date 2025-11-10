@@ -5,7 +5,7 @@
   "entities": [
     {
       "id": "1:5859520049495032366",
-      "lastPropertyId": "66:2046752512379718317",
+      "lastPropertyId": "67:1368932844357110787",
       "name": "AIOSettings",
       "properties": [
         {
@@ -328,6 +328,11 @@
           "id": "66:2046752512379718317",
           "name": "downloadDataModelDBId",
           "type": 6
+        },
+        {
+          "id": "67:1368932844357110787",
+          "name": "hasUserSkipBatteryOptimization",
+          "type": 1
         }
       ],
       "relations": []

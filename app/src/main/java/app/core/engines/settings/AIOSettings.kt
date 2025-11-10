@@ -99,6 +99,9 @@ class AIOSettings : Serializable {
 	@JvmField @JsonAttribute(name = "hasUserRatedTheApplication")
 	var hasUserRatedTheApplication: Boolean = false
 
+	@JvmField @JsonAttribute(name = "hasUserSkipBatteryOptimization")
+	var hasUserSkipBatteryOptimization: Boolean = false
+
 	/**
 	 * Counter for total successful download operations completed by the user.
 	 * Used for analytics, user engagement metrics, and feature unlocking.
