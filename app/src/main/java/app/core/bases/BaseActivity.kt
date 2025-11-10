@@ -258,6 +258,10 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 			logger.d("Checking and requesting required permissions")
 			requestForPermissionIfRequired()
 
+			// Requesting user to disable battery optimization
+			logger.d("Requesting user to disable battery optimization")
+			requestForDisablingBatteryOptimization()
+
 			// Update the state of foreground services
 			logger.d("Updating foreground service state")
 			AIOForegroundService.updateService()
@@ -494,8 +498,8 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 					logger.d("Showing explanation dialog for denied permissions: $deniedList")
 					callback.showRequestReasonDialog(
 						permissions = deniedList,
-						message = getString(R.string.title_allow_the_permissions),
-						positiveText = getString(R.string.title_allow_now)
+						message = getString(R.string.title_allow_the_storage_permissions),
+						positiveText = getString(R.string.title_allow_now_in_settings)
 					)
 				}
 
@@ -505,7 +509,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 					scope.showForwardToSettingsDialog(
 						permissions = deniedList,
 						message = getString(R.string.text_allow_permission_in_setting),
-						positiveText = getString(R.string.title_allow_now)
+						positiveText = getString(R.string.title_allow_now_in_settings)
 					)
 				}
 
@@ -1073,35 +1077,50 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 		return isIgnored
 	}
 
+	// Tracks whether the battery optimization dialog is currently being displayed to the user
+	private var isBatteryOptimizationDialogShowing = false
+
 	/**
-	 * Prompts the user to disable battery optimization for the app.
+	 * Prompts the user to disable battery optimization for the app to ensure reliable background operations.
 	 *
-	 * Conditions:
-	 * - Only if at least one successful download has occurred.
-	 * - Only if the current activity is [MotherActivity].
-	 * - Only if battery optimization is not already ignored.
+	 * This function displays a persuasive dialog explaining why disabling battery optimization is beneficial
+	 * for maintaining background download functionality. The dialog only shows under specific conditions
+	 * to avoid annoying users and appears at appropriate times.
 	 *
-	 * Displays a custom dialog explaining the need for disabling battery optimization.
-	 * If the user agrees, launches the system settings to allow manual exclusion.
+	 * @see isBatteryOptimizationIgnored For checking current battery optimization status
+	 * @see MotherActivity The main activity context required for showing the dialog
 	 */
 	fun requestForDisablingBatteryOptimization() {
 		logger.d("requestForDisablingBatteryOptimization() called")
 
-		// Guard clauses
+		// Guard clause: Only show if user has experienced successful downloads
+		// This proves the app's value before asking for special permissions
 		if (aioSettings.totalNumberOfSuccessfulDownloads < 1) {
 			logger.d("Skipping — no successful downloads yet")
 			return
 		}
+
+		// Guard clause: Only show in main activity context for proper UI presentation
 		if (safeBaseActivityRef !is MotherActivity) {
 			logger.d("Skipping — current activity is not MotherActivity")
 			return
 		}
-		if (isBatteryOptimizationIgnored()) {
-			logger.d("Skipping — battery optimization already ignored")
+
+		// Guard clause: Prevent multiple simultaneous dialogs
+		if (isBatteryOptimizationDialogShowing) {
+			logger.d("Skipping battery optimization prompt — already showing to user")
 			return
 		}
 
-		// Show custom message dialog to prompt user
+		// Guard clause: Don't bother user if they've already configured this setting
+		if (isBatteryOptimizationIgnored()) {
+			logger.d("Skipping battery optimization prompt —  already ignored by user")
+			return
+		}
+
+		logger.d("All conditions met — proceeding to show battery optimization dialog")
+
+		// Create and configure the battery optimization explanation dialog
 		MsgDialogUtils.getMessageDialog(
 			baseActivityInf = safeBaseActivityRef,
 			isTitleVisible = true,
@@ -1113,14 +1132,35 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 				it.setLeftSideDrawable(R.drawable.ic_button_arrow_next)
 			}
 		)?.apply {
-			setOnClickForPositiveButton {
-				logger.d("User agreed — launching battery optimization settings")
-				val intent = Intent(ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-				startActivity(intent)
+			// Set up dialog lifecycle listeners to properly manage the showing state
+			dialog.setOnDismissListener {
+				logger.d("Battery optimization dialog dismissed - resetting showing state")
+				isBatteryOptimizationDialogShowing = false
 			}
-		}?.show()
+			dialog.setOnCancelListener {
+				logger.d("Battery optimization dialog cancelled - resetting showing state")
+				isBatteryOptimizationDialogShowing = false
+			}
 
-		logger.d("Battery optimization dialog displayed (if conditions met)")
+			// Handle user acceptance - launch system settings for battery optimization
+			setOnClickForPositiveButton {
+				logger.d("User accepted battery optimization prompt — launching system settings intent")
+				dialog.cancel()
+				try {
+					// Intent to open battery optimization settings where user can exclude this app
+					val intent = Intent(ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+					startActivity(intent)
+					logger.d("Battery optimization settings intent launched successfully")
+				} catch (error: Exception) {
+					logger.e("Failed to launch battery optimization settings intent", error)
+				}
+			}
+		}?.show().let {
+			// This prevents duplicate dialogs while the current one is visible
+			isBatteryOptimizationDialogShowing = true
+		}
+
+		logger.d("Battery optimization dialog display process completed")
 	}
 
 	// Tracks the background job for update checks to prevent multiple concurrent checks
@@ -1186,7 +1226,8 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 	 * @param updater The updater instance used to fetch update information
 	 * @return A pair containing the downloaded APK file and update info, or null if validation fails
 	 */
-	private suspend fun fetchAndValidateUpdate(updater: AIOUpdater): Pair<File, AIOUpdater.UpdateInfo>? {
+	private suspend fun fetchAndValidateUpdate(
+		updater: AIOUpdater): Pair<File, AIOUpdater.UpdateInfo>? {
 		// Step 1: Get the latest APK download URL
 		val latestAPKUrl = updater.getLatestApkUrl()
 		if (latestAPKUrl.isNullOrEmpty()) {
@@ -1201,7 +1242,8 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 			logger.d("UpdateInfo is null — aborting update check")
 			return null
 		}
-		logger.d("Fetched update info: version=${updateInfo.latestVersion}, hash=${updateInfo.versionHash}")
+		logger.d("Fetched update info: version=" +
+				"${updateInfo.latestVersion}, hash=${updateInfo.versionHash}")
 
 		// Step 3: Download the APK file silently (without user interaction)
 		val latestAPKFile = updater.downloadUpdateApkSilently(
@@ -1226,7 +1268,8 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 
 		// Step 6: Compare computed hash with expected hash from server
 		if (fileHash != updateInfo.versionHash) {
-			logger.d("SHA256 mismatch! Expected=${updateInfo.versionHash}, Got=$fileHash — deleting APK")
+			logger.d("SHA256 mismatch! Expected=" +
+					"${updateInfo.versionHash}, Got=$fileHash — deleting APK")
 			latestAPKFile.delete()
 			return null
 		}

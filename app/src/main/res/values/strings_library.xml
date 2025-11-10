@@ -266,7 +266,7 @@
 	<string name="title_download_now">Download Now</string>
 	<string name="title_failed_open_the_video">Failed To Open The Video</string>
 	<string name="title_allow_now">Allow Now</string>
-	<string name="title_allow_the_permissions">Allow The Permissions</string>
+	<string name="title_allow_the_storage_permissions">Allow The Storage Permissions</string>
 	<string name="title_press_back_button_to_exit">Press Back Once More To Exit</string>
 	<string name="title_unknown_video_title">Unknown Video Title</string>
 	<string name="title_00_00">00:00</string>
@@ -596,5 +596,6 @@
 	<string name="title_move_to_private_successfully">Successfully Moved To Private</string>
 	<string name="title_move_to_gallery_successfully">Successfully Moved To Gallery</string>
 	<string name="title_move_to_gallery">Move To Gallery</string>
+	<string name="title_allow_now_in_settings">Allow In Settings</string>
 
 </resources>
