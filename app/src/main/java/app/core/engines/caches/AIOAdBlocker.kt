@@ -50,7 +50,7 @@ class AIOAdBlocker {
 	 */
 	fun fetchAdFilters() {
 		logger.d("Fetching ad-block hosts from remote source...")
-		executeInBackground(codeBlock = {
+		executeInBackground(timeOutInMilli = 3000L, codeBlock = {
 			try {
 				adBlockHosts = fetchHostsFromUrl() ?: run {
 					logger.d("Remote fetch failed, falling back to default hosts")

@@ -2,6 +2,7 @@
 
 package app.core.bases
 
+import android.Manifest.permission.MANAGE_EXTERNAL_STORAGE
 import android.Manifest.permission.POST_NOTIFICATIONS
 import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 import android.annotation.SuppressLint
@@ -182,7 +183,9 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 
 			// Set global crash handler for uncaught exceptions
 			logger.d("Setting default uncaught exception handler")
-			setDefaultUncaughtExceptionHandler(CrashHandler())
+			WeakReference(CrashHandler()).get()?.let {
+				setDefaultUncaughtExceptionHandler(it)
+			}
 
 			// Configure theme, status bar, and other system UI aspects
 			logger.d("Applying theme appearance")
@@ -315,11 +318,18 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 
 		isActivityRunning = false
 
+		// Releasing objects that no longer needed
+		scopedStorageHelper = null
+		permissionCheckListener = null
+
 		// Cancel ongoing vibrations to release hardware
 		if (vibrator.hasVibrator()) {
 			logger.d("Cancelling active vibration")
 			vibrator.cancel()
 		}
+
+		// Cancel ongoing background version update check
+		cancelUpdateCheck()
 
 		// Check if the reference is not null and is of type MotherActivity
 		(safeBaseActivityRef as? MotherActivity)?.let { motherActivity ->
@@ -815,7 +825,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 				logger.d("Permission check not active — scheduling delayed permission request")
 
 				// Add a delay to ensure activity UI is ready
-				delay(1000, object : OnTaskFinishListener {
+				delay(timeInMile = 1000, listener = object : OnTaskFinishListener {
 					override fun afterDelay() {
 						logger.d("Delayed permission check triggered")
 
@@ -829,9 +839,12 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 						logger.d("Permissions required by SDK: $permissions")
 
 						// Check if permission is already granted
-						if (permissions.isNotEmpty() && !isGranted(safeActivityRef, permissions[0])) {
+						if (permissions.isNotEmpty() ||
+							!isGranted(safeActivityRef, POST_NOTIFICATIONS) ||
+							!isGranted(safeActivityRef, MANAGE_EXTERNAL_STORAGE) ||
+							!isGranted(safeActivityRef, WRITE_EXTERNAL_STORAGE)) {
 							logger.d("Permission not granted — launching permission request")
-							launchPermissionRequest(getRequiredPermissionsBySDKVersion())
+							launchPermissionRequest(permissions)
 						} else {
 							logger.d("All required permissions are already granted")
 							permissionCheckListener?.onPermissionResultFound(
@@ -868,13 +881,17 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 
 		val permissions = ArrayList<String>()
 
-		// POST_NOTIFICATIONS is required for Android 13+ (Tiramisu)
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
 			logger.d("Android version >= 13 — adding POST_NOTIFICATIONS permission")
 			permissions.add(POST_NOTIFICATIONS)
 		} else {
 			logger.d("Android version < 13 — adding WRITE_EXTERNAL_STORAGE permission")
 			permissions.add(WRITE_EXTERNAL_STORAGE)
+		}
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+			logger.d("Android version >= 10 — adding MANAGE_EXTERNAL_STORAGE permission")
+			permissions.add(MANAGE_EXTERNAL_STORAGE)
 		}
 
 		logger.d("Permissions determined: $permissions")
@@ -1106,8 +1123,14 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 		logger.d("Battery optimization dialog displayed (if conditions met)")
 	}
 
+	// Tracks the background job for update checks to prevent multiple concurrent checks
 	private var updateCheckJob: Job? = null
 
+	/**
+	 * Initiates a check for the latest application update.
+	 * This method cancels any ongoing update check to prevent duplicates and
+	 * executes the update check with retry logic for network-related failures.
+	 */
 	fun checkForLatestUpdate() {
 		safeBaseActivityRef?.let { activityRef ->
 			// Cancel previous update check to prevent duplicates
@@ -1115,10 +1138,12 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 
 			logger.d("Starting optimized checkForLatestUpdate()")
 
+			// Execute update check with retry mechanism for transient failures
 			updateCheckJob = ThreadsUtility.executeWithRetry(
 				retryCount = 2,
 				retryDelay = 2000L,
 				shouldRetry = { error ->
+					// Retry only on network/timeout errors, not logical errors
 					error is IOException || error is TimeoutCancellationException
 				},
 				codeBlock = { performUpdateCheck(activityRef) },
@@ -1128,10 +1153,15 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 		} ?: logger.d("safeBaseActivityRef is null — cannot perform update check")
 	}
 
+	/**
+	 * Performs the actual update check workflow.
+	 *
+	 * @param baseActivity The activity context used for UI operations
+	 */
 	private suspend fun performUpdateCheck(baseActivity: BaseActivity) {
 		val updater = AIOUpdater().apply { logger.d("AIOUpdater initialized") }
 
-		// Early return if no update available
+		// Early return if no update available to avoid unnecessary processing
 		if (!updater.isNewUpdateAvailable()) {
 			logger.d("No new update available — skipping update check")
 			return
@@ -1144,12 +1174,20 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 			fetchAndValidateUpdate(updater)
 		}
 
+		// If valid update found, show the update dialog to user
 		updateResult?.let { (apkFile, updateInfo) ->
 			showUpdateDialog(baseActivity, apkFile, updateInfo)
 		}
 	}
 
+	/**
+	 * Fetches and validates an update by downloading the APK and verifying its integrity.
+	 *
+	 * @param updater The updater instance used to fetch update information
+	 * @return A pair containing the downloaded APK file and update info, or null if validation fails
+	 */
 	private suspend fun fetchAndValidateUpdate(updater: AIOUpdater): Pair<File, AIOUpdater.UpdateInfo>? {
+		// Step 1: Get the latest APK download URL
 		val latestAPKUrl = updater.getLatestApkUrl()
 		if (latestAPKUrl.isNullOrEmpty()) {
 			logger.d("Latest APK URL is null or empty — aborting update check")
@@ -1157,6 +1195,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 		}
 		logger.d("Latest APK URL: $latestAPKUrl")
 
+		// Step 2: Fetch update metadata (version, hash, etc.)
 		val updateInfo = updater.fetchUpdateInfo()
 		if (updateInfo == null) {
 			logger.d("UpdateInfo is null — aborting update check")
@@ -1164,24 +1203,28 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 		}
 		logger.d("Fetched update info: version=${updateInfo.latestVersion}, hash=${updateInfo.versionHash}")
 
-		val latestAPKFile = updater.downloadUpdateApkSilently(url = latestAPKUrl,
-			version = updateInfo.latestVersion.toString()) ?: run {
+		// Step 3: Download the APK file silently (without user interaction)
+		val latestAPKFile = updater.downloadUpdateApkSilently(
+			url = latestAPKUrl,
+			version = updateInfo.latestVersion.toString()
+		) ?: run {
 			logger.d("Failed to download latest APK")
 			return null
 		}
 
-		// Validate downloaded file
+		// Step 4: Validate the downloaded file is a proper APK
 		if (!isValidApkFile(latestAPKFile)) {
 			logger.d("Downloaded file is not a valid APK — deleting")
 			latestAPKFile.delete()
 			return null
 		}
 
-		// Verify file hash on background thread
+		// Step 5: Verify file integrity using SHA256 hash on background thread
 		val fileHash = ThreadsUtility.executeOnDefault {
 			getFileSha256(latestAPKFile)
 		}
 
+		// Step 6: Compare computed hash with expected hash from server
 		if (fileHash != updateInfo.versionHash) {
 			logger.d("SHA256 mismatch! Expected=${updateInfo.versionHash}, Got=$fileHash — deleting APK")
 			latestAPKFile.delete()
@@ -1192,6 +1235,12 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 		return Pair(latestAPKFile, updateInfo)
 	}
 
+	/**
+	 * Validates that a file is a legitimate APK file.
+	 *
+	 * @param file The file to validate
+	 * @return true if the file exists, is non-empty, and has an APK extension
+	 */
 	private fun isValidApkFile(file: File): Boolean {
 		return file.exists() &&
 				file.isFile &&
@@ -1199,15 +1248,24 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 				getFileExtension(file.name)?.contains("apk", true) == true
 	}
 
+	/**
+	 * Displays the update dialog to the user on the main UI thread.
+	 *
+	 * @param activity The activity context for showing the dialog
+	 * @param apkFile The downloaded APK file ready for installation
+	 * @param updateInfo The update metadata (version, release notes, etc.)
+	 */
 	private suspend fun showUpdateDialog(activity: BaseActivity,
 		apkFile: File, updateInfo: AIOUpdater.UpdateInfo) {
 		ThreadsUtility.executeOnMain(codeBlock = {
+			// Safety check: ensure activity is still valid and active
 			if (!isActivityRunning || activity.isFinishing || activity.isDestroyed) {
 				logger.d("Activity not running — cleaning up downloaded APK")
 				apkFile.delete()
 				return@executeOnMain
 			}
 
+			// Only show dialog on MotherActivity (main activity)
 			if (activity is MotherActivity) {
 				UpdaterDialog(
 					baseActivity = activity,
@@ -1222,22 +1280,36 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 		})
 	}
 
+	/**
+	 * Cancels any ongoing update check operation.
+	 * Useful when the user navigates away or the app is backgrounded.
+	 */
 	fun cancelUpdateCheck() {
 		updateCheckJob?.cancel()
 		updateCheckJob = null
 		logger.d("Update check cancelled")
 	}
 
+	// Timestamp tracking for debouncing update checks
 	private var lastUpdateCheckTime = 0L
+
+	// Minimum interval between update checks (5 minutes) to avoid excessive network calls
 	private val minUpdateCheckInterval = 5 * 60 * 1000L // 5 minutes
 
+	/**
+	 * Performs a debounced update check to prevent excessive checking.
+	 * Only allows one update check per [minUpdateCheckInterval] period.
+	 */
 	fun checkForLatestUpdateDebounced() {
 		val currentTime = System.currentTimeMillis()
+
+		// Check if minimum interval has elapsed since last check
 		if (currentTime - lastUpdateCheckTime < minUpdateCheckInterval) {
 			logger.d("Skipping update check - too soon since last check")
 			return
 		}
 
+		// Update timestamp and proceed with check
 		lastUpdateCheckTime = currentTime
 		checkForLatestUpdate()
 	}
