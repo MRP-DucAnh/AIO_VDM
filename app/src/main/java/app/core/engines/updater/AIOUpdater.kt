@@ -182,7 +182,7 @@ class AIOUpdater {
 	 * @param url The direct URL to the APK file.
 	 * @return The File object pointing to the saved APK, or null if download fails.
 	 */
-	fun downloadUpdateApkSilently( url: String): File? {
+	fun downloadUpdateApkSilently(url: String, version: String): File? {
 		logger.d("Starting silent APK download from URL: $url")
 		val externalDataFolderPath = getText(R.string.text_default_aio_download_folder_path)
 		val directoryPath = "$externalDataFolderPath/${getText(R.string.title_aio_others)}/.configs"
@@ -193,9 +193,9 @@ class AIOUpdater {
 			logger.d("Directory created at: ${downloadDestination.absolutePath}")
 		}
 
-		val outputFile = File(downloadDestination, APK_FILE_NAME)
-		val tempFile = File(downloadDestination, TEMP_APK_FILE_NAME)
-		val infoFile = File(downloadDestination, APK_DOWNLOAD_INFO_FILE)
+		val outputFile = File(downloadDestination, "$version.$APK_FILE_NAME")
+		val tempFile = File(downloadDestination, "$version.$TEMP_APK_FILE_NAME")
+		val infoFile = File(downloadDestination, "$version.$APK_DOWNLOAD_INFO_FILE")
 		if (outputFile.isFile && outputFile.exists()) return outputFile
 
 		try {

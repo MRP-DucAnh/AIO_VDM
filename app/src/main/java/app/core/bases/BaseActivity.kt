@@ -66,6 +66,8 @@ import com.aio.R
 import com.anggrayudi.storage.SimpleStorageHelper
 import com.permissionx.guolindev.PermissionX
 import com.permissionx.guolindev.PermissionX.isGranted
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
 import lib.files.FileSystemUtility.getFileExtension
 import lib.files.FileSystemUtility.getFileSha256
 import lib.process.CommonTimeUtils.OnTaskFinishListener
@@ -79,6 +81,8 @@ import lib.ui.MsgDialogUtils.showMessageDialog
 import lib.ui.ViewUtility
 import lib.ui.ViewUtility.setLeftSideDrawable
 import lib.ui.builders.ToastView.Companion.showToast
+import java.io.File
+import java.io.IOException
 import java.lang.Thread.setDefaultUncaughtExceptionHandler
 import java.lang.ref.WeakReference
 import java.util.TimeZone
@@ -1102,85 +1106,139 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 		logger.d("Battery optimization dialog displayed (if conditions met)")
 	}
 
-	/**
-	 * Checks for the latest available update in the background.
-	 *
-	 * Steps performed:
-	 * 1. Verifies if a new update is available via [AIOUpdater].
-	 * 2. Fetches the latest APK URL and update metadata ([UpdateInfo]).
-	 * 3. Downloads the APK silently to a local file.
-	 * 4. Validates the downloaded APK against SHA256 hash.
-	 * 5. If valid, launches [UpdaterDialog] on the main thread for user installation.
-	 *
-	 * Handles nulls, invalid downloads, and hash mismatches gracefully, with logging.
-	 */
+	private var updateCheckJob: Job? = null
+
 	fun checkForLatestUpdate() {
-		safeBaseActivityRef?.let { safeBaseActivityRef ->
-			logger.d("Starting checkForLatestUpdate()")
+		safeBaseActivityRef?.let { activityRef ->
+			// Cancel previous update check to prevent duplicates
+			updateCheckJob?.cancel()
 
-			// Execute update check in a background thread
-			ThreadsUtility.executeInBackground(codeBlock = {
+			logger.d("Starting optimized checkForLatestUpdate()")
 
-				val updater = AIOUpdater()
-				logger.d("AIOUpdater initialized")
-
-				if (updater.isNewUpdateAvailable()) {
-					logger.d("New update available — fetching details")
-
-					val latestAPKUrl = updater.getLatestApkUrl()
-					if (latestAPKUrl.isNullOrEmpty()) {
-						logger.d("Latest APK URL is null or empty — aborting update check")
-						return@executeInBackground
-					}
-					logger.d("Latest APK URL: $latestAPKUrl")
-
-					val updateInfo = updater.fetchUpdateInfo()
-					if (updateInfo == null) {
-						logger.d("UpdateInfo is null — aborting update check")
-						return@executeInBackground
-					}
-					logger.d("Fetched update info: version=${updateInfo.latestVersion}, hash=${updateInfo.versionHash}")
-
-					val latestAPKFile = updater.downloadUpdateApkSilently(latestAPKUrl)
-					if (latestAPKFile != null &&
-						latestAPKFile.exists() &&
-						latestAPKFile.isFile &&
-						getFileExtension(latestAPKFile.name)?.contains("apk", true) == true
-					) {
-						logger.d("Downloaded latest APK successfully at ${latestAPKFile.absolutePath}")
-						val fileHash = getFileSha256(latestAPKFile)
-
-						if (fileHash != updateInfo.versionHash) {
-							logger.d("SHA256 mismatch! Expected=${updateInfo.versionHash}, Got=$fileHash — deleting APK")
-							latestAPKFile.delete()
-							return@executeInBackground
-						}
-						logger.d("APK hash verified successfully — proceeding to show updater dialog")
-
-						// Launch updater dialog on the main thread
-						ThreadsUtility.executeOnMain(codeBlock = {
-							logger.d("Executing on main thread to show UpdaterDialog")
-							if (!isActivityRunning) {
-								logger.d("Activity not running — skipping UpdaterDialog")
-								return@executeOnMain
-							}
-
-							if (safeBaseActivityRef is MotherActivity) {
-								UpdaterDialog(
-									baseActivity = safeBaseActivityRef,
-									latestVersionApkFile = latestAPKFile,
-									versionInfo = updateInfo
-								).show()
-								logger.d("UpdaterDialog launched for version=${updateInfo.latestVersion}")
-							}
-						})
-					} else {
-						logger.d("Failed to download latest APK or file invalid: ${latestAPKFile?.absolutePath}")
-					}
-				} else {
-					logger.d("No new update available — skipping update check")
-				}
-			})
+			updateCheckJob = ThreadsUtility.executeWithRetry(
+				retryCount = 2,
+				retryDelay = 2000L,
+				shouldRetry = { error ->
+					error is IOException || error is TimeoutCancellationException
+				},
+				codeBlock = { performUpdateCheck(activityRef) },
+				onSuccess = { logger.d("Update check completed successfully") },
+				onFinalError = { error -> logger.e("Update check failed after retries:", error) }
+			)
 		} ?: logger.d("safeBaseActivityRef is null — cannot perform update check")
+	}
+
+	private suspend fun performUpdateCheck(baseActivity: BaseActivity) {
+		val updater = AIOUpdater().apply { logger.d("AIOUpdater initialized") }
+
+		// Early return if no update available
+		if (!updater.isNewUpdateAvailable()) {
+			logger.d("No new update available — skipping update check")
+			return
+		}
+
+		logger.d("New update available — fetching details")
+
+		// Use executeOnDefault for CPU-intensive hash calculations
+		val updateResult = ThreadsUtility.executeOnDefault {
+			fetchAndValidateUpdate(updater)
+		}
+
+		updateResult?.let { (apkFile, updateInfo) ->
+			showUpdateDialog(baseActivity, apkFile, updateInfo)
+		}
+	}
+
+	private suspend fun fetchAndValidateUpdate(updater: AIOUpdater): Pair<File, AIOUpdater.UpdateInfo>? {
+		val latestAPKUrl = updater.getLatestApkUrl()
+		if (latestAPKUrl.isNullOrEmpty()) {
+			logger.d("Latest APK URL is null or empty — aborting update check")
+			return null
+		}
+		logger.d("Latest APK URL: $latestAPKUrl")
+
+		val updateInfo = updater.fetchUpdateInfo()
+		if (updateInfo == null) {
+			logger.d("UpdateInfo is null — aborting update check")
+			return null
+		}
+		logger.d("Fetched update info: version=${updateInfo.latestVersion}, hash=${updateInfo.versionHash}")
+
+		val latestAPKFile = updater.downloadUpdateApkSilently(url = latestAPKUrl,
+			version = updateInfo.latestVersion.toString()) ?: run {
+			logger.d("Failed to download latest APK")
+			return null
+		}
+
+		// Validate downloaded file
+		if (!isValidApkFile(latestAPKFile)) {
+			logger.d("Downloaded file is not a valid APK — deleting")
+			latestAPKFile.delete()
+			return null
+		}
+
+		// Verify file hash on background thread
+		val fileHash = ThreadsUtility.executeOnDefault {
+			getFileSha256(latestAPKFile)
+		}
+
+		if (fileHash != updateInfo.versionHash) {
+			logger.d("SHA256 mismatch! Expected=${updateInfo.versionHash}, Got=$fileHash — deleting APK")
+			latestAPKFile.delete()
+			return null
+		}
+
+		logger.d("APK hash verified successfully")
+		return Pair(latestAPKFile, updateInfo)
+	}
+
+	private fun isValidApkFile(file: File): Boolean {
+		return file.exists() &&
+				file.isFile &&
+				file.length() > 0 &&
+				getFileExtension(file.name)?.contains("apk", true) == true
+	}
+
+	private suspend fun showUpdateDialog(activity: BaseActivity,
+		apkFile: File, updateInfo: AIOUpdater.UpdateInfo) {
+		ThreadsUtility.executeOnMain(codeBlock = {
+			if (!isActivityRunning || activity.isFinishing || activity.isDestroyed) {
+				logger.d("Activity not running — cleaning up downloaded APK")
+				apkFile.delete()
+				return@executeOnMain
+			}
+
+			if (activity is MotherActivity) {
+				UpdaterDialog(
+					baseActivity = activity,
+					latestVersionApkFile = apkFile,
+					versionInfo = updateInfo
+				).show()
+				logger.d("UpdaterDialog launched for version=${updateInfo.latestVersion}")
+			} else {
+				logger.d("Activity is not MotherActivity — cleaning up downloaded APK")
+				apkFile.delete()
+			}
+		})
+	}
+
+	fun cancelUpdateCheck() {
+		updateCheckJob?.cancel()
+		updateCheckJob = null
+		logger.d("Update check cancelled")
+	}
+
+	private var lastUpdateCheckTime = 0L
+	private val minUpdateCheckInterval = 5 * 60 * 1000L // 5 minutes
+
+	fun checkForLatestUpdateDebounced() {
+		val currentTime = System.currentTimeMillis()
+		if (currentTime - lastUpdateCheckTime < minUpdateCheckInterval) {
+			logger.d("Skipping update check - too soon since last check")
+			return
+		}
+
+		lastUpdateCheckTime = currentTime
+		checkForLatestUpdate()
 	}
 }
