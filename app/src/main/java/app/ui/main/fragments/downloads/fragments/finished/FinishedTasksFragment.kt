@@ -222,7 +222,7 @@ open class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIO
 		downloadsFragment?.safeFragmentLayoutRef?.let { fragmentLayout ->
 			if (isFragmentRunning == false) return
 			val totalDownloadedFiles = downloadSystem.finishedDownloadDataModels.size
-			if (totalDownloadedFiles == lastCheckedFinishedTasks) return
+			if (totalDownloadedFiles == lastCheckedFinishedTasks && totalDownloadedFiles > 0) return
 			val title = fragmentLayout.findViewById<TextView>(R.id.txt_current_frag_name)
 			val fixedTitleName = getText(R.string.title_downloaded_files)
 			val titleText = "$fixedTitleName ($totalDownloadedFiles)"
