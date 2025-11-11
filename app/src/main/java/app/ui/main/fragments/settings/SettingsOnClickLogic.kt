@@ -13,13 +13,14 @@ import app.core.engines.settings.AIOSettings.Companion.AIO_SETTING_DARK_MODE_FIL
 import app.core.engines.updater.AIOUpdater
 import app.ui.main.fragments.settings.activities.browser.AdvBrowserSettingsActivity
 import app.ui.main.fragments.settings.dialogs.ContentRegionSelector
-import app.ui.main.fragments.settings.dialogs.CustomDownloadFolderSelector
 import app.ui.main.fragments.settings.dialogs.DownloadLocationSelector
 import app.ui.others.information.UserFeedbackActivity
 import app.ui.others.startup.LanguagePickerDialog
 import com.aio.R
 import kotlinx.coroutines.delay
 import lib.device.ShareUtility
+import lib.files.FileSystemUtility.hasFullFileSystemAccess
+import lib.files.FileSystemUtility.openAllFilesAccessSettings
 import lib.networks.URLUtility.ensureHttps
 import lib.networks.URLUtility.isValidURL
 import lib.process.CommonTimeUtils.OnTaskFinishListener
@@ -30,10 +31,12 @@ import lib.process.OSProcessUtils.restartApp
 import lib.process.ThreadsUtility
 import lib.texts.CommonTextUtils.getText
 import lib.ui.MsgDialogUtils
+import lib.ui.MsgDialogUtils.getMessageDialog
 import lib.ui.ViewUtility
 import lib.ui.ViewUtility.setLeftSideDrawable
 import lib.ui.ViewUtility.showOnScreenKeyboard
 import lib.ui.builders.DialogBuilder
+import lib.ui.builders.FileFolderPicker
 import lib.ui.builders.ToastView.Companion.showToast
 import lib.ui.builders.WaitingDialog
 import java.io.File
@@ -95,7 +98,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	fun showLanguageChanger() {
 		logger.d("→ Language Picker")
 		settingsFragmentRef?.safeMotherActivityRef?.let { activity ->
-			MsgDialogUtils.getMessageDialog(
+			getMessageDialog(
 				baseActivityInf = activity,
 				isTitleVisible = true,
 				titleText = getText(R.string.title_experimental_feature),
@@ -181,14 +184,37 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 		} ?: logger.d("× Failed: Activity null (Daily Suggestions)")
 	}
 
-	/**
-	 * Launches a folder picker dialog for download location selection.
-	 */
+	private var isFileFolderPickerActive = false
 	fun changeDefaultDownloadFolder() {
-		logger.d("→ Custom Download Folder Selector")
-		settingsFragmentRef?.safeMotherActivityRef?.apply {
-			CustomDownloadFolderSelector(this).show()
-		} ?: logger.d("× Failed: Activity null (Folder Selector)")
+		logger.d("Custom Download Folder Selector")
+		settingsFragmentRef?.safeMotherActivityRef?.let { activityRef ->
+			if (!hasFullFileSystemAccess(activityRef)) {
+				getMessageDialog(
+					baseActivityInf = activityRef,
+					isTitleVisible = true,
+					isCancelable = false,
+					isNegativeButtonVisible = false,
+					titleText = activityRef.getString(R.string.title_storage_permission_needed),
+					messageTextViewCustomize = { it.setText(R.string.text_file_system_permission_needed) },
+					positiveButtonTextCustomize = { it.setText(R.string.title_allow_now_in_settings) }
+				)?.apply { setOnClickForPositiveButton { openAllFilesAccessSettings(activityRef); close() } }?.show()
+			} else {
+				if (isFileFolderPickerActive == false) {
+					FileFolderPicker(
+						activityRef,
+						isCancellable = false,
+						isFolderPickerOnly = true,
+						isFilePickerOnly = false,
+						isMultiSelection = false,
+						titleText = getText(R.string.title_select_download_folder),
+						positiveButtonText = getText(R.string.title_select_folder),
+						onUserAbortedProcess = { },
+						onFileSelection = {
+
+						}).show()
+				}
+			}
+		} ?: logger.d("Failed: Activity null (Folder Selector)")
 	}
 
 	/**
@@ -547,7 +573,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 		logger.d("Show restart dialog")
 		settingsFragmentRef?.safeMotherActivityRef?.let { safeMotherActivityRef ->
 			val msgResId = R.string.text_cation_msg_of_restarting_application
-			MsgDialogUtils.getMessageDialog(
+			getMessageDialog(
 				baseActivityInf = safeMotherActivityRef,
 				isTitleVisible = true,
 				titleText = getText(R.string.title_are_you_sure_about_this),

@@ -70,6 +70,7 @@
 	<string name="text_battery_optimization_msg"><b>To ensure downloads are not interrupted</b>, exclude this app from battery optimization.</string>
 	<string name="text_unlock_before_access_private_file">Please confirm your device PIN, pattern, password, or biometric to securely access this private file.</string>
 	<string name="text_prompt_skip_or_play_private_video"><b>You are trying to access private videos.</b> Do you want to skip for this session or play them?</string>
+	<string name="text_file_system_permission_needed"><b>Please grant the storage permission</b> to allow changing the default download folder.</string>
 
 	<string name="text_fb_how_to_guide_1">Tap the <b>Share 📤</b> button below the video or reel, then <b>Copy link 🔗</b> to copy its address.</string>
 	<string name="text_yt_how_to_guide_1">Tap the <b>Share 📤</b> button below the video, then <b>scroll ↔️</b> to find the <b>More...</b> option.</string>
@@ -601,5 +602,8 @@
 	<string name="title_select">Select</string>
 	<string name="go_back_previous_path">Go Back To Previous Path</string>
 	<string name="title_sample_folder_name">Sample File/Folder Name</string>
+	<string name="title_select_download_folder">Select Default Download Folder</string>
+	<string name="title_select_folder">Select Folder</string>
+	<string name="title_storage_permission_needed">Storage Permission Needed</string>
 
 </resources>
