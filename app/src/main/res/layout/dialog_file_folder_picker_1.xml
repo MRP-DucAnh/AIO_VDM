@@ -83,6 +83,25 @@
 					android:textSize="@dimen/normal_text_size" />
 			</LinearLayout>
 
+			<HorizontalScrollView
+				android:id="@+id/container_breadcrumb_scroll"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginHorizontal="@dimen/_10"
+				android:layout_marginTop="@dimen/_5"
+				android:background="@drawable/rounded_transparent_black"
+				android:scrollbars="none">
+
+				<LinearLayout
+					android:id="@+id/container_breadcrumb"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:layout_gravity="center_vertical"
+					android:layout_marginHorizontal="@dimen/_5"
+					android:layout_marginVertical="@dimen/_5"
+					android:orientation="horizontal" />
+			</HorizontalScrollView>
+
 			<TextView
 				android:id="@+id/btn_go_to_previous_dir"
 				android:layout_width="match_parent"

@@ -116,6 +116,6 @@
 		android:adjustViewBounds="true"
 		android:importantForAccessibility="no"
 		android:src="@drawable/ic_image_selection"
-		android:visibility="visible" />
+		android:visibility="gone" />
 
 </RelativeLayout>
