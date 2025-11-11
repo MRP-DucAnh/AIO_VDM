@@ -1,4 +1,19 @@
-<?xml version="1.0" encoding="utf-8"?><!-- Settings screen layout with multiple sections for user preferences -->
+<?xml version="1.0" encoding="utf-8"?>
+<!-- =========================================================================
+     Settings Screen Layout
+     Comprehensive settings interface organizing user preferences into logical sections.
+     Features a scrollable layout with categorized CardView containers for different
+     setting types including user profile, application preferences, download controls,
+     browser configuration, customer service, and version information.
+
+     Layout Structure:
+     - ScrollView root for handling content overflow on smaller screens
+     - Vertical LinearLayout organizing setting categories
+     - Multiple CardView sections with consistent styling and spacing
+     - Interactive buttons with icons and descriptive text
+     - Toggle switches for boolean preferences
+     - Proper accessibility and visual lint considerations
+     ========================================================================= -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
 	xmlns:tools="http://schemas.android.com/tools"
@@ -8,12 +23,23 @@
 	android:orientation="vertical"
 	tools:ignore="UseCompatTextViewDrawableXml,UseAppTint,TooManyViews,VisualLintLongText">
 
+	<!-- ============================================================
+	     MAIN CONTENT CONTAINER
+	     Vertical layout holding all settings categories in sequential order.
+	     Uses consistent margin spacing and transparent background to maintain
+	     visual hierarchy while allowing parent background to show through.
+	     ============================================================ -->
 	<LinearLayout
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
 		android:orientation="vertical">
 
-		<!-- User profile information section -->
+		<!-- ======================================================
+		     USER PROFILE INFORMATION SECTION
+		     Displays user account details with avatar, name, email,
+		     and cloud service integration options. Initially hidden
+		     (visibility="gone") until user authentication occurs.
+		     ====================================================== -->
 		<androidx.cardview.widget.CardView
 			android:id="@+id/container_user_info"
 			android:layout_width="match_parent"
@@ -32,7 +58,12 @@
 				android:layout_height="wrap_content"
 				android:orientation="vertical">
 
-				<!-- User avatar and basic info row -->
+				<!-- ==============================================
+				     USER AVATAR AND BASIC INFO ROW
+				     Horizontal layout containing circular avatar
+				     image and user details with edit capability.
+				     Uses colored background for visual separation.
+				     ============================================== -->
 				<LinearLayout
 					android:layout_width="match_parent"
 					android:layout_height="wrap_content"
@@ -40,7 +71,7 @@
 					android:gravity="center_vertical"
 					android:orientation="horizontal">
 
-					<!-- Circular user avatar image -->
+					<!-- Circular user avatar with default placeholder -->
 					<de.hdodenhof.circleimageview.CircleImageView
 						android:id="@+id/img_user_avatar"
 						android:layout_width="@dimen/_50"
@@ -51,7 +82,7 @@
 						android:layout_marginBottom="@dimen/_2"
 						android:src="@drawable/image_default_avatar" />
 
-					<!-- User name and email info container -->
+					<!-- User information container with clickable edit functionality -->
 					<LinearLayout
 						android:id="@+id/btn_user_info"
 						android:layout_width="match_parent"
@@ -64,7 +95,7 @@
 						android:orientation="vertical"
 						tools:ignore="TouchTargetSizeCheck">
 
-						<!-- User name with edit icon -->
+						<!-- User name display with edit icon indicator -->
 						<TextView
 							android:id="@+id/txt_user_name"
 							android:layout_width="match_parent"
@@ -83,7 +114,7 @@
 							android:textSize="@dimen/normal_text_size"
 							tools:ignore="TouchTargetSizeCheck" />
 
-						<!-- User email address -->
+						<!-- User email address in secondary text color -->
 						<TextView
 							android:id="@+id/txt_user_email"
 							android:layout_width="match_parent"
@@ -97,16 +128,19 @@
 							android:textSize="@dimen/small_text_size"
 							tools:ignore="TouchTargetSizeCheck" />
 					</LinearLayout>
-
 				</LinearLayout>
 
-				<!-- Cloud connection section -->
+				<!-- ==============================================
+				     CLOUD SERVICE INTEGRATION SECTION
+				     Prompts user to connect with cloud backup service
+				     for data synchronization and cross-device access.
+				     ============================================== -->
 				<LinearLayout
 					android:layout_width="match_parent"
 					android:layout_height="wrap_content"
 					android:orientation="vertical">
 
-					<!-- Cloud service suggestion text -->
+					<!-- Cloud service promotional text with web link support -->
 					<TextView
 						android:id="@+id/txt_suggest_for_sign_up"
 						android:layout_width="match_parent"
@@ -121,7 +155,7 @@
 						android:textColor="@color/color_text_primary"
 						android:textSize="@dimen/message_text_size" />
 
-					<!-- Cloud backup connection button -->
+					<!-- Primary call-to-action button for cloud connection -->
 					<RelativeLayout
 						android:id="@+id/btn_login_register_to_cloud"
 						android:layout_width="match_parent"
@@ -135,7 +169,7 @@
 						android:elevation="@dimen/_2"
 						tools:ignore="TouchTargetSizeCheck">
 
-						<!-- Sign in/register button text -->
+						<!-- Sign in/register action text with connection icon -->
 						<TextView
 							android:id="@+id/txt_connect_to_cloud"
 							android:layout_width="wrap_content"
@@ -153,11 +187,14 @@
 							android:textSize="@dimen/normal_text_size" />
 					</RelativeLayout>
 				</LinearLayout>
-
 			</LinearLayout>
 		</androidx.cardview.widget.CardView>
 
-		<!-- Application general settings section -->
+		<!-- ======================================================
+		     APPLICATION GENERAL SETTINGS SECTION
+		     Core application preferences including download location,
+		     language selection, and theme customization options.
+		     ====================================================== -->
 		<androidx.cardview.widget.CardView
 			android:id="@+id/container_application_settings"
 			android:layout_width="match_parent"
@@ -175,7 +212,7 @@
 				android:layout_height="wrap_content"
 				android:orientation="vertical">
 
-				<!-- Settings section header -->
+				<!-- Settings section header with colored background -->
 				<LinearLayout
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
@@ -197,7 +234,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Download location setting button -->
+				<!-- Download location preference setting -->
 				<LinearLayout
 					android:id="@+id/btn_default_download_location"
 					android:layout_width="match_parent"
@@ -226,7 +263,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Language picker setting button -->
+				<!-- Language selection preference -->
 				<LinearLayout
 					android:id="@+id/btn_language_picker"
 					android:layout_width="match_parent"
@@ -255,7 +292,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Dark mode user setting button -->
+				<!-- Dark mode theme toggle with check indicator -->
 				<LinearLayout
 					android:id="@+id/btn_dark_mode_ui"
 					android:layout_width="match_parent"
@@ -284,7 +321,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Divider line -->
+				<!-- Hidden divider for future content separation -->
 				<View
 					android:visibility="gone"
 					android:layout_width="match_parent"
@@ -295,7 +332,7 @@
 					android:layout_marginBottom="@dimen/_5"
 					android:background="@color/transparent_dark" />
 
-				<!-- Content location setting button -->
+				<!-- Future content region setting (currently hidden) -->
 				<LinearLayout
 					android:visibility="gone"
 					android:id="@+id/btn_content_location"
@@ -325,7 +362,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Daily suggestions toggle button -->
+				<!-- Future daily suggestions toggle (currently hidden) -->
 				<LinearLayout
 					android:visibility="gone"
 					android:id="@+id/btn_daily_suggestions"
@@ -354,11 +391,14 @@
 						android:textColor="@color/color_text_primary"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
 			</LinearLayout>
 		</androidx.cardview.widget.CardView>
 
-		<!-- Download-specific settings section -->
+		<!-- ======================================================
+		     DOWNLOAD-SPECIFIC SETTINGS SECTION
+		     Controls download behavior including notifications,
+		     network restrictions, and file handling preferences.
+		     ====================================================== -->
 		<androidx.cardview.widget.CardView
 			android:id="@+id/container_download_settings"
 			android:layout_width="match_parent"
@@ -376,7 +416,7 @@
 				android:layout_height="wrap_content"
 				android:orientation="vertical">
 
-				<!-- Download settings header -->
+				<!-- Download settings section header -->
 				<LinearLayout
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
@@ -398,7 +438,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Default download folder setting -->
+				<!-- Default download folder setting (currently hidden) -->
 				<LinearLayout
 					android:visibility="gone"
 					android:id="@+id/btn_default_download_folder"
@@ -430,7 +470,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Hide task notifications toggle -->
+				<!-- Hide task notifications toggle with unchecked state -->
 				<LinearLayout
 					android:id="@+id/btn_hide_task_notifications"
 					android:layout_width="match_parent"
@@ -461,7 +501,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- WiFi only downloads toggle -->
+				<!-- WiFi-only downloads restriction toggle -->
 				<LinearLayout
 					android:id="@+id/btn_wifi_only_downloads"
 					android:layout_width="match_parent"
@@ -492,7 +532,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Single click open download file -->
+				<!-- Single-click file opening convenience feature -->
 				<LinearLayout
 					android:id="@+id/btn_single_click_open"
 					android:layout_width="match_parent"
@@ -523,7 +563,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Play notification sound toggle -->
+				<!-- Download completion sound notification toggle -->
 				<LinearLayout
 					android:id="@+id/btn_play_notification_sound"
 					android:layout_width="match_parent"
@@ -555,7 +595,7 @@
 						tools:ignore="TextContrastCheck" />
 				</LinearLayout>
 
-				<!-- Divider line -->
+				<!-- Visual divider separating basic and advanced settings -->
 				<View
 					android:layout_width="match_parent"
 					android:layout_height="@dimen/_1"
@@ -565,7 +605,7 @@
 					android:layout_marginBottom="@dimen/_5"
 					android:background="@color/transparent_dark" />
 
-				<!-- Advanced download settings button -->
+				<!-- Advanced download settings navigation button -->
 				<LinearLayout
 					android:id="@+id/btn_adv_downloads_settings"
 					android:layout_width="match_parent"
@@ -595,11 +635,14 @@
 						android:textColor="@color/color_text_primary"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
 			</LinearLayout>
 		</androidx.cardview.widget.CardView>
 
-		<!-- Browser settings section -->
+		<!-- ======================================================
+		     BROWSER SETTINGS SECTION
+		     Web browser configuration including homepage, ad blocking,
+		     popup controls, and media display preferences.
+		     ====================================================== -->
 		<androidx.cardview.widget.CardView
 			android:id="@+id/container_browser_settings"
 			android:layout_width="match_parent"
@@ -617,7 +660,7 @@
 				android:layout_height="wrap_content"
 				android:orientation="vertical">
 
-				<!-- Browser settings header -->
+				<!-- Browser settings section header -->
 				<LinearLayout
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
@@ -639,7 +682,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Browser homepage setting -->
+				<!-- Browser homepage configuration setting -->
 				<LinearLayout
 					android:id="@+id/btn_browser_homepage"
 					android:layout_width="match_parent"
@@ -670,7 +713,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Adblock toggle setting -->
+				<!-- Adblock feature toggle for cleaner browsing -->
 				<LinearLayout
 					android:id="@+id/btn_enable_adblock"
 					android:layout_width="match_parent"
@@ -701,7 +744,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Popup blocker toggle setting -->
+				<!-- Popup blocker toggle for intrusive window prevention -->
 				<LinearLayout
 					android:id="@+id/btn_enable_popup_blocker"
 					android:layout_width="match_parent"
@@ -732,7 +775,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Divider line -->
+				<!-- Visual divider separating content display settings -->
 				<View
 					android:layout_width="match_parent"
 					android:layout_height="@dimen/_1"
@@ -742,7 +785,7 @@
 					android:layout_marginBottom="@dimen/_5"
 					android:background="@color/transparent_dark" />
 
-				<!-- Show images on web toggle -->
+				<!-- Web image display toggle for bandwidth control -->
 				<LinearLayout
 					android:id="@+id/btn_show_image_on_web"
 					android:layout_width="match_parent"
@@ -773,7 +816,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Video grabber toggle setting -->
+				<!-- Video grabber feature toggle for media detection -->
 				<LinearLayout
 					android:id="@+id/btn_enable_video_grabber"
 					android:layout_width="match_parent"
@@ -804,7 +847,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Divider line -->
+				<!-- Visual divider separating advanced browser settings -->
 				<View
 					android:layout_width="match_parent"
 					android:layout_height="@dimen/_1"
@@ -814,7 +857,7 @@
 					android:layout_marginBottom="@dimen/_5"
 					android:background="@color/transparent_dark" />
 
-				<!-- Advanced browser settings button -->
+				<!-- Advanced browser settings navigation button -->
 				<LinearLayout
 					android:id="@+id/btn_adv_browser_settings"
 					android:layout_width="match_parent"
@@ -844,11 +887,14 @@
 						android:textColor="@color/color_text_primary"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
 			</LinearLayout>
 		</androidx.cardview.widget.CardView>
 
-		<!-- Customer service and policies section -->
+		<!-- ======================================================
+		     CUSTOMER SERVICE AND POLICIES SECTION
+		     User support options including feedback, sharing, about info,
+		     and legal documentation access points.
+		     ====================================================== -->
 		<androidx.cardview.widget.CardView
 			android:id="@+id/container_customer_service"
 			android:layout_width="match_parent"
@@ -866,7 +912,7 @@
 				android:layout_height="wrap_content"
 				android:orientation="vertical">
 
-				<!-- Policies header -->
+				<!-- Customer service section header -->
 				<LinearLayout
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
@@ -888,7 +934,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Feedback button -->
+				<!-- User feedback submission button -->
 				<LinearLayout
 					android:id="@+id/btn_open_feedback"
 					android:layout_width="match_parent"
@@ -919,7 +965,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Share with friends button -->
+				<!-- Application sharing with friends feature -->
 				<LinearLayout
 					android:id="@+id/btn_share_with_friends"
 					android:layout_width="match_parent"
@@ -943,7 +989,6 @@
 						android:drawablePadding="@dimen/_5"
 						android:drawableTint="@color/color_secondary"
 						android:ellipsize="end"
-
 						android:fontFamily="@font/application_font_family"
 						android:maxLines="1"
 						android:text="@string/title_share_with_friends"
@@ -951,7 +996,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- About info button -->
+				<!-- Application information and about screen -->
 				<LinearLayout
 					android:id="@+id/btn_open_about_info"
 					android:layout_width="match_parent"
@@ -982,7 +1027,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Divider line -->
+				<!-- Visual divider separating support and legal sections -->
 				<View
 					android:layout_width="match_parent"
 					android:layout_height="@dimen/_1"
@@ -992,7 +1037,7 @@
 					android:layout_marginBottom="@dimen/_5"
 					android:background="@color/transparent_dark" />
 
-				<!-- Privacy policy button -->
+				<!-- Privacy policy documentation access -->
 				<LinearLayout
 					android:id="@+id/btn_open_privacy_policy"
 					android:layout_width="match_parent"
@@ -1023,7 +1068,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Terms and conditions button -->
+				<!-- Terms and conditions documentation access -->
 				<LinearLayout
 					android:id="@+id/btn_open_terms_condition"
 					android:layout_width="match_parent"
@@ -1053,11 +1098,14 @@
 						android:textColor="@color/color_text_primary"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
 			</LinearLayout>
 		</androidx.cardview.widget.CardView>
 
-		<!-- Application version info section -->
+		<!-- ======================================================
+		     APPLICATION VERSION INFORMATION SECTION
+		     Displays current version details, update checking,
+		     and application restart functionality.
+		     ====================================================== -->
 		<androidx.cardview.widget.CardView
 			android:id="@+id/container_application_version"
 			android:layout_width="match_parent"
@@ -1075,7 +1123,7 @@
 				android:layout_height="wrap_content"
 				android:orientation="vertical">
 
-				<!-- Version header -->
+				<!-- Version information section header -->
 				<LinearLayout
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
@@ -1097,7 +1145,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Version info text -->
+				<!-- Dynamic version information display -->
 				<LinearLayout
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
@@ -1119,7 +1167,7 @@
 						android:textSize="@dimen/normal_text_size_small" />
 				</LinearLayout>
 
-				<!-- Check for updates button -->
+				<!-- Check for application updates button -->
 				<RelativeLayout
 					android:id="@+id/btn_check_new_update"
 					android:layout_width="match_parent"
@@ -1150,7 +1198,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</RelativeLayout>
 
-				<!-- Restart explain message -->
+				<!-- Restart application explanation text -->
 				<TextView
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
@@ -1164,7 +1212,7 @@
 					android:textColor="@color/color_text_primary"
 					android:textSize="@dimen/message_text_size" />
 
-				<!-- Restart application button -->
+				<!-- Application restart action button -->
 				<TextView
 					android:id="@+id/btn_restart_application"
 					android:layout_width="match_parent"
@@ -1188,7 +1236,11 @@
 			</LinearLayout>
 		</androidx.cardview.widget.CardView>
 
-		<!-- Acknowledgements and follow section -->
+		<!-- ======================================================
+		     ACKNOWLEDGEMENTS AND FOLLOW SECTION
+		     Developer recognition and social media follow options
+		     for user engagement and community building.
+		     ====================================================== -->
 		<androidx.cardview.widget.CardView
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
@@ -1205,7 +1257,7 @@
 				android:layout_height="match_parent"
 				android:orientation="vertical">
 
-				<!-- Acknowledgements header -->
+				<!-- Acknowledgements section header -->
 				<LinearLayout
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
@@ -1228,7 +1280,7 @@
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
-				<!-- Thank you message -->
+				<!-- Thank you message for user support -->
 				<TextView
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
@@ -1242,7 +1294,7 @@
 					android:textColor="@color/color_text_primary"
 					android:textSize="@dimen/message_text_size" />
 
-				<!-- Follow shibafoss developer button -->
+				<!-- Developer follow action button -->
 				<TextView
 					android:id="@+id/btn_follow_shibafoss"
 					android:layout_width="match_parent"
