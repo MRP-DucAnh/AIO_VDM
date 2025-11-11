@@ -323,18 +323,17 @@
 
 				<!-- Hidden divider for future content separation -->
 				<View
-					android:visibility="gone"
 					android:layout_width="match_parent"
 					android:layout_height="@dimen/_1"
 					android:layout_marginStart="@dimen/_10"
 					android:layout_marginTop="@dimen/_5"
 					android:layout_marginEnd="@dimen/_5"
 					android:layout_marginBottom="@dimen/_5"
-					android:background="@color/transparent_dark" />
+					android:background="@color/transparent_dark"
+					android:visibility="gone" />
 
 				<!-- Future content region setting (currently hidden) -->
 				<LinearLayout
-					android:visibility="gone"
 					android:id="@+id/btn_content_location"
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
@@ -345,6 +344,7 @@
 					android:background="@drawable/ic_button_negative_selector"
 					android:clickable="true"
 					android:orientation="vertical"
+					android:visibility="gone"
 					tools:ignore="TouchTargetSizeCheck">
 
 					<TextView
@@ -364,7 +364,6 @@
 
 				<!-- Future daily suggestions toggle (currently hidden) -->
 				<LinearLayout
-					android:visibility="gone"
 					android:id="@+id/btn_daily_suggestions"
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
@@ -375,6 +374,7 @@
 					android:background="@drawable/ic_button_negative_selector"
 					android:clickable="true"
 					android:orientation="vertical"
+					android:visibility="gone"
 					tools:ignore="TouchTargetSizeCheck">
 
 					<TextView
@@ -440,7 +440,6 @@
 
 				<!-- Default download folder setting (currently hidden) -->
 				<LinearLayout
-					android:visibility="gone"
 					android:id="@+id/btn_default_download_folder"
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
@@ -451,6 +450,7 @@
 					android:background="@drawable/ic_button_negative_selector"
 					android:clickable="true"
 					android:orientation="vertical"
+					android:visibility="visible"
 					tools:ignore="TouchTargetSizeCheck">
 
 					<TextView
@@ -476,7 +476,7 @@
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
 					android:layout_marginStart="@dimen/_10"
-					android:layout_marginTop="@dimen/_10"
+					android:layout_marginTop="@dimen/_0"
 					android:layout_marginEnd="@dimen/_10"
 					android:layout_marginBottom="@dimen/_0"
 					android:background="@drawable/ic_button_negative_selector"

@@ -597,5 +597,7 @@
 	<string name="title_move_to_gallery_successfully">Successfully Moved To Gallery</string>
 	<string name="title_move_to_gallery">Move To Gallery</string>
 	<string name="title_allow_now_in_settings">Allow In Settings</string>
+	<string name="title_file_folder_picker">File / Folder Picker</string>
+	<string name="title_select">Select</string>
 
 </resources>
