@@ -599,5 +599,7 @@
 	<string name="title_allow_now_in_settings">Allow In Settings</string>
 	<string name="title_file_folder_picker">File / Folder Picker</string>
 	<string name="title_select">Select</string>
+	<string name="go_back_previous_path">Go Back To Previous Path</string>
+	<string name="title_sample_folder_name">Sample File/Folder Name</string>
 
 </resources>
