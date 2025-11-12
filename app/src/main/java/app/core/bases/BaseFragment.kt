@@ -1,5 +1,6 @@
 package app.core.bases
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -26,24 +27,25 @@ import java.lang.ref.WeakReference
 abstract class BaseFragment : Fragment() {
 
 	/**
-	 * A memory-safe weak reference to the parent BaseActivity, retrieved lazily when first accessed.
+	 * Weak reference to the parent BaseActivity for safe context access and memory leak prevention.
 	 *
-	 * Using weak references prevents memory leaks that can occur when fragments retain strong
-	 * references to activities after they are destroyed. The lazy initialization ensures the
-	 * reference is only created when actually needed, optimizing resource usage.
-	 *
-	 * Usage pattern:
-	 * ```kotlin
-	 * safeBaseActivityRef?.let { activity ->
-	 *     // Perform operations with the safe activity reference
-	 * }
-	 * ```
-	 *
-	 * @return The parent BaseActivity instance if available and not destroyed, or null otherwise.
+	 * This reference allows fragments to access activity-specific functionality while ensuring
+	 * that the activity can be garbage collected when destroyed. The weak reference pattern
+	 * prevents common memory leaks that occur when fragments outlive their host activities.
 	 */
-	open val safeBaseActivityRef: BaseActivity? by lazy {
-		WeakReference(activity).get() as BaseActivity
-	}
+	private var weakReferenceOfActivity: WeakReference<BaseActivity>? = null
+
+	/**
+	 * Provides safe access to the parent BaseActivity with null safety.
+	 *
+	 * This method returns the current BaseActivity instance if available and not destroyed,
+	 * or null if the activity reference has been cleared or the activity is no longer valid.
+	 * Always check for null before using the returned activity to prevent NullPointerExceptions.
+	 *
+	 * @return The current BaseActivity instance if available, null otherwise
+	 */
+	open val safeBaseActivityRef: BaseActivity?
+		get() = weakReferenceOfActivity?.get()
 
 	/**
 	 * Backing field for the fragment's layout view with controlled access through weak reference.
@@ -65,7 +67,7 @@ abstract class BaseFragment : Fragment() {
 	 * view has been destroyed or if the weak reference was cleared.
 	 */
 	open val safeFragmentLayoutRef: View?
-		get() = WeakReference(_fragmentLayout).get()
+		get() = _fragmentLayout
 
 	/**
 	 * Flag indicating whether the fragment is currently visible and actively running.
@@ -149,6 +151,21 @@ abstract class BaseFragment : Fragment() {
 	 * subclasses to perform cleanup while the fragment is still considered active.
 	 */
 	protected abstract fun onPauseFragment()
+
+	/**
+	 * Called when the fragment is first attached to its context (activity).
+	 *
+	 * This method establishes the connection between the fragment and its host activity.
+	 * It initializes the weak reference to the BaseActivity for safe context access
+	 * throughout the fragment's lifecycle. The context is cast to BaseActivity to ensure
+	 * compatibility with the application's activity hierarchy.
+	 *
+	 * @param context The context (activity) to which the fragment is being attached
+	 */
+	override fun onAttach(context: Context) {
+		super.onAttach(context)
+		weakReferenceOfActivity = WeakReference(context as BaseActivity)
+	}
 
 	/**
 	 * Called by the system to inflate and return the fragment's layout hierarchy.
@@ -235,5 +252,7 @@ abstract class BaseFragment : Fragment() {
 		super.onDestroyView()
 		isFragmentRunning = false
 		_fragmentLayout = null
+		weakReferenceOfActivity?.clear()
+		weakReferenceOfActivity = null
 	}
 }

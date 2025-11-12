@@ -149,7 +149,7 @@ interface BaseActivityInf {
 	 * handle common intent flags and ensure consistent navigation behavior
 	 * throughout the application.
 	 *
-	 * @param activity The class of the target activity to launch (e.g.,
+	 * @param targetActivity The class of the target activity to launch (e.g.,
 	 *                 SettingsActivity::class.java). The activity must be
 	 *                 declared in the AndroidManifest.xml with proper intent filters.
 	 * @param shouldAnimate Whether to apply a transition animation when opening
@@ -158,7 +158,7 @@ interface BaseActivityInf {
 	 *                      programmatic navigation where immediate response is
 	 *                      preferred over visual polish.
 	 */
-	fun openActivity(activity: Class<*>, shouldAnimate: Boolean = true)
+	fun openActivity(targetActivity: Class<*>, shouldAnimate: Boolean = true)
 
 	/**
 	 * Closes the current activity with an intuitive swipe-right animation.
@@ -286,7 +286,7 @@ interface BaseActivityInf {
 	 *                     may ignore values outside reasonable ranges or
 	 *                     based on device capabilities and user settings.
 	 */
-	fun doSomeVibration(timeInMillis: Int)
+	fun doSomeVibration(timeInMillis: Int = 20)
 
 	/**
 	 * Provides standardized intent flags for single-top activity launch mode.

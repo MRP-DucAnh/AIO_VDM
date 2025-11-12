@@ -26,47 +26,85 @@ import app.core.bases.interfaces.BaseActivityInf;
 import lib.process.LogHelperUtils;
 
 /**
- * A builder class for displaying highly customizable and memory-leak-safe dialogs.
+ * A comprehensive builder class for creating and managing highly customizable,
+ * memory-leak-safe dialogs throughout the application.
  * <p>
- * This class simplifies the creation and configuration of {@link AlertDialog} instances
- * by wrapping Android's native dialog APIs and ensuring lifecycle-safe usage with WeakReferences.
- * It also supports custom layout views, bottom positioning, animations, and more.
+ * This class provides a robust wrapper around Android's native AlertDialog system,
+ * addressing common pain points like memory leaks, lifecycle management, and
+ * consistent styling. It implements the builder pattern for fluent API design
+ * while ensuring safe usage across configuration changes and activity destruction.
+ * <p>
+ * Key Features:
+ * - Memory-leak prevention through WeakReference usage
+ * - Lifecycle-aware dialog display and dismissal
+ * - Consistent Material Design styling and animations
+ * - Bottom-sheet style positioning with slide animations
+ * - Custom view inflation and management
+ * - Automatic cleanup and resource management
+ * - Type-safe view referencing and click handling
+ * <p>
+ * Usage Pattern:
+ * ```java
+ * new DialogBuilder(activity)
+ * .setView(R.layout.dialog_custom)
+ * .setOnClickForPositiveButton(v -> handleAction())
+ * .setCancelable(true)
+ * .show();
+ * ```
  */
 public class DialogBuilder {
 
 	/**
-	 * Logger instance for this class to log debug and error messages.
+	 * Logger instance for tracking dialog lifecycle events, user interactions,
+	 * and potential errors during dialog creation and management. Provides
+	 * detailed diagnostics for debugging dialog-related issues.
 	 */
 	private final LogHelperUtils logger = LogHelperUtils.from(getClass());
 
 	/**
-	 * Weak reference to the activity interface to safely access context
-	 * without leaking the activity.
+	 * Weak reference to the activity interface ensuring the dialog doesn't prevent
+	 * garbage collection if the activity is destroyed. This is crucial for preventing
+	 * memory leaks when dialogs are referenced during configuration changes or
+	 * when activities are destroyed while dialogs are still showing.
 	 */
 	private final WeakReference<BaseActivityInf> weakReferenceBaseActivity;
 
 	/**
-	 * Holds the custom view to be displayed inside the AlertDialog.
+	 * Weak reference to the custom view displayed within the dialog, allowing
+	 * proper cleanup and preventing view leaks. The view is automatically
+	 * cleared when the dialog is closed or when the activity is destroyed.
 	 */
 	private WeakReference<View> weakCustomView;
 
 	/**
-	 * Reference to the AlertDialog instance created and managed by this class.
+	 * The underlying AlertDialog instance managed by this builder. This reference
+	 * is carefully managed to ensure proper lifecycle handling and prevent
+	 * WindowManager leaks that can occur with improperly dismissed dialogs.
 	 */
 	private AlertDialog dialog;
 
 	/**
-	 * Constructs a new {@link DialogBuilder} with a reference to an activity that implements {@link BaseActivityInf}.
+	 * Constructs a new DialogBuilder with lifecycle-safe activity reference.
 	 *
-	 * @param baseActivityInf a reference to the associated activity, used to access context safely.
+	 * @param baseActivityInf The activity context that will host the dialog,
+	 *                        wrapped in a weak reference to prevent memory leaks.
+	 *                        If null, dialog operations will fail gracefully.
 	 */
 	public DialogBuilder(@Nullable BaseActivityInf baseActivityInf) {
 		this.weakReferenceBaseActivity = new WeakReference<>(baseActivityInf);
 	}
 
 	/**
-	 * Displays the dialog if the associated activity is valid and not finishing/destroyed.
-	 * Initializes the dialog if it hasn’t been created yet.
+	 * Displays the dialog with comprehensive lifecycle safety checks and error handling.
+	 * <p>
+	 * This method performs multiple safety checks before showing the dialog:
+	 * - Validates activity existence and non-destruction state
+	 * - Ensures dialog is not already showing to prevent duplicates
+	 * - Handles edge cases like rapid successive calls
+	 * - Provides graceful failure with detailed logging
+	 * <p>
+	 * The dialog is automatically created if it hasn't been initialized yet,
+	 * and all window parameters are applied before display.
 	 */
 	public void show() {
 		try {
@@ -84,10 +122,10 @@ public class DialogBuilder {
 	}
 
 	/**
-	 * Returns the initialized dialog instance.
+	 * Retrieves the managed AlertDialog instance with state validation.
 	 *
-	 * @return the current {@link AlertDialog} instance.
-	 * @throws IllegalStateException if the dialog has not been initialized via {@link #show()}.
+	 * @return The currently managed AlertDialog instance
+	 * @throws IllegalStateException if the dialog hasn't been initialized via show()
 	 */
 	@NonNull
 	public AlertDialog getDialog() {
@@ -98,10 +136,14 @@ public class DialogBuilder {
 	}
 
 	/**
-	 * Sets a click listener to a view inside the dialog using its resource ID.
+	 * Attaches a click listener to any view within the dialog's custom layout.
+	 * <p>
+	 * This method provides type-safe access to dialog subviews while handling
+	 * potential null references gracefully. The listener is attached directly
+	 * to the view found by resource ID.
 	 *
-	 * @param viewId   the resource ID of the view.
-	 * @param listener the click listener to attach.
+	 * @param viewId   The resource ID of the view to attach the listener to
+	 * @param listener The click listener implementation
 	 */
 	public void setOnClickListener(int viewId, @NonNull OnClickListener listener) {
 		if (weakCustomView.get() == null) return;
@@ -112,14 +154,23 @@ public class DialogBuilder {
 	}
 
 	/**
-	 * Enables a slide-up window animation on the dialog.
+	 * Applies a slide-up entrance animation to the dialog for bottom-positioned dialogs.
+	 * <p>
+	 * This animation style is particularly effective for bottom-sheet style dialogs
+	 * and creates a smooth, modern user experience. The animation is defined in
+	 * the style resources and can be customized globally.
 	 */
 	public void enableSlideUpAnimation() {
 		setDialogAnimation(R.style.style_dialog_animation);
 	}
 
 	/**
-	 * Configures the dialog to appear at the bottom of the screen with transparent background.
+	 * Configures the dialog to appear at the bottom of the screen with full width.
+	 * <p>
+	 * This method creates a bottom-sheet style dialog that slides up from the bottom
+	 * of the screen. It sets appropriate gravity, transparent background, and layout
+	 * parameters to achieve the modern bottom-sheet appearance commonly used in
+	 * Material Design applications.
 	 */
 	public void enableBottomPosition() {
 		if (dialog.getWindow() != null) {
@@ -133,9 +184,11 @@ public class DialogBuilder {
 	}
 
 	/**
-	 * Sets whether the dialog can be canceled and dismissed by tapping outside its bounds.
+	 * Controls whether the dialog can be dismissed by user interaction.
 	 *
-	 * @param cancelable true to allow cancellation; false to make it persistent.
+	 * @param cancelable True to allow dismissal by back press or outside tap,
+	 *                   false to create a persistent dialog that must be
+	 *                   explicitly dismissed programmatically
 	 */
 	public void setCancelable(boolean cancelable) {
 		if (dialog == null) create();
@@ -144,16 +197,24 @@ public class DialogBuilder {
 	}
 
 	/**
-	 * Returns whether the dialog is currently visible to the user.
+	 * Checks the current visibility state of the dialog.
 	 *
-	 * @return true if the dialog is showing; false otherwise.
+	 * @return True if the dialog is currently showing to the user,
+	 * false if it's not initialized, not showing, or already dismissed
 	 */
 	public boolean isShowing() {
 		return dialog != null && dialog.isShowing();
 	}
 
 	/**
-	 * Closes the dialog if it is currently visible.
+	 * Safely closes and cleans up the dialog with comprehensive resource management.
+	 * <p>
+	 * This method performs complete cleanup to prevent memory leaks:
+	 * - Removes all listeners to break reference cycles
+	 * - Properly dismisses the dialog if showing
+	 * - Clears all click listeners from the view hierarchy
+	 * - Nullifies references to allow garbage collection
+	 * - Handles exceptions gracefully to prevent crashes
 	 */
 	public void close() {
 		try {
@@ -172,10 +233,10 @@ public class DialogBuilder {
 	}
 
 	/**
-	 * Returns the root custom view set for this dialog.
+	 * Retrieves the custom view set for this dialog with state validation.
 	 *
-	 * @return the inflated or manually set custom {@link View}.
-	 * @throws IllegalStateException if no view has been set using {@link #setView}.
+	 * @return The root custom view of the dialog
+	 * @throws IllegalStateException if no view has been set or the view was cleared
 	 */
 	@NonNull
 	public View getView() {
@@ -185,10 +246,10 @@ public class DialogBuilder {
 	}
 
 	/**
-	 * Sets a layout resource as the dialog's content view.
+	 * Sets a layout resource as the dialog's content by inflating it.
 	 *
-	 * @param layoutResId the layout resource ID to inflate and use as the dialog's view.
-	 * @return the current {@link DialogBuilder} instance.
+	 * @param layoutResId The layout resource ID to inflate
+	 * @return This DialogBuilder instance for method chaining
 	 */
 	@NonNull
 	public DialogBuilder setView(int layoutResId) {
@@ -200,10 +261,10 @@ public class DialogBuilder {
 	}
 
 	/**
-	 * Sets a custom {@link View} as the dialog's content.
+	 * Sets a pre-inflated view as the dialog's content.
 	 *
-	 * @param view the view to display in the dialog.
-	 * @return the current {@link DialogBuilder} instance.
+	 * @param view The view to use as dialog content
+	 * @return This DialogBuilder instance for method chaining
 	 */
 	@NonNull
 	public DialogBuilder setView(@NonNull View view) {
@@ -212,9 +273,9 @@ public class DialogBuilder {
 	}
 
 	/**
-	 * Returns the positive button container from the dialog layout.
+	 * Retrieves the positive button container view from the dialog layout.
 	 *
-	 * @return the {@link View} containing the positive button.
+	 * @return The view containing the positive action button
 	 */
 	@NonNull
 	public View getPositiveButtonView() {
@@ -222,10 +283,10 @@ public class DialogBuilder {
 	}
 
 	/**
-	 * Sets a click listener on the dialog's positive button.
+	 * Attaches a click listener to the positive button using weak reference.
 	 *
-	 * @param listener the listener to execute on click.
-	 * @return the current {@link DialogBuilder} instance.
+	 * @param listener The listener to execute when positive button is clicked
+	 * @return This DialogBuilder instance for method chaining
 	 */
 	@NonNull
 	public DialogBuilder setOnClickForPositiveButton(@NonNull OnClickListener listener) {
@@ -237,9 +298,9 @@ public class DialogBuilder {
 	}
 
 	/**
-	 * Returns the negative button container from the dialog layout.
+	 * Retrieves the negative button container view from the dialog layout.
 	 *
-	 * @return the {@link View} containing the negative button.
+	 * @return The view containing the negative/cancel action button
 	 */
 	@NonNull
 	public View getNegativeButtonView() {
@@ -247,10 +308,10 @@ public class DialogBuilder {
 	}
 
 	/**
-	 * Sets a click listener on the dialog's negative button.
+	 * Attaches a click listener to the negative button using weak reference.
 	 *
-	 * @param listener the listener to execute on click.
-	 * @return the current {@link DialogBuilder} instance.
+	 * @param listener The listener to execute when negative button is clicked
+	 * @return This DialogBuilder instance for method chaining
 	 */
 	@NonNull
 	public DialogBuilder setOnClickForNegativeButton(@NonNull OnClickListener listener) {
@@ -262,9 +323,9 @@ public class DialogBuilder {
 	}
 
 	/**
-	 * Safely retrieves the associated {@link Activity} from the weak reference.
+	 * Safely retrieves the associated activity from the weak reference.
 	 *
-	 * @return the {@link Activity} instance or null if unavailable.
+	 * @return The activity instance or null if the activity was garbage collected
 	 */
 	@Nullable
 	public Activity getActivity() {
@@ -273,9 +334,12 @@ public class DialogBuilder {
 	}
 
 	/**
-	 * Hides the on-screen keyboard from the specified views.
+	 * Hides the on-screen keyboard from specified focused views.
+	 * <p>
+	 * This is particularly useful when closing dialogs that contain input fields
+	 * to ensure the keyboard doesn't persist after dialog dismissal.
 	 *
-	 * @param focusedView one or more views currently holding input focus.
+	 * @param focusedView One or more views that may have input focus
 	 */
 	public void hideKeyboard(@NonNull View... focusedView) {
 		Activity act = getActivity();
@@ -284,9 +348,15 @@ public class DialogBuilder {
 	}
 
 	/**
-	 * Internally creates the dialog using the custom view and default styles.
+	 * Internally creates the AlertDialog instance with proper configuration.
+	 * <p>
+	 * This method applies all the configured settings:
+	 * - Custom view from weak reference
+	 * - Material Design style theme
+	 * - Bottom positioning and animations
+	 * - Auto-dismissal cleanup
 	 *
-	 * @return the constructed {@link AlertDialog} instance.
+	 * @return The created AlertDialog or null if creation fails
 	 */
 	private AlertDialog create() {
 		Activity activity = getActivity();
@@ -304,7 +374,7 @@ public class DialogBuilder {
 	}
 
 	/**
-	 * Applies both bottom gravity and animation styles to the dialog.
+	 * Applies both bottom positioning and slide animation to the dialog.
 	 */
 	private void applyBottomPositioning() {
 		enableBottomPosition();
@@ -312,9 +382,9 @@ public class DialogBuilder {
 	}
 
 	/**
-	 * Applies a custom animation style to the dialog's window.
+	 * Applies a window animation style to the dialog.
 	 *
-	 * @param animationResId the animation resource to apply.
+	 * @param animationResId The animation style resource ID
 	 */
 	private void setDialogAnimation(int animationResId) {
 		if (dialog != null && dialog.getWindow() != null) {
@@ -322,6 +392,14 @@ public class DialogBuilder {
 		}
 	}
 
+	/**
+	 * Recursively clears all click listeners from a view hierarchy.
+	 * <p>
+	 * This prevents memory leaks by breaking reference cycles between
+	 * views and their listeners during dialog cleanup.
+	 *
+	 * @param view The root view to clear listeners from
+	 */
 	private void clearAllClickListeners(@NonNull View view) {
 		view.setOnClickListener(null);
 		if (view instanceof ViewGroup group) {
@@ -332,7 +410,10 @@ public class DialogBuilder {
 	}
 
 	/**
-	 * A listener interface for receiving cancel events from the dialog.
+	 * Listener interface for receiving dialog cancellation events.
+	 * <p>
+	 * This extends the native Android OnCancelListener to provide
+	 * consistent typing within the DialogBuilder ecosystem.
 	 */
 	public interface OnCancelListener extends DialogInterface.OnCancelListener {
 		@Override

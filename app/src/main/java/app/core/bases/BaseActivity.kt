@@ -137,24 +137,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 	 *
 	 * @see WeakReference For the Java weak reference mechanism used
 	 */
-	private var weakBaseActivityRef: WeakReference<BaseActivity>? = null
-
-	/**
-	 * A safe, non-leaking reference to the current activity instance retrieved from the weak reference.
-	 *
-	 * This property provides convenient access to the activity context while maintaining memory
-	 * safety. It should be used for all activity operations that require context, and should always
-	 * be checked for null before use since it may be cleared during garbage collection or when
-	 * the activity is destroyed.
-	 *
-	 * Usage pattern:
-	 * ```kotlin
-	 * safeBaseActivityRef?.let { activity ->
-	 *     // Perform operations with the safe activity reference
-	 * }
-	 * ```
-	 */
-	private var safeBaseActivityRef: BaseActivity? = null
+	private var weakReferenceOfActivity: WeakReference<BaseActivity>? = null
 
 	/**
 	 * Flag to track whether a user permission check is currently in progress.
@@ -241,7 +224,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 	 * when haptic feedback is actually used in the application, reducing memory
 	 * footprint for users who don't interact with vibration-enabled features.
 	 */
-	private val vibrator: Vibrator by lazy {
+	private val vibrator: Vibrator? by lazy {
 		logger.d("Initializing Vibrator instance with lazy loading")
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
 			logger.d("Using VibratorManager for Android 12+ with enhanced vibration capabilities")
@@ -298,19 +281,17 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 
 		// Initialize weak reference to prevent memory leaks when activity is destroyed
 		// Weak references allow garbage collection while providing temporary access
-		weakBaseActivityRef = WeakReference(this)
-		safeBaseActivityRef = weakBaseActivityRef?.get()
 		logger.d("Activity references initialized with weak reference strategy")
+		weakReferenceOfActivity = WeakReference(this)
 
-		safeBaseActivityRef?.let { safeActivityRef ->
+		getActivity()?.let { activity ->
 			logger.d("Safe activity reference acquired — proceeding with full initialization")
 
 			// Set global crash handler to capture uncaught exceptions and prevent app crashes
 			// This provides better error reporting and user experience during failures
 			logger.d("Setting default uncaught exception handler for crash prevention")
-			WeakReference(CrashHandler()).get()?.let {
-				setDefaultUncaughtExceptionHandler(it)
-			}
+			val weakReferenceOfCrashHandler = WeakReference(CrashHandler())
+			setDefaultUncaughtExceptionHandler(weakReferenceOfCrashHandler.get())
 
 			// Configure theme appearance based on user preferences or system settings
 			// Ensures consistent visual experience across the application
@@ -320,12 +301,12 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 			// Initialize scoped storage helper for modern file access on Android 10+
 			// Handles permissions and provides abstraction for storage operations
 			logger.d("Initializing ScopedStorageHelper for file system access")
-			scopedStorageHelper = SimpleStorageHelper(safeActivityRef)
+			scopedStorageHelper = SimpleStorageHelper(activity)
 
 			// Apply user-selected language for localization and internationalization
 			// Overrides system language if user has specified a preference
 			logger.d("Applying user-selected language for localization")
-			aioLanguage.applyUserSelectedLanguage(safeActivityRef)
+			aioLanguage.applyUserSelectedLanguage()
 
 			// Lock activity orientation to portrait for consistent user experience
 			// Prevents layout recalculations and provides predictable UI behavior
@@ -337,7 +318,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 			logger.d("Configuring custom back press handler for enhanced navigation")
 			WeakReference(object : OnBackPressedCallback(true) {
 				override fun handleOnBackPressed() = onBackPressActivity()
-			}).get()?.let { onBackPressedDispatcher.addCallback(safeActivityRef, it) }
+			}).get()?.let { onBackPressedDispatcher.addCallback(activity, it) }
 
 			// Inflate layout if provided by subclass through template method
 			// Allows subclasses to specify their own UI while maintaining base initialization
@@ -405,14 +386,14 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 		super.onResume()
 		logger.d("onResume() called — preparing activity for interaction")
 
-		// Reinitialize activity reference if it was cleared during backgrounding
+		// Reinitialize weak activity reference if it was cleared during backgrounding
 		// This ensures safe access to activity context for UI operations
-		if (safeBaseActivityRef == null) {
-			logger.d("Re-initializing safe activity reference after background state")
-			safeBaseActivityRef = WeakReference(this).get()
+		if (weakReferenceOfActivity == null) {
+			logger.d("Re-initializing safe weak activity reference after background state")
+			weakReferenceOfActivity = WeakReference(this)
 		}
 
-		safeBaseActivityRef?.let { safeActivityRef ->
+		getActivity()?.let { activity ->
 			isActivityRunning = true
 			logger.d("Activity marked as running and ready for user interaction")
 
@@ -449,7 +430,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 			// Handle language changes and restart if necessary for localization
 			// Ensures UI is displayed in the correct language based on user preference
 			logger.d("Checking for language changes that require activity restart")
-			aioLanguage.closeActivityIfLanguageChanged(safeActivityRef)
+			aioLanguage.closeActivityIfLanguageChanged(activity)
 
 			// Refresh ad-blocking filters to ensure up-to-date protection
 			// Maintains effective ad-blocking with latest filter definitions
@@ -459,7 +440,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 			// Register base-activity at download UI manager for proper UI updates
 			// Ensures download progress and status are properly displayed
 			logger.d("Registering base-activity at download ui manager for UI coordination")
-			(safeActivityRef as? MotherActivity)?.let { motherActivity ->
+			(activity as? MotherActivity)?.let { motherActivity ->
 				downloadSystem.downloadsUIManager.safeMotherActivity = motherActivity
 			}
 
@@ -521,9 +502,9 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 
 		// Cancel ongoing vibrations to release hardware resources
 		// Prevents vibrations from continuing after activity destruction
-		if (vibrator.hasVibrator()) {
+		if (vibrator?.hasVibrator() == true) {
 			logger.d("Cancelling active vibration to release hardware resources")
-			vibrator.cancel()
+			vibrator?.cancel()
 		}
 
 		// Cancel ongoing background version update check to prevent memory leaks
@@ -533,7 +514,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 
 		// Clear the MotherActivity reference from download UI manager
 		// Prevents attempts to update UI from a destroyed activity
-		(safeBaseActivityRef as? MotherActivity)?.let { motherActivity ->
+		(getActivity() as? MotherActivity)?.let { motherActivity ->
 			downloadSystem.downloadsUIManager.safeMotherActivity = null
 			logger.d("Cleared MotherActivity reference from download UI manager")
 		}
@@ -743,10 +724,10 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 	override fun launchPermissionRequest(permissions: ArrayList<String>) {
 		logger.d("launchPermissionRequest() called with permissions=$permissions")
 
-		safeBaseActivityRef?.let { safeActivityRef ->
+		getActivity()?.let { activity ->
 			logger.d("Starting permission request flow with ${permissions.size} permission(s)")
 
-			PermissionX.init(safeActivityRef)
+			PermissionX.init(activity)
 				.permissions(permissions)
 
 				// Show explanation dialog when permissions are initially denied
@@ -806,31 +787,31 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 	 * The fade animation provides smooth visual transition that helps users understand
 	 * the navigation flow and maintains the app's polished feel.
 	 *
-	 * @param activity The target activity class to open. This should be a valid
+	 * @param targetActivity The target activity class to open. This should be a valid
 	 *        Activity class that is declared in the AndroidManifest.xml.
 	 * @param shouldAnimate Whether to apply the fade transition animation after
 	 *        launching the activity. Set to true for user-initiated navigation
 	 *        where smooth transitions enhance UX, false for programmatic navigation
 	 *        where animation might be unnecessary.
 	 */
-	override fun openActivity(activity: Class<*>, shouldAnimate: Boolean) {
-		logger.d("openActivity() called — activity=${activity.simpleName}, shouldAnimate=$shouldAnimate")
+	override fun openActivity(targetActivity: Class<*>, shouldAnimate: Boolean) {
+		logger.d("openActivity() called — activity=${targetActivity.simpleName}, shouldAnimate=$shouldAnimate")
 
-		safeBaseActivityRef?.let { safeActivityRef ->
-			logger.d("Launching activity: ${activity.simpleName}")
+		getActivity()?.let { activity ->
+			logger.d("Launching activity: ${targetActivity.simpleName}")
 
 			// Prepare intent with flags to manage activity stack and prevent duplicates
-			val intent = Intent(safeActivityRef, activity).apply {
+			val intent = Intent(activity, targetActivity).apply {
 				flags = FLAG_ACTIVITY_CLEAR_TOP or FLAG_ACTIVITY_SINGLE_TOP
 			}
 
 			startActivity(intent)
-			logger.d("Activity ${activity.simpleName} started successfully")
+			logger.d("Activity ${targetActivity.simpleName} started successfully")
 
 			// Apply fade animation if requested for smooth visual transition
 			if (shouldAnimate) {
 				logger.d("Applying fade transition animation for polished navigation experience")
-				animActivityFade(safeActivityRef)
+				animActivityFade(activity)
 			}
 		} ?: logger.d("openActivity() skipped — safeBaseActivityRef is null")
 	}
@@ -854,7 +835,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 	override fun closeActivityWithSwipeAnimation(shouldAnimate: Boolean) {
 		logger.d("closeActivityWithSwipeAnimation() called — shouldAnimate=$shouldAnimate")
 
-		safeBaseActivityRef?.apply {
+		getActivity()?.apply {
 			logger.d("Finishing current activity: ${this::class.java.simpleName}")
 			finish()
 
@@ -882,7 +863,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 	override fun closeActivityWithFadeAnimation(shouldAnimate: Boolean) {
 		logger.d("closeActivityWithFadeAnimation() called — shouldAnimate=$shouldAnimate")
 
-		safeBaseActivityRef?.apply {
+		getActivity()?.apply {
 			logger.d("Finishing current activity: ${this::class.java.simpleName}")
 			finish()
 
@@ -918,7 +899,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 
 			// Show exit prompt toast to educate user about double-press requirement
 			showToast(
-				activityInf = safeBaseActivityRef,
+				activityInf = getActivity(),
 				msgId = R.string.title_press_back_button_to_exit
 			)
 
@@ -1031,7 +1012,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 
 			// Show fallback message when no browser is available
 			showToast(
-				activityInf = safeBaseActivityRef,
+				activityInf = getActivity(),
 				msgId = R.string.title_please_install_web_browser
 			)
 			logger.d("Displayed toast: Please install a web browser")
@@ -1069,7 +1050,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 	 */
 	override fun getActivity(): BaseActivity? {
 		logger.d("getActivity() called — returning current activity reference")
-		return safeBaseActivityRef
+		return weakReferenceOfActivity?.get()
 	}
 
 	/**
@@ -1087,12 +1068,12 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 		logger.d("clearWeakActivityReference() called — clearing activity references")
 
 		// Clear the weak reference to allow garbage collection
-		weakBaseActivityRef?.clear()
+		weakReferenceOfActivity?.clear()
 		logger.d("Weak reference cleared")
 
 		// Clear the safe reference to prevent accidental usage of destroyed activity
-		safeBaseActivityRef = null
-		logger.d("Safe activity reference set to null")
+		weakReferenceOfActivity = null
+		logger.d("Safe weak activity reference set to null")
 	}
 
 	/**
@@ -1112,11 +1093,11 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 	override fun doSomeVibration(timeInMillis: Int) {
 		logger.d("doSomeVibration() called — duration=${timeInMillis}ms")
 
-		if (vibrator.hasVibrator()) {
+		if (vibrator?.hasVibrator() == true) {
 			logger.d("Device supports vibration — triggering vibration")
 
 			// Create a one-shot vibration effect with default amplitude
-			vibrator.vibrate(
+			vibrator?.vibrate(
 				VibrationEffect.createOneShot(
 					/* milliseconds = */ timeInMillis.toLong(),
 					/* amplitude = */ VibrationEffect.DEFAULT_AMPLITUDE
@@ -1170,9 +1151,9 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 		logger.d("showUpcomingFeatures() called — displaying upcoming feature dialog")
 
 		// Trigger short vibration for haptic feedback to acknowledge user interaction
-		doSomeVibration(50)
+		doSomeVibration(20)
 
-		safeBaseActivityRef?.let { safeActivityRef ->
+		getActivity()?.let { safeActivityRef ->
 			logger.d("Safe activity reference found — preparing dialog")
 
 			showMessageDialog(
@@ -1230,7 +1211,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 	private fun requestForPermissionIfRequired() {
 		logger.d("requestForPermissionIfRequired() called")
 
-		safeBaseActivityRef?.let { safeActivityRef ->
+		getActivity()?.let { activity ->
 			if (!isUserPermissionCheckingActive) {
 				logger.d("Permission check not active — scheduling delayed permission request")
 
@@ -1241,8 +1222,9 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 						logger.d("Delayed permission check triggered after 1000ms")
 
 						// Skip permission check for OpeningActivity to avoid overwhelming new users
-						if (safeActivityRef is OpeningActivity) {
-							logger.d("Activity is OpeningActivity — skipping permission request to improve first-run experience")
+						if (activity is OpeningActivity) {
+							logger.d("Activity is OpeningActivity — " +
+									"skipping permission request to improve first-run experience")
 							return
 						}
 
@@ -1252,9 +1234,9 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 						// Check if any required permissions are not granted
 						// This includes notification and storage permissions based on Android version
 						if (permissions.isNotEmpty() ||
-							!isGranted(safeActivityRef, POST_NOTIFICATIONS) ||
-							!isGranted(safeActivityRef, MANAGE_EXTERNAL_STORAGE) ||
-							!isGranted(safeActivityRef, WRITE_EXTERNAL_STORAGE)) {
+							!isGranted(activity, POST_NOTIFICATIONS) ||
+							!isGranted(activity, MANAGE_EXTERNAL_STORAGE) ||
+							!isGranted(activity, WRITE_EXTERNAL_STORAGE)) {
 							logger.d("Required permissions not granted — launching permission request dialog")
 							launchPermissionRequest(permissions)
 						} else {
@@ -1269,9 +1251,11 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 					}
 				})
 			} else {
-				logger.d("Permission check already active — skipping duplicate request to avoid conflicts")
+				logger.d("Permission check already active — " +
+						"skipping duplicate request to avoid conflicts")
 			}
-		} ?: logger.d("Activity reference is null — cannot request permissions without valid context")
+		} ?: logger.d("Activity reference is null — " +
+				"cannot request permissions without valid context")
 	}
 
 	/**
@@ -1377,8 +1361,8 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 	fun setThemeAppearance() {
 		logger.d("setThemeAppearance() called — applying user-selected or system theme")
 
-		safeBaseActivityRef?.let {
-			ViewUtility.changesSystemTheme(it)
+		getActivity()?.let { activity ->
+			ViewUtility.changesSystemTheme(activity)
 			logger.d("Theme applied via ViewUtility.changesSystemTheme()")
 		} ?: logger.d("No active activity reference — theme appearance not applied")
 	}
@@ -1608,7 +1592,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 		}
 
 		// Guard clause: Only show in main activity context for proper UI presentation
-		if (safeBaseActivityRef !is MotherActivity) {
+		if (getActivity() !is MotherActivity) {
 			logger.d("Skipping — current activity is not MotherActivity")
 			return
 		}
@@ -1629,7 +1613,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 
 		// Create and configure the battery optimization explanation dialog
 		MsgDialogUtils.getMessageDialog(
-			baseActivityInf = safeBaseActivityRef,
+			baseActivityInf = getActivity(),
 			isTitleVisible = true,
 			messageTextViewCustomize = { it.setText(R.string.text_battery_optimization_msg) },
 			titleTextViewCustomize = { it.setText(R.string.title_turn_off_battery_optimization) },
@@ -1707,7 +1691,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 	 * automatically recovering from temporary network problems without bothering users.
 	 */
 	fun checkForLatestUpdate() {
-		safeBaseActivityRef?.let { activityRef ->
+		getActivity()?.let { activity ->
 			// Cancel previous update check to prevent duplicates and resource conflicts
 			updateCheckJob?.cancel()
 
@@ -1723,7 +1707,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 					// automatically recovering from temporary network issues
 					error is IOException || error is TimeoutCancellationException
 				},
-				codeBlock = { performUpdateCheck(activityRef) },
+				codeBlock = { performUpdateCheck(activity) },
 				onSuccess = { logger.d("Update check completed successfully") },
 				onFinalError = { error -> logger.e("Update check failed after retries:", error) }
 			)
@@ -1888,7 +1872,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 			// Only show dialog on MotherActivity (main activity) for consistent UX
 			if (activity is MotherActivity) {
 				UpdaterDialog(
-					baseActivity = activity,
+					weakReferenceOfActivity = WeakReference(activity),
 					latestVersionApkFile = apkFile,
 					versionInfo = updateInfo
 				).show()
