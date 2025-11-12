@@ -1,8 +1,8 @@
 package app.core
 
-import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioSettings
 import app.core.bases.interfaces.BaseActivityInf
+import app.core.bases.language.LanguageAwareApplication.Companion.localeAwareManager
 import app.core.bases.language.LocaleAwareManager
 import lib.process.CommonTimeUtils.OnTaskFinishListener
 import lib.process.CommonTimeUtils.delay
@@ -70,11 +70,7 @@ open class AIOLanguage {
 			val locale = Locale.forLanguageTag(languageCode)
 
 			logger.d("Applying user-selected language: $languageCode")
-
-			LocaleAwareManager(safeActivityRef).setNewLocale(safeActivityRef, languageCode)
-			LocaleAwareManager(INSTANCE).setNewLocale(INSTANCE, languageCode)
-			LocalizationHelper.setAppLocale(INSTANCE, locale)
-
+			localeAwareManager?.setNewLocale(languageCode)
 			logger.d("Language applied successfully. Locale set to: $locale")
 			onComplete()
 		} ?: logger.d("applyUserSelectedLanguage called with null activity reference")

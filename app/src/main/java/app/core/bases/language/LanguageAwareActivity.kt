@@ -33,6 +33,13 @@ import lib.process.LogHelperUtils
  */
 abstract class LanguageAwareActivity : AppCompatActivity() {
 
+	/**
+	 * Logger instance for debugging, tracing lifecycle events, and monitoring application behavior.
+	 *
+	 * This logger provides structured logging throughout the activity lifecycle, helping with
+	 * debugging, performance monitoring, and issue diagnosis. It automatically uses the
+	 * concrete activity class name for clear log identification.
+	 */
 	private val logger = LogHelperUtils.from(javaClass)
 
 	/**
@@ -51,7 +58,7 @@ abstract class LanguageAwareActivity : AppCompatActivity() {
 	 * @param context The original context provided by the Android system
 	 */
 	override fun attachBaseContext(context: Context) {
-		val wrappedContext = localeAwareManager?.setLocale(context) ?: context
+		val wrappedContext = localeAwareManager?.setLocale() ?: context
 		super.attachBaseContext(wrappedContext)
 	}
 
@@ -128,7 +135,7 @@ abstract class LanguageAwareActivity : AppCompatActivity() {
 	 *         localeAwareManager is unavailable or language change failed
 	 */
 	fun setNewLocale(language: String): Boolean {
-		localeAwareManager?.setNewLocale(this, language) ?: return false
+		localeAwareManager?.setNewLocale(language) ?: return false
 		recreate()
 		return true
 	}
