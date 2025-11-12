@@ -8,8 +8,8 @@
 [![Download AIO Video Downloader](https://a.fsdn.com/con/app/sf-download-button)](https://sourceforge.net/projects/aio-video-downloader/files/latest/download)
 ----
 [![GitHub release (latest SemVer including pre-releases)](https://img.shields.io/github/v/release/shibaFoss/AIO-Video-Downloader?include_prereleases&sort=semver&color=black&label=Latest&logo=github)](https://github.com/shibaFoss/AIO-Video-Downloader/releases)
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/shibaFoss/AIO-Video-Downloader?color=black&label=Stable&logo=github)](https://github.com/shibaFoss/AIO-Video-Downloader/releases/latest/)
-[![GitHub all releases](https://img.shields.io/github/downloads/shibafoss/AIO-Video-Downloader/total?label=Downloads&logo=github)](https://github.com/shibafoss/AIO-Video-Downloader/releases/)
+[![Release version](https://img.shields.io/github/v/release/shibaFoss/AIO-Video-Downloader?color=brightgreen&label=Download&style=for-the-badge)](https://github.com/shibaFoss/AIO-Video-Downloader/releases/latest/)
+[![GitHub all releases](https://img.shields.io/github/downloads/shibafoss/AIO-Video-Downloader/total?color=brightgreen&label=Total-Downloads&style=for-the-badge)](https://github.com/shibafoss/AIO-Video-Downloader/releases/)
 [![Download AIO-Video-Downloader](https://img.shields.io/sourceforge/dm/aio-video-downloader.svg)](https://sourceforge.net/projects/aio-video-downloader/files/latest/download)
 
 ![AIO Video Downloader Logo](others/graphics/feature_cover.png)
