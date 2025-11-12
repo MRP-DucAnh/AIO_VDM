@@ -17,35 +17,33 @@ import java.io.File
 import java.lang.ref.WeakReference
 
 /**
- * Displays a user-friendly dialog prompting the user to install a new version of the application.
+ * Displays a user-friendly dialog for application updates with secure APK installation handling.
  *
- * This dialog serves as the primary user interface for the app update flow, presenting update
- * information in a clear, actionable manner while ensuring safe installation through proper
- * Android security protocols. The dialog is designed to be informative yet non-intrusive,
- * allowing users to make informed decisions about updating their application.
+ * This dialog bridges the gap between downloading an update and actually installing it by:
+ * - Presenting version information in a clear, non-technical manner
+ * - Providing secure APK installation through Android's file provider system
+ * - Preventing memory leaks during configuration changes via weak references
+ * - Ensuring only one instance is visible at a time to avoid user confusion
  *
- * Key features:
- * - Displays latest available version with clear version comparison
- * - Shows currently installed version for context (when available)
- * - Provides clickable changelog links for detailed update information
- * - One-tap installation process with proper APK handling
- * - Memory-safe implementation using weak activity references
- * - Prevents duplicate dialog instances and manages lifecycle properly
+ * ## Why This Approach Matters:
  *
- * The dialog uses a DialogBuilder for consistent UI theming and follows Material Design
- * principles for intuitive user interaction. It handles the complete update presentation
- * flow from information display to installation initiation.
+ * **Weak References**: Android activities can be destroyed during configuration changes
+ * (like screen rotation). Using WeakReference prevents memory leaks by allowing the
+ * garbage collector to reclaim the activity if needed, while still providing access
+ * when the activity exists.
  *
- * @property baseActivity The activity that hosts and displays the dialog, stored as a
- *                        weak reference to prevent memory leaks during configuration changes
- *                        or unexpected activity destruction.
- * @property latestVersionApkFile The downloaded APK file containing the new application
- *                                version, ready for installation verification and handling.
- * @property versionInfo Metadata container for the update including version string,
- *                       changelog URL, release notes, and other relevant update information.
+ * **File Provider Security**: Direct file:// URIs are blocked in modern Android.
+ * This dialog uses a FileProvider to create content:// URIs, ensuring secure APK
+ * installation while complying with Android's security model.
+ *
+ * **Single Instance Enforcement**: Prevents multiple update dialogs from stacking,
+ * which could confuse users and create inconsistent application state.
  */
-class UpdaterDialog(private val weakReferenceOfActivity: WeakReference<BaseActivity>?,
-	private val latestVersionApkFile: File, private val versionInfo: UpdateInfo) {
+class UpdaterDialog(
+	private val weakReferenceOfActivity: WeakReference<BaseActivity>?,
+	private val latestVersionApkFile: File,
+	private val versionInfo: UpdateInfo
+) {
 
 	/**
 	 * Logger instance for tracking dialog lifecycle events, user interactions,
@@ -54,74 +52,84 @@ class UpdaterDialog(private val weakReferenceOfActivity: WeakReference<BaseActiv
 	private val logger = LogHelperUtils.from(javaClass)
 
 	/**
-	 * Memory-safe weak reference to the parent activity ensuring the dialog doesn't
-	 * prevent garbage collection if the activity is destroyed while the dialog exists.
-	 * This prevents common memory leak scenarios in Android dialog management.
+	 * Safely accesses the activity reference with leak protection.
+	 *
+	 * **How it works**: The weak reference may return null if the activity was garbage collected
+	 * (during memory pressure or configuration changes). This property acts as a safe gateway
+	 * that automatically handles the null case without crashing.
 	 */
 	private val safeBaseActivityRef: BaseActivity?
 		get() = weakReferenceOfActivity?.get()
 
 	/**
-	 * Dialog builder instance responsible for creating, configuring, and managing
-	 * the dialog's visual presentation and interactive behavior throughout its lifecycle.
+	 * Dialog builder that manages the actual Android dialog lifecycle.
+	 *
+	 * **Why separate from direct Dialog usage**: DialogBuilder provides consistent theming
+	 * across the app and abstracts away the complexity of DialogFragment management,
+	 * especially important for handling orientation changes properly.
 	 */
 	private val dialogBuilder: DialogBuilder = DialogBuilder(safeBaseActivityRef)
 
 	/**
-	 * Initialization block that sets up the dialog's visual structure, content population,
-	 * and interactive behavior. This runs immediately when the UpdaterDialog instance is
-	 * created, preparing the dialog for display while ensuring safe activity reference usage.
+	 * Initializes the dialog content and behavior when the object is created.
+	 *
+	 * **Execution Flow**:
+	 * 1. Checks if activity reference is valid (early exit if not)
+	 * 2. Configures dialog appearance and non-cancelable behavior
+	 * 3. Formats version information with HTML styling for better readability
+	 * 4. Sets up click handling for the installation action
 	 */
 	init {
 		safeBaseActivityRef?.let { activity ->
-			logger.d("Initializing UpdaterDialog with version ${versionInfo.latestVersion}")
+			logger.d("Building update dialog for version ${versionInfo.latestVersion}")
 
-			// Configure dialog visual structure using predefined layout resource
+			// Non-cancelable prevents users from accidentally dismissing during critical update flow
 			dialogBuilder.setView(R.layout.dialog_new_version_updater_1)
-			dialogBuilder.setCancelable(false) // Prevent accidental dismissal during critical update flow
+			dialogBuilder.setCancelable(false)
 
-			// Populate and format the version information message with HTML styling
-			dialogBuilder.view.apply {
-				findViewById<TextView>(R.id.txt_dialog_message)?.let { textView ->
-					val htmlMsg = activity.getString(
-						/* resId = */ R.string.title_b_latest_version_b,
-						/* ...formatArgs = */ versionInfo.latestVersion
-					).trimIndent()
+			// Format version information with HTML for rich text display
+			dialogBuilder.view.findViewById<TextView>(R.id.txt_dialog_message)?.let { textView ->
+				val htmlMsg = activity.getString(
+					/* resId = */ R.string.title_b_latest_version_b,
+					/* ...formatArgs = */ versionInfo.latestVersion
+				).trimIndent()
 
-					// Convert HTML-formatted string to styled text with clickable links
-					textView.text = Html.fromHtml(htmlMsg, FROM_HTML_MODE_COMPACT)
-					textView.movementMethod = LinkMovementMethod.getInstance() // Enable link clicking
-				}
+				// FROM_HTML_MODE_COMPACT removes excess whitespace for cleaner appearance
+				textView.text = Html.fromHtml(htmlMsg, FROM_HTML_MODE_COMPACT)
+
+				// Enables clickable links in the text view for changelog or release notes
+				textView.movementMethod = LinkMovementMethod.getInstance()
 			}
 
-			// Attach click handler to the primary action button for update installation
+			// Wire up the installation button with click handling
 			setViewOnClickListener(
 				{ button: View -> this.setupClickEvents(button) },
 				dialogBuilder.view,
 				R.id.btn_dialog_positive_container
 			)
-		} ?: logger.d("UpdaterDialog initialization skipped — " +
-						"activity reference is null, dialog cannot be displayed")
+		} ?: logger.d("Activity reference unavailable - dialog initialization aborted")
 	}
 
 	/**
-	 * Handles user interactions with dialog buttons and orchestrates the appropriate responses.
+	 * Handles user interaction with dialog buttons and routes to appropriate actions.
 	 *
-	 * This method processes click events from all interactive elements within the dialog,
-	 * routing each to the corresponding action handler. Currently supports the primary
-	 * installation action with extensibility for additional buttons like cancel or later options.
+	 * **Current Implementation**:
+	 * - Installation button: Dismisses dialog and triggers APK installation
 	 *
-	 * @param button The clicked button view that triggered the event, used to determine
-	 *               which action to execute based on its resource ID.
+	 * **Extensibility**: The when() structure makes it easy to add more buttons
+	 * (like "Remind me later" or "Skip this version") in the future.
+	 *
+	 * @param button The clicked view that triggered this event, identified by resource ID
 	 */
 	private fun setupClickEvents(button: View) {
-		logger.d("Dialog button clicked with id=${button.id}")
+		logger.d("Processing click event for view ID: ${button.id}")
 		when (button.id) {
 			R.id.btn_dialog_positive_container -> {
-				logger.d("Install button clicked — initiating update installation process")
-				close() // Dismiss dialog before proceeding to installation
+				logger.d("User initiated update installation")
+				close() // Clean up dialog before proceeding to system installer
+
 				safeBaseActivityRef?.let { activity ->
-					// Use file provider authority for secure APK file sharing
+					// Generate content URI through FileProvider for secure APK access
 					val authority = "${activity.packageName}.provider"
 					openApkFile(activity, latestVersionApkFile, authority)
 				} ?: showToast(safeBaseActivityRef, msgId = R.string.title_something_went_wrong)
@@ -130,34 +138,34 @@ class UpdaterDialog(private val weakReferenceOfActivity: WeakReference<BaseActiv
 	}
 
 	/**
-	 * Displays the update dialog to the user if it is not already visible.
+	 * Displays the update dialog to the user with duplicate prevention.
 	 *
-	 * This method ensures the dialog is only shown once, preventing duplicate dialogs
-	 * that could confuse users or cause interface conflicts. It performs a visibility
-	 * check before attempting to display, maintaining clean dialog state management.
+	 * **Why check isShowing**: Android doesn't prevent multiple show() calls on the same
+	 * dialog instance. This check ensures we don't create stacked dialogs that would
+	 * require multiple back button presses to dismiss.
 	 */
 	fun show() {
 		if (!dialogBuilder.isShowing) {
-			logger.d("Displaying UpdaterDialog to user")
+			logger.d("Presenting update dialog to user")
 			dialogBuilder.show()
 		} else {
-			logger.d("UpdaterDialog already visible — skipping show() to prevent duplicates")
+			logger.d("Update dialog already visible - ignoring duplicate show request")
 		}
 	}
 
 	/**
-	 * Dismisses the update dialog if it is currently visible to the user.
+	 * Safely dismisses the dialog and releases resources.
 	 *
-	 * This method safely closes the dialog and releases associated resources.
-	 * It checks the dialog's visibility state before attempting dismissal to
-	 * avoid unnecessary operations or potential window manager exceptions.
+	 * **Error Prevention**: Checking isShowing before dismissal avoids WindowManager
+	 * exceptions that can occur when trying to dismiss a already-dismissed dialog.
+	 * This is particularly important during activity lifecycle transitions.
 	 */
 	fun close() {
 		if (dialogBuilder.isShowing) {
-			logger.d("Closing UpdaterDialog and releasing resources")
+			logger.d("Closing update dialog and cleaning up resources")
 			dialogBuilder.close()
 		} else {
-			logger.d("UpdaterDialog already closed — skipping redundant close operation")
+			logger.d("Dialog already closed - no action needed")
 		}
 	}
 }
