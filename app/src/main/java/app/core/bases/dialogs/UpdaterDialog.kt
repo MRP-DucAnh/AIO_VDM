@@ -44,7 +44,7 @@ import java.lang.ref.WeakReference
  * @property versionInfo Metadata container for the update including version string,
  *                       changelog URL, release notes, and other relevant update information.
  */
-class UpdaterDialog(private val baseActivity: BaseActivity?,
+class UpdaterDialog(private val weakReferenceOfActivity: WeakReference<BaseActivity>?,
 	private val latestVersionApkFile: File, private val versionInfo: UpdateInfo) {
 
 	/**
@@ -58,7 +58,8 @@ class UpdaterDialog(private val baseActivity: BaseActivity?,
 	 * prevent garbage collection if the activity is destroyed while the dialog exists.
 	 * This prevents common memory leak scenarios in Android dialog management.
 	 */
-	private val safeBaseActivityRef = WeakReference(baseActivity).get()
+	private val safeBaseActivityRef: BaseActivity?
+		get() = weakReferenceOfActivity?.get()
 
 	/**
 	 * Dialog builder instance responsible for creating, configuring, and managing
@@ -99,7 +100,8 @@ class UpdaterDialog(private val baseActivity: BaseActivity?,
 				dialogBuilder.view,
 				R.id.btn_dialog_positive_container
 			)
-		} ?: logger.d("UpdaterDialog initialization skipped — activity reference is null, dialog cannot be displayed")
+		} ?: logger.d("UpdaterDialog initialization skipped — " +
+						"activity reference is null, dialog cannot be displayed")
 	}
 
 	/**
@@ -122,10 +124,8 @@ class UpdaterDialog(private val baseActivity: BaseActivity?,
 					// Use file provider authority for secure APK file sharing
 					val authority = "${activity.packageName}.provider"
 					openApkFile(activity, latestVersionApkFile, authority)
-				} ?: showToast(activityInf = baseActivity, msgId = R.string.title_something_went_wrong)
+				} ?: showToast(safeBaseActivityRef, msgId = R.string.title_something_went_wrong)
 			}
-			// Additional button handlers can be added here for future functionality
-			// such as cancel, remind later, or view changelog actions
 		}
 	}
 
