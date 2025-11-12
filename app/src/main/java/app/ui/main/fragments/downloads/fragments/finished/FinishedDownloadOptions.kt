@@ -81,7 +81,7 @@ class FinishedDownloadOptions(finishedTasksFragment: FinishedTasksFragment?) : O
 	private val safeMotherActivityRef = safeFinishedTasksFragmentRef?.safeMotherActivityRef
 
 	// Lazy initialization of dialog builder (ensures it's only created when needed)
-	private val dialogBuilder: DialogBuilder? by lazy { DialogBuilder(safeMotherActivityRef) }
+	private var dialogBuilder: DialogBuilder?= null
 
 	// Components for file operations
 	private lateinit var downloadFileRenamer: DownloadFileRenamer
@@ -90,10 +90,11 @@ class FinishedDownloadOptions(finishedTasksFragment: FinishedTasksFragment?) : O
 
 	init {
 		logger.d("Initializing FinishedDownloadOptions")
+		dialogBuilder = DialogBuilder(finishedTasksFragment?.safeBaseActivityRef)
+		dialogBuilder?.setView(R.layout.frag_down_4_finish_1_onclick_1)
 
 		// Initialize dialog view and set click listeners for all option buttons
 		dialogBuilder?.let { dialogBuilder ->
-			dialogBuilder.setView(R.layout.frag_down_4_finish_1_onclick_1)
 			ViewUtility.setViewOnClickListener(
 				onClickListener = this,
 				layout = dialogBuilder.view,

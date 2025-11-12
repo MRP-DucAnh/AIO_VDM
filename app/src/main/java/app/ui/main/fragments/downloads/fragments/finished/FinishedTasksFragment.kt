@@ -39,14 +39,13 @@ open class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIO
 
 	private val logger = LogHelperUtils.from(javaClass)
 
+	private val weakReferenceOfFragment = WeakReference(this)
+
 	/** Safe reference to the parent activity (MotherActivity). */
 	open val safeMotherActivityRef by lazy { WeakReference(safeBaseActivityRef as MotherActivity).get() }
 
 	/** Safe reference to this fragment. */
 	open val safeFinishTasksFragment by lazy { WeakReference(this).get() }
-
-	/** Options menu for finished downloads (rename, delete, etc.). */
-	private val finishTaskOptions by lazy { FinishedDownloadOptions(safeFinishTasksFragment) }
 
 	private lateinit var emptyDownloadContainer: View
 	private lateinit var buttonOpenActiveTasks: View
@@ -108,11 +107,14 @@ open class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIO
 		safeMotherActivityRef?.let {
 			val globalSettings = downloadModel.globalSettings
 			val downloadLocation = globalSettings.defaultDownloadLocation
+			val finishTaskOptions = FinishedDownloadOptions(weakReferenceOfFragment.get())
 			fun openDownloadOptions() {
 				if (aioSettings.openDownloadedFileOnSingleClick) {
 					finishTaskOptions.setDownloadModel(downloadModel)
 					finishTaskOptions.playTheMedia()
-				} else finishTaskOptions.show(downloadModel)
+				} else {
+					finishTaskOptions.show(downloadModel)
+				}
 			}
 
 			if (downloadLocation == AIOSettings.PRIVATE_FOLDER) {
@@ -129,6 +131,7 @@ open class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIO
 	override fun onFinishedDownloadLongClick(downloadModel: DownloadDataModel) {
 		safeMotherActivityRef?.let {
 			fun openDownloadOptions() {
+				val finishTaskOptions = FinishedDownloadOptions(weakReferenceOfFragment.get())
 				safeMotherActivityRef?.doSomeVibration(50)
 				finishTaskOptions.show(downloadModel)
 			}
