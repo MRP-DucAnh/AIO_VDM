@@ -10,9 +10,9 @@ import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
 import android.content.DialogInterface;
 import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.view.WindowManager.LayoutParams;
 
 import androidx.annotation.NonNull;
@@ -43,12 +43,12 @@ public class DialogBuilder {
 	 * Weak reference to the activity interface to safely access context
 	 * without leaking the activity.
 	 */
-	private final WeakReference<BaseActivityInf> safeActivityRef;
+	private final WeakReference<BaseActivityInf> weakReferenceBaseActivity;
 
 	/**
 	 * Holds the custom view to be displayed inside the AlertDialog.
 	 */
-	private View customView;
+	private WeakReference<View> weakCustomView;
 
 	/**
 	 * Reference to the AlertDialog instance created and managed by this class.
@@ -58,10 +58,10 @@ public class DialogBuilder {
 	/**
 	 * Constructs a new {@link DialogBuilder} with a reference to an activity that implements {@link BaseActivityInf}.
 	 *
-	 * @param safeActivityRef a reference to the associated activity, used to access context safely.
+	 * @param baseActivityInf a reference to the associated activity, used to access context safely.
 	 */
-	public DialogBuilder(@Nullable BaseActivityInf safeActivityRef) {
-		this.safeActivityRef = new WeakReference<>(safeActivityRef);
+	public DialogBuilder(@Nullable BaseActivityInf baseActivityInf) {
+		this.weakReferenceBaseActivity = new WeakReference<>(baseActivityInf);
 	}
 
 	/**
@@ -71,11 +71,11 @@ public class DialogBuilder {
 	public void show() {
 		try {
 			if (dialog == null) dialog = create();
-			BaseActivityInf inf = safeActivityRef.get();
-			if (inf == null || inf.getActivity() == null) return;
+			BaseActivityInf activityInf = weakReferenceBaseActivity.get();
+			if (activityInf == null || activityInf.getActivity() == null) return;
 
-			Activity act = inf.getActivity();
-			if (!act.isFinishing() && !act.isDestroyed() && !dialog.isShowing()) {
+			Activity activity = activityInf.getActivity();
+			if (!activity.isFinishing() && !activity.isDestroyed() && !dialog.isShowing()) {
 				dialog.show();
 			}
 		} catch (Exception error) {
@@ -104,7 +104,8 @@ public class DialogBuilder {
 	 * @param listener the click listener to attach.
 	 */
 	public void setOnClickListener(int viewId, @NonNull OnClickListener listener) {
-		View view = customView.findViewById(viewId);
+		if (weakCustomView.get() == null) return;
+		View view = weakCustomView.get().findViewById(viewId);
 		if (view != null) {
 			view.setOnClickListener(listener);
 		}
@@ -155,8 +156,18 @@ public class DialogBuilder {
 	 * Closes the dialog if it is currently visible.
 	 */
 	public void close() {
-		if (dialog != null && dialog.isShowing()) {
-			dialog.cancel();
+		try {
+			if (dialog != null) {
+				dialog.setOnDismissListener(null);
+				dialog.setOnCancelListener(null);
+				if (dialog.isShowing()) dialog.dismiss();
+				dialog = null;
+			}
+			View view = weakCustomView != null ? weakCustomView.get() : null;
+			if (view != null) clearAllClickListeners(view);
+			weakCustomView = null;
+		} catch (Exception error) {
+			logger.e("Dialog close failed: " + error.getMessage());
 		}
 	}
 
@@ -168,10 +179,9 @@ public class DialogBuilder {
 	 */
 	@NonNull
 	public View getView() {
-		if (customView == null) {
-			throw new IllegalStateException("No view set. Call setView() first.");
-		}
-		return customView;
+		View view = weakCustomView != null ? weakCustomView.get() : null;
+		if (view == null) throw new IllegalStateException("No view set or view released.");
+		return view;
 	}
 
 	/**
@@ -182,8 +192,10 @@ public class DialogBuilder {
 	 */
 	@NonNull
 	public DialogBuilder setView(int layoutResId) {
-		LayoutInflater inflater = from(safeActivityRef.get().getActivity());
-		customView = inflater.inflate(layoutResId, null);
+		Activity activity = getActivity();
+		if (activity == null) return this;
+		View view = from(activity).inflate(layoutResId, null);
+		this.weakCustomView = new WeakReference<>(view);
 		return this;
 	}
 
@@ -195,7 +207,7 @@ public class DialogBuilder {
 	 */
 	@NonNull
 	public DialogBuilder setView(@NonNull View view) {
-		customView = view;
+		this.weakCustomView = new WeakReference<>(view);
 		return this;
 	}
 
@@ -217,7 +229,10 @@ public class DialogBuilder {
 	 */
 	@NonNull
 	public DialogBuilder setOnClickForPositiveButton(@NonNull OnClickListener listener) {
-		getPositiveButtonView().setOnClickListener(listener);
+		WeakReference<OnClickListener> weakReference = new WeakReference<>(listener);
+		if (weakReference.get() != null) {
+			getPositiveButtonView().setOnClickListener(weakReference.get());
+		}
 		return this;
 	}
 
@@ -239,7 +254,10 @@ public class DialogBuilder {
 	 */
 	@NonNull
 	public DialogBuilder setOnClickForNegativeButton(@NonNull OnClickListener listener) {
-		getNegativeButtonView().setOnClickListener(listener);
+		WeakReference<OnClickListener> weakReference = new WeakReference<>(listener);
+		if (weakReference.get() != null) {
+			getNegativeButtonView().setOnClickListener(weakReference.get());
+		}
 		return this;
 	}
 
@@ -250,7 +268,7 @@ public class DialogBuilder {
 	 */
 	@Nullable
 	public Activity getActivity() {
-		BaseActivityInf inf = safeActivityRef.get();
+		BaseActivityInf inf = weakReferenceBaseActivity.get();
 		return inf != null ? inf.getActivity() : null;
 	}
 
@@ -272,9 +290,15 @@ public class DialogBuilder {
 	 */
 	private AlertDialog create() {
 		Activity activity = getActivity();
+		if (activity == null || activity.isFinishing() || activity.isDestroyed()) return null;
+
 		Builder builder = new Builder(activity, R.style.style_dialog);
-		builder.setView(customView);
+		View view = weakCustomView != null ? weakCustomView.get() : null;
+		if (view == null) return null;
+
+		builder.setView(view);
 		dialog = builder.create();
+		dialog.setOnDismissListener(d -> close());
 		applyBottomPositioning();
 		return dialog;
 	}
@@ -295,6 +319,15 @@ public class DialogBuilder {
 	private void setDialogAnimation(int animationResId) {
 		if (dialog != null && dialog.getWindow() != null) {
 			dialog.getWindow().getAttributes().windowAnimations = animationResId;
+		}
+	}
+
+	private void clearAllClickListeners(@NonNull View view) {
+		view.setOnClickListener(null);
+		if (view instanceof ViewGroup group) {
+			for (int i = 0; i < group.getChildCount(); i++) {
+				clearAllClickListeners(group.getChildAt(i));
+			}
 		}
 	}
 
