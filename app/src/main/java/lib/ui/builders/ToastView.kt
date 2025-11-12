@@ -14,7 +14,6 @@ import app.core.bases.interfaces.BaseActivityInf
 import com.aio.R
 import lib.networks.URLUtility.isValidURL
 import lib.texts.CommonTextUtils.getText
-import java.lang.ref.WeakReference
 
 /**
  * A custom Toast class that allows setting a custom layout and icon.
@@ -51,12 +50,9 @@ class ToastView(context: Context) : Toast(context) {
 		@JvmStatic
 		fun showToast(activityInf: BaseActivityInf?, msg: String? = null, msgId: Int = -1) {
 			if (activityInf == null) return
-			val activity = activityInf.getActivity()
-			if (activity == null) return
-
 			when {
-				msgId != -1 -> showResourceToast(activity, msgId)
-				msg != null -> showTextToast(activity, msg)
+				msgId != -1 -> showResourceToast(activityInf, msgId)
+				msg != null -> showTextToast(activityInf, msg)
 			}
 		}
 
@@ -64,62 +60,61 @@ class ToastView(context: Context) : Toast(context) {
 		 * Displays a toast using a string resource ID.
 		 * Skips displaying if the resolved message is a URL.
 		 *
-		 * @param activity The activity reference needed.
+		 * @param activityInf The activity reference needed.
 		 * @param msgId The resource ID of the message string.
 		 */
-		private fun showResourceToast(activity: BaseActivity, msgId: Int) {
+		private fun showResourceToast(activityInf: BaseActivityInf, msgId: Int) {
 			val message = getText(msgId)
 			if (isValidURL(message)) return
-			makeText(activity, message).show()
+			makeText(activityInf, message)?.show()
 		}
 
 		/**
 		 * Displays a toast using a string message.
 		 * Skips displaying if the message is a URL.
 		 *
-		 * @param activity The activity reference needed.
+		 * @param activityInf The activity reference needed.
 		 * @param msg The message string to show.
 		 */
-		private fun showTextToast(activity: BaseActivity, msg: String) {
+		private fun showTextToast(activityInf: BaseActivityInf, msg: String) {
 			if (isValidURL(msg)) return
-			makeText(activity, msg).show()
+			makeText(activityInf, msg)?.show()
 		}
 
 		/**
 		 * Creates and configures a [ToastView] instance using a custom layout and duration.
 		 *
-		 * @param activity The context used to create the toast.
-		 * @param message The message to display in the toast.
+		 * @param activityInf The context used to create the toast.
+		 * @param toastMessage The message to display in the toast.
 		 * @param duration The duration of the toast. Defaults to [Toast.LENGTH_LONG].
 		 * @return A configured [ToastView] instance.
 		 */
-		private fun makeText(
-			activity: BaseActivity, message: CharSequence?, duration: Int = LENGTH_LONG
-		): ToastView {
-			return WeakReference(activity).get()?.let { safeContext ->
-				configureToastView(safeContext, message, duration)
-			} ?: run { ToastView(activity) }
+		private fun makeText(activityInf: BaseActivityInf,
+			toastMessage: CharSequence?, duration: Int = LENGTH_LONG): ToastView? {
+			return activityInf.getActivity()?.let { safeActivityContext ->
+				configureToastView(safeActivityContext, toastMessage, duration)
+			}
 		}
 
 		/**
 		 * Inflates the custom toast layout and sets its properties.
 		 *
 		 * @param activity The context used to inflate the view.
-		 * @param message The text to display.
+		 * @param toastMessage The text to display.
 		 * @param duration How long to display the toast.
 		 * @return A [ToastView] instance with the custom layout and message.
 		 */
-		@SuppressLint("InflateParams") private fun configureToastView(
-			activity: BaseActivity, message: CharSequence?, duration: Int
-		): ToastView {
+		@SuppressLint("InflateParams")
+		private fun configureToastView(activity: BaseActivity,
+			toastMessage: CharSequence?, duration: Int): ToastView {
 			// Wrap the activity with its current theme
 			val themedCtx = ContextThemeWrapper(activity, R.style.style_application)
 			val inflater = LayoutInflater.from(themedCtx)
 
 			// Create toast with activity (not application) context
-			return ToastView(activity).apply {
+			return ToastView(activity.applicationContext).apply {
 				val toastView = inflater.inflate(R.layout.lay_custom_toast_view_1, null)
-				toastView.findViewById<TextView>(R.id.txt_toast_message).text = message
+				toastView.findViewById<TextView>(R.id.txt_toast_message).text = toastMessage
 				view = toastView
 				setDuration(duration)
 			}
