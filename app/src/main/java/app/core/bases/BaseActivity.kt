@@ -427,11 +427,6 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 			logger.d("Calling subclass onResumeActivity() for custom initialization")
 			onResumeActivity()
 
-			// Handle language changes and restart if necessary for localization
-			// Ensures UI is displayed in the correct language based on user preference
-			logger.d("Checking for language changes that require activity restart")
-			aioLanguage.closeActivityIfLanguageChanged(activity)
-
 			// Refresh ad-blocking filters to ensure up-to-date protection
 			// Maintains effective ad-blocking with latest filter definitions
 			logger.d("Fetching latest ad-blocker filters for updated protection")

@@ -29,6 +29,19 @@ import android.content.res.Configuration
 open class LanguageAwareApplication : Application() {
 
 	/**
+	 * Singleton instance of [LocaleAwareManager] for application-wide locale management.
+	 *
+	 * **Access Pattern**: This property is initialized in [attachBaseContext] and
+	 * available throughout the application lifecycle. It uses a nullable type to
+	 * handle edge cases during initialization or testing scenarios.
+	 *
+	 * **Thread Safety**: Initialization happens on the main thread during app startup,
+	 * ensuring thread-safe access for subsequent reads.
+	 */
+	var localeAwareManager: LocaleAwareManager? = null
+		private set
+
+	/**
 	 * Intercepts context creation to apply locale settings at the earliest possible moment.
 	 *
 	 * **Critical Timing**: This method is called before onCreate() and before any
@@ -57,6 +70,29 @@ open class LanguageAwareApplication : Application() {
 	}
 
 	/**
+	 * Completes application initialization after context configuration.
+	 *
+	 * **Post-Initialization Tasks**:
+	 * - Ensures locale preferences are loaded and ready
+	 * - Provides opportunity for additional locale-dependent setup
+	 * - Validates that locale manager is properly initialized
+	 *
+	 * **Why Access Language Property**: Triggering the [LocaleAwareManager.language]
+	 * getter ensures that SharedPreferences are initialized and the current language
+	 * setting is loaded into memory, preventing lazy initialization issues later.
+	 */
+	override fun onCreate() {
+		super.onCreate()
+
+		// Ensure full initialization after context is ready
+		localeAwareManager?.let { manager ->
+			// Access language property to trigger preferences initialization
+			// This ensures SharedPreferences are loaded and ready for use
+			@Suppress("UnusedVariable") val currentLang = manager.language
+		}
+	}
+
+	/**
 	 * Handles configuration changes while maintaining language consistency.
 	 *
 	 * **The Problem**: When device configuration changes (rotation, night mode, etc.),
@@ -73,31 +109,18 @@ open class LanguageAwareApplication : Application() {
 	 * some configuration changes can cause the system to recreate resources with
 	 * default locale settings. This method acts as a safeguard.
 	 *
+	 * **Execution Order**: The locale is reapplied BEFORE calling super to ensure
+	 * that the parent implementation receives the updated configuration.
+	 *
 	 * @param newConfig The updated device configuration provided by the system
 	 */
 	override fun onConfigurationChanged(newConfig: Configuration) {
 		// Reapply locale settings before handling the configuration change
+		// This ensures all subsequent resource loading uses the correct locale
 		localeAwareManager?.setLocale()
 
 		// Proceed with normal configuration change handling
+		// Parent implementation will handle other configuration aspects
 		super.onConfigurationChanged(newConfig)
-	}
-
-	companion object {
-		/**
-		 * Global singleton instance of [LocaleAwareManager] for application-wide locale management.
-		 *
-		 * **Design Pattern**: Singleton pattern ensures consistent locale state across the entire app.
-		 * All components (activities, fragments, services) can access the same locale manager instance.
-		 *
-		 * **Access Control**: Private setter restricts modification to this class only, preventing
-		 * external components from accidentally replacing the manager and causing inconsistencies.
-		 *
-		 * **Null Safety**: The property is nullable to handle edge cases during initialization
-		 * or in testing environments, but should never be null during normal app operation
-		 * after attachBaseContext() completes.
-		 */
-		var localeAwareManager: LocaleAwareManager? = null
-			private set
 	}
 }

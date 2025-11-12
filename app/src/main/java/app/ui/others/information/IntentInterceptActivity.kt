@@ -387,7 +387,7 @@ class IntentInterceptActivity : BaseActivity() {
 			logger.e("forwardIntentToMotherActivity: Error occurred while launching MotherActivity", error)
 
 			// Fallback: open MotherActivity with default animation if forwarding fails
-			openActivity(activity = MotherActivity::class.java, shouldAnimate = true)
+			openActivity(targetActivity = MotherActivity::class.java, shouldAnimate = true)
 			closeActivityWithFadeAnimation(shouldAnimate = true)
 			logger.d("forwardIntentToMotherActivity: Fallback - opened MotherActivity and closed current activity.")
 		}

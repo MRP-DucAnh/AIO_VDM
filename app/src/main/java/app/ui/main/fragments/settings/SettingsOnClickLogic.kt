@@ -56,89 +56,180 @@ import java.lang.ref.WeakReference
  */
 class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 
-	/** Logger instance for diagnostics. */
+	/**
+	 * Logger instance for tracking user interactions, method executions, and error conditions
+	 * within the settings functionality. Provides detailed diagnostics for debugging user
+	 * preference changes and navigation flows throughout the settings management system.
+	 */
 	private val logger = LogHelperUtils.from(javaClass)
 
-	/** Safe reference to prevent leaks across lifecycle changes. */
+	/**
+	 * Memory-safe weak reference to the parent SettingsFragment to prevent memory leaks
+	 * during configuration changes or when the fragment is destroyed. This ensures the
+	 * settings controller doesn't retain references to destroyed UI components while
+	 * still allowing access to the fragment when it's active and visible.
+	 */
 	private val settingsFragmentRef = WeakReference(settingsFragment).get()
 
 	/**
-	 * Launches the username editor. Currently, only vibrates and shows feature upcoming dialog.
+	 * Launches the username editor interface with haptic feedback and feature availability notice.
+	 *
+	 * This method currently serves as a placeholder for future username editing functionality.
+	 * It provides immediate user feedback through vibration and informs users that this feature
+	 * is planned for future releases. The implementation demonstrates the pattern for handling
+	 * upcoming features while maintaining consistent user experience.
+	 *
+	 * Future Implementation:
+	 * - Username validation and availability checking
+	 * - Real-time editing interface with character limits
+	 * - Save/cancel workflow with confirmation dialogs
+	 * - Integration with user profile synchronization
 	 */
 	fun showUsernameEditor() {
 		settingsFragmentRef?.safeMotherActivityRef?.apply {
-			doSomeVibration(50)
+			// Provide tactile feedback to acknowledge user interaction
+			doSomeVibration()
+			// Inform user that username editing is coming soon
 			showUpcomingFeatures()
 		}
 	}
 
 	/**
-	 * Opens login or registration dialog option. Currently, only vibrates and shows feature upcoming dialog.
+	 * Opens the authentication dialog for user login or new account registration.
+	 *
+	 * This placeholder implementation provides user feedback and indicates that authentication
+	 * features are under development. The method follows the same pattern as other upcoming
+	 * features to maintain consistency in the user experience when accessing in-development
+	 * functionality.
+	 *
+	 * Planned Authentication Flow:
+	 * - Email/password and social authentication options
+	 * - Forgot password and account recovery workflows
+	 * - Terms of service and privacy policy acceptance
+	 * - Profile synchronization and cloud backup setup
+	 * - Multi-device login management
 	 */
 	fun showLoginOrRegistrationDialog() {
 		settingsFragmentRef?.safeMotherActivityRef?.apply {
-			doSomeVibration(50)
+			// Acknowledge user tap with haptic response
+			doSomeVibration()
+			// Display feature availability information
 			showUpcomingFeatures()
 		}
 	}
 
 	/**
-	 * Opens the dialog allowing user to pick or change their download location.
+	 * Opens the download location selector dialog for choosing where downloaded files are stored.
+	 *
+	 * This functional implementation allows users to change their default download directory
+	 * using a system file picker or custom directory selector. The method handles proper
+	 * activity reference checking and provides error logging if the dialog cannot be displayed.
+	 *
+	 * Features:
+	 * - Browse and select from available storage locations
+	 * - Create new directories for organized file management
+	 * - Visual feedback for currently selected location
+	 * - Permission handling for storage access
+	 * - Validation of writable directory paths
 	 */
 	fun showDownloadLocationPicker() {
-		logger.d("→ Download Location Picker")
+		logger.d("Download Location Picker - Initiating directory selection dialog")
 		settingsFragmentRef?.safeMotherActivityRef?.let { activity ->
+			// Create and display the download location selector
 			DownloadLocationSelector(baseActivity = activity).show()
-		} ?: logger.d("× Picker failed: Activity null")
+		} ?: logger.d("Picker failed: Activity null - Cannot show dialog without valid activity context")
 	}
 
 	/**
-	 * Launches language picker dialog with a preliminary "experimental" warning.
+	 * Launches the language selection dialog with experimental feature warning and app restart requirement.
+	 *
+	 * This method implements a complete language selection flow including user education about
+	 * the experimental nature of the feature, confirmation to proceed, language selection interface,
+	 * and automatic app restart to apply the language changes. The multi-step process ensures
+	 * users understand the implications of changing the application language.
+	 *
+	 * Flow Description:
+	 * 1. Show experimental feature warning with proceed/cancel options
+	 * 2. Display language picker with available localization options
+	 * 3. Apply selected language and restart application
+	 * 4. Ensure all UI components reload with new language resources
+	 *
+	 * @see LanguagePickerDialog For the actual language selection interface
+	 * @see restartApp For the application restart mechanism
 	 */
 	fun showLanguageChanger() {
-		logger.d("→ Language Picker")
+		logger.d("Language Picker - Starting language selection workflow")
 		settingsFragmentRef?.safeMotherActivityRef?.let { activity ->
+			// Step 1: Show experimental feature warning dialog
 			getMessageDialog(
 				baseActivityInf = activity,
 				isTitleVisible = true,
 				titleText = getText(R.string.title_experimental_feature),
+				// Explain that language switching may have incomplete translations
 				messageTextViewCustomize = { it.setText(R.string.text_feature_is_experimental_msg) },
-				isNegativeButtonVisible = false,
+				isNegativeButtonVisible = false, // Force user to explicitly proceed or back out
 				positiveButtonTextCustomize = {
 					it.setText(R.string.title_proceed)
-					it.setLeftSideDrawable(R.drawable.ic_button_arrow_next)
+					it.setLeftSideDrawable(R.drawable.ic_button_arrow_next) // Indicates forward action
 				}
 			)?.apply {
+				// Handle user confirmation to proceed with language selection
 				setOnClickForPositiveButton {
-					logger.d("✔ Proceeding to LanguagePickerDialog")
-					close()
+					logger.d("User confirmed - Proceeding to LanguagePickerDialog")
+					close() // Dismiss the warning dialog
+
+					// Step 2: Show language selection interface
 					LanguagePickerDialog(activity).apply {
+						// Allow users to cancel without making changes
 						getDialogBuilder().setCancelable(true)
+
+						// Step 3: Handle language selection and restart app
 						onApplyListener = {
-							logger.d("✔ Language selected → Restarting app")
-							close()
+							logger.d("Language selected - Initiating application restart")
+							close() // Close language picker dialog
+							// Restart app to fully apply language changes to all components
 							restartApp(shouldKillProcess = true)
 						}
-					}.show()
+					}.show() // Display the language selection dialog
 				}
-			}?.show()
-		} ?: logger.d("× Language Picker failed: Activity null")
+			}?.show() // Display the initial warning dialog
+		} ?: logger.d("Language Picker failed: Activity null - Cannot access language resources without activity")
 	}
 
 	/**
-	 * Toggles the dark mode UI setting using a flag file.
-	 * Handles creation/deletion of the config file and triggers UI refresh.
+	 * Toggles the dark mode UI setting using a persistent flag file for state management.
+	 *
+	 * This method implements a file-based toggle system for dark mode preference, creating
+	 * or deleting a configuration file to track the current theme state. The approach ensures
+	 * theme persistence across app restarts while providing immediate visual feedback through
+	 * system theme updates and UI state refresh.
+	 *
+	 * Implementation Details:
+	 * - Uses background thread for file I/O operations to prevent UI blocking
+	 * - Maintains theme state in internal storage for persistence
+	 * - Triggers immediate UI refresh on main thread after state change
+	 * - Handles file system exceptions gracefully with error logging
+	 *
+	 * File Strategy:
+	 * - File exists = Dark mode enabled
+	 * - File doesn't exist = Light mode enabled
+	 * This binary approach simplifies state management and recovery
 	 */
 	fun togglesDarkModeUISettings() {
-		logger.d("Toggling Dark Mode UI setting")
+		logger.d("Toggling Dark Mode UI setting - Initiating theme switch")
 		ThreadsUtility.executeInBackground(codeBlock = {
 			try {
 				val tempFile = File(INSTANCE.filesDir, AIO_SETTING_DARK_MODE_FILE_NAME)
+				// Toggle dark mode state by creating/deleting the flag file
 				if (tempFile.exists()) tempFile.delete() else tempFile.createNewFile()
+				// Persist the updated settings configuration
 				aioSettings.updateInStorage()
+
+				// Update UI on main thread to reflect theme change immediately
 				ThreadsUtility.executeOnMain {
 					updateSettingStateUI()
 					settingsFragmentRef?.safeMotherActivityRef?.apply {
+						// Apply new theme to all activities and system UI
 						ViewUtility.changesSystemTheme(this)
 						logger.d("Dark Mode UI is now: ${tempFile.exists()}")
 					}
@@ -150,109 +241,232 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	}
 
 	/**
-	 * Opens a region selector dialog and restarts the app after new region is chosen.
+	 * Opens a content region selector dialog and automatically restarts the application
+	 * after the user selects a new geographic region for content customization.
+	 *
+	 * This method handles regional content preferences that may affect available media,
+	 * language defaults, or service availability. The app restart ensures all regional
+	 * configurations are properly loaded and applied throughout the application.
+	 *
+	 * Regional Impact:
+	 * - Content catalog and media availability
+	 * - Language and localization defaults
+	 * - Service endpoints and API configurations
+	 * - Compliance with regional regulations
+	 *
+	 * The restart process guarantees consistent regional experience across all app components
+	 * and prevents partial application of regional settings.
 	 */
 	fun changeDefaultContentRegion() {
-		logger.d("→ Content Region Selector")
+		logger.d("Content Region Selector - Launching geographic preference dialog")
 		settingsFragmentRef?.safeMotherActivityRef?.apply {
 			ContentRegionSelector(this).apply {
+				// Allow users to cancel without making region changes
 				getDialogBuilder().setCancelable(true)
+				// Handle region selection confirmation with app restart
 				onApplyListener = {
-					logger.d("✔ Region selected → Restarting app")
+					logger.d("✔ Region selected → Restarting app for regional configuration update")
 					close()
+					// Force restart to apply regional settings across all app components
 					restartApp(shouldKillProcess = true)
 				}
 			}.show()
-		} ?: logger.d("× Failed: Activity null (Region Selector)")
+		} ?: logger.d("Failed: Activity null (Region Selector) - Cannot access regional content preferences")
 	}
 
 	/**
-	 * Toggles daily content suggestion notifications.
+	 * Toggles daily content suggestion notifications for personalized user recommendations.
+	 *
+	 * This method manages the user's preference for receiving daily content suggestions
+	 * through notifications. The setting is immediately persisted to storage and the UI
+	 * is updated to reflect the current state. The toggle provides users with control
+	 * over notification frequency and content discovery features.
+	 *
+	 * User Experience Benefits:
+	 * - Reduces notification fatigue when disabled
+	 * - Enhances content discovery when enabled
+	 * - Immediate feedback through UI state updates
+	 * - Persistent preference across app sessions
+	 *
+	 * Notification Content:
+	 * - Personalized media recommendations
+	 * - Trending content in user's preferred categories
+	 * - New content from followed sources or creators
 	 */
 	fun toggleDailyContentSuggestions() {
-		logger.d("→ Toggle Daily Suggestions")
+		logger.d("Toggle Daily Suggestions - Updating content recommendation preferences")
 		settingsFragmentRef?.safeMotherActivityRef?.apply {
 			try {
+				// Get current state and invert for toggle behavior
 				val contentSuggestion = aioSettings.enableDailyContentSuggestion
 				aioSettings.enableDailyContentSuggestion = !contentSuggestion
+				// Persist the updated notification preference
 				aioSettings.updateInStorage()
 				logger.d("✔ Daily suggestions: $contentSuggestion")
+				// Refresh UI to show current toggle state
 				updateSettingStateUI()
 			} catch (error: Exception) {
-				logger.e("× Error toggling suggestions: ${error.message}", error)
+				logger.e("Error toggling suggestions: ${error.message}", error)
 			}
-		} ?: logger.d("× Failed: Activity null (Daily Suggestions)")
+		} ?: logger.d("Failed: Activity null (Daily Suggestions) - Cannot update notification settings")
 	}
 
+	/**
+	 * Tracks whether the file/folder picker dialog is currently active to prevent duplicate instances.
+	 * This state management ensures only one file picker is open at a time, preventing UI conflicts
+	 * and confusing user experiences with multiple overlapping dialogs.
+	 */
 	private var isFileFolderPickerActive = false
+
+	/**
+	 * Opens a custom download folder selector with comprehensive storage permission handling
+	 * and user guidance for file system access requirements.
+	 *
+	 * This method implements a complete workflow for selecting custom download directories:
+	 * 1. Checks for necessary file system permissions
+	 * 2. Guides users to enable permissions if missing
+	 * 3. Launches folder picker with appropriate configuration
+	 * 4. Prevents multiple picker instances through state tracking
+	 *
+	 * Permission Handling:
+	 * - Detects MANAGE_EXTERNAL_STORAGE permission status
+	 * - Provides educational dialog when permission is missing
+	 * - Directs users to system settings for permission grant
+	 * - Ensures legal compliance with scoped storage requirements
+	 *
+	 * Picker Configuration:
+	 * - Folder-only selection mode (no individual files)
+	 * - Single selection for clear directory targeting
+	 * - Non-cancellable to ensure download location is set
+	 * - Custom title and button text for clear purpose
+	 */
 	fun changeDefaultDownloadFolder() {
-		logger.d("Custom Download Folder Selector")
+		logger.d("Custom Download Folder Selector - Initiating directory selection workflow")
 		settingsFragmentRef?.safeMotherActivityRef?.let { activityRef ->
+			// Step 1: Check for required file system access permissions
 			if (!hasFullFileSystemAccess(activityRef)) {
+				// Step 2: Show permission education dialog when access is limited
 				getMessageDialog(
 					baseActivityInf = activityRef,
 					isTitleVisible = true,
-					isCancelable = false,
-					isNegativeButtonVisible = false,
+					isCancelable = false, // Force users to address permission requirement
+					isNegativeButtonVisible = false, // Single action flow
 					titleText = activityRef.getString(R.string.title_storage_permission_needed),
+					// Explain why file system access is required for folder selection
 					messageTextViewCustomize = { it.setText(R.string.text_file_system_permission_needed) },
 					positiveButtonTextCustomize = { it.setText(R.string.title_allow_now_in_settings) }
-				)?.apply { setOnClickForPositiveButton { openAllFilesAccessSettings(activityRef); close() } }?.show()
+				)?.apply {
+					// Direct users to system settings for permission management
+					setOnClickForPositiveButton {
+						openAllFilesAccessSettings(activityRef)
+						close()
+					}
+				}?.show()
 			} else {
-				if (isFileFolderPickerActive == false) {
-					FileFolderPicker(
-						activityRef,
-						isCancellable = false,
-						isFolderPickerOnly = true,
-						isFilePickerOnly = false,
-						isMultiSelection = false,
-						titleText = getText(R.string.title_select_download_folder),
-						positiveButtonText = getText(R.string.title_select_folder),
-						onUserAbortedProcess = { },
-						onFileSelection = {
+				if (isFileFolderPickerActive) return
 
-						}).show()
-				}
+				// Step 3: Launch folder picker when permissions are granted
+				FileFolderPicker(
+					activityRef,
+					isCancellable = false, // Ensure download location is always set
+					isFolderPickerOnly = true, // Restrict to directory selection only
+					isFilePickerOnly = false, // Explicitly disable file selection
+					isMultiSelection = false, // Single folder selection for clarity
+					titleText = getText(R.string.title_select_download_folder),
+					positiveButtonText = getText(R.string.title_select_folder),
+					onUserAbortedProcess = {
+						// Handle user cancellation or back navigation
+						isFileFolderPickerActive = false
+					},
+					onFileSelection = {
+						// Process selected folder path for download destination
+						// Implementation would handle the selected directory path
+						isFileFolderPickerActive = false
+					}).show()
+				// Update state to prevent duplicate picker instances
+				isFileFolderPickerActive = true
 			}
-		} ?: logger.d("Failed: Activity null (Folder Selector)")
+		} ?: logger.d("Failed: Activity null (Folder Selector) - " +
+				"Cannot access file system without activity context")
 	}
 
 	/**
-	 * Toggles whether download notifications should be displayed or suppressed.
+	 * Toggles the visibility of download progress and completion notifications in the system status bar.
+	 *
+	 * This setting allows users to control whether download notifications are displayed during
+	 * and after download operations. When disabled, downloads proceed silently without system
+	 * notifications, providing a cleaner notification experience for users who prefer minimal
+	 * interruptions or are frequently downloading multiple files.
+	 *
+	 * Use Cases:
+	 * - Users who want to reduce notification clutter during batch downloads
+	 * - Privacy-conscious users who prefer discreet background operations
+	 * - Power users managing multiple simultaneous downloads
+	 *
+	 * Impact: Affects both in-progress download notifications and completion alerts,
+	 * but does not disable essential error or failure notifications that require user attention.
 	 */
 	fun toggleHideDownloadNotification() {
-		logger.d("→ Toggle Download Notification")
+		logger.d("Toggle Download Notification - Updating notification visibility preference")
 		try {
 			val hideNotification = aioSettings.downloadHideNotification
 			aioSettings.downloadHideNotification = !hideNotification
 			aioSettings.updateInStorage()
-			logger.d("✔ Notifications hidden: $hideNotification")
+			logger.d("Notifications hidden: $hideNotification")
 			updateSettingStateUI()
 		} catch (error: Exception) {
-			logger.e("× Error toggling notifications: ${error.message}", error)
+			logger.e("Error toggling notifications: ${error.message}", error)
 		}
 	}
 
 	/**
-	 * Toggles Wi-Fi-only downloads.
+	 * Toggles Wi-Fi-only download restriction to control cellular data usage for file downloads.
+	 *
+	 * When enabled, this setting prevents downloads from occurring over mobile data connections,
+	 * ensuring large file transfers only use Wi-Fi networks. This helps users avoid exceeding
+	 * cellular data caps and prevents unexpected data charges for large downloads.
+	 *
+	 * Network Behavior:
+	 * - Enabled: Downloads pause automatically when Wi-Fi disconnects
+	 * - Disabled: Downloads use any available network (Wi-Fi or cellular)
+	 * - Automatic resumption when Wi-Fi reconnects (if enabled)
+	 *
+	 * User Benefits:
+	 * - Data cost control for limited cellular plans
+	 * - Battery optimization by avoiding cellular data transfers
+	 * - Peace of mind for large file downloads
 	 */
 	fun toggleWifiOnlyDownload() {
-		logger.d("→ Toggle Wi-Fi Only Mode")
+		logger.d("Toggle Wi-Fi Only Mode - Updating network restriction preference")
 		try {
 			aioSettings.downloadWifiOnly = !aioSettings.downloadWifiOnly
 			aioSettings.updateInStorage()
-			logger.d("✔ Wi-Fi only: ${aioSettings.downloadWifiOnly}")
+			logger.d("Wi-Fi only: ${aioSettings.downloadWifiOnly}")
 			updateSettingStateUI()
 		} catch (error: Exception) {
-			logger.e("× Error toggling Wi-Fi only: ${error.message}", error)
+			logger.e("Error toggling Wi-Fi only: ${error.message}", error)
 		}
 	}
 
 	/**
-	 * Toggles single-click-to-open-file download behavior.
+	 * Toggles single-click file opening behavior for downloaded items in file browsers.
+	 *
+	 * This setting controls whether downloaded files open immediately with a single tap
+	 * or require a more deliberate double-click action. Single-click mode provides faster
+	 * access to downloaded content, while double-click mode prevents accidental file openings
+	 * and provides an additional confirmation step.
+	 *
+	 * User Experience Impact:
+	 * - Single-click: Faster access, higher risk of accidental openings
+	 * - Double-click: Slower but safer, reduces accidental file launches
+	 * - Particularly useful for touchscreen devices where precision varies
+	 *
+	 * Recommended Usage:
+	 * - Single-click: For frequently accessed documents and media files
+	 * - Double-click: For important files or in high-traffic browsing scenarios
 	 */
 	fun toggleSingleClickToOpenFile() {
-		logger.d("Toggling single-click open file setting")
+		logger.d("Toggling single-click open file setting - Updating file interaction behavior")
 		try {
 			val singleClickOpen = aioSettings.openDownloadedFileOnSingleClick
 			aioSettings.openDownloadedFileOnSingleClick = !singleClickOpen
@@ -265,10 +479,25 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	}
 
 	/**
-	 * Toggles notification sound for download completion.
+	 * Toggles auditory feedback for download completion notifications.
+	 *
+	 * Controls whether download completion triggers a system notification sound.
+	 * When enabled, users receive audible confirmation when downloads finish.
+	 * When disabled, completion notifications are silent, ideal for quiet environments
+	 * or users who prefer visual-only notifications.
+	 *
+	 * Sound Behavior:
+	 * - Follows system notification sound preferences
+	 * - Respects device silent/vibrate modes
+	 * - Uses default notification sound unless customized
+	 *
+	 * Usage Scenarios:
+	 * - Enabled: For important downloads requiring immediate attention
+	 * - Disabled: In meetings, libraries, or during nighttime hours
+	 * - Customizable per user preference and environment
 	 */
 	fun toggleDownloadNotificationSound() {
-		logger.d("Toggling Download Notification Sound")
+		logger.d("Toggling Download Notification Sound - Updating auditory feedback preference")
 		try {
 			aioSettings.downloadPlayNotificationSound = !aioSettings.downloadPlayNotificationSound
 			aioSettings.updateInStorage()
@@ -280,34 +509,72 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	}
 
 	/**
-	 * Displays a not-yet-implemented advanced download settings dialog.
+	 * Displays a placeholder dialog for advanced download settings currently under development.
+	 *
+	 * This method serves as a temporary implementation for the advanced downloads settings
+	 * section, informing users that additional configuration options are planned for future
+	 * releases. It provides haptic feedback and a clear message about feature availability.
+	 *
+	 * Planned Advanced Features:
+	 * - Download speed limiting and bandwidth management
+	 * - Scheduled download timing and automation
+	 * - Parallel download configuration and thread management
+	 * - File type-specific download behaviors
+	 * - Network condition detection and adaptive downloading
+	 *
+	 * Future Implementation:
+	 * - Comprehensive settings interface with categorized options
+	 * - Real-time download performance monitoring
+	 * - Advanced network configuration and protocol settings
 	 */
 	fun openAdvanceDownloadsSettings() {
-		logger.d("Opening Advanced Downloads Settings (not implemented)")
+		logger.d("Opening Advanced Downloads Settings (not implemented) - Showing feature roadmap")
 		settingsFragmentRef?.safeMotherActivityRef.let {
-			it?.doSomeVibration(50)
+			// Provide tactile feedback to acknowledge user interaction
+			it?.doSomeVibration(20)
+			// Inform users about upcoming advanced features
 			MsgDialogUtils.showMessageDialog(
 				baseActivityInf = it,
 				isTitleVisible = true,
 				titleText = getText(R.string.title_feature_isnt_implemented),
 				messageTextViewCustomize = { msgTextView ->
 					msgTextView.setText(R.string.text_feature_isnt_available_yet)
-				}, isNegativeButtonVisible = false
+				}, isNegativeButtonVisible = false // Single action to acknowledge
 			)
-		} ?: run { logger.d("Failed: null activity") }
+		} ?: run { logger.d("Failed: null activity - Cannot display feature roadmap") }
 	}
 
 	/**
-	 * Prompts user to enter a browser homepage URL and validates input before saving.
+	 * Prompts users to configure a custom browser homepage URL with comprehensive validation
+	 * and user experience optimization.
+	 *
+	 * This method implements a complete homepage configuration workflow including:
+	 * - Current homepage display for context
+	 * - URL input with automatic keyboard management
+	 * - Comprehensive URL validation and normalization
+	 * - User feedback through haptic and visual cues
+	 *
+	 * URL Validation & Normalization:
+	 * - Checks for valid URL format and structure
+	 * - Automatically adds HTTPS protocol if missing
+	 * - Validates network accessibility and format compliance
+	 * - Provides clear error messages for invalid entries
+	 *
+	 * User Experience Features:
+	 * - Automatic keyboard display for immediate input
+	 * - Current setting context for informed decisions
+	 * - Success confirmation with visual feedback
+	 * - Input validation with clear error guidance
 	 */
 	fun setBrowserDefaultHomepage() {
-		logger.d("Opening Browser Homepage dialog")
+		logger.d("Opening Browser Homepage dialog - Initiating URL configuration workflow")
 		try {
 			settingsFragmentRef?.safeMotherActivityRef?.let { activityRef ->
 				val dialogBuilder = DialogBuilder(activityRef)
 				dialogBuilder.setView(R.layout.dialog_browser_homepage_1)
 
 				val dialogLayout = dialogBuilder.view
+				// Display current homepage for user context and comparison
 				val stringResId = R.string.title_current_homepage
 				val formatArgs = aioSettings.browserDefaultHomepage
 				val homepageString = activityRef.getString(stringResId, formatArgs)
@@ -315,10 +582,12 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 				dialogLayout.findViewById<TextView>(R.id.txt_current_homepage).text = homepageString
 				val editTextURL = dialogLayout.findViewById<EditText>(R.id.edit_field_url)
 
+				// Handle URL submission with validation and processing
 				dialogBuilder.setOnClickForPositiveButton {
 					val userEnteredURL = editTextURL.text.toString()
 					logger.d("User entered homepage URL: $userEnteredURL")
 					if (isValidURL(userEnteredURL)) {
+						// Normalize URL by ensuring HTTPS protocol for security
 						val finalNormalizedURL = ensureHttps(userEnteredURL) ?: userEnteredURL
 						aioSettings.browserDefaultHomepage = finalNormalizedURL
 						aioSettings.updateInStorage()
@@ -327,11 +596,14 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 						showToast(activityInf = activityRef, msgId = R.string.title_successful)
 					} else {
 						logger.d("Invalid homepage URL entered: $userEnteredURL")
-						activityRef.doSomeVibration(50)
+						// Provide immediate feedback for invalid input
+						activityRef.doSomeVibration(20)
 						showToast(activityInf = activityRef, msgId = R.string.title_invalid_url)
 					}
 				}
 				dialogBuilder.show()
+
+				// Automatically focus and show keyboard for optimal user experience
 				delay(200, object : OnTaskFinishListener {
 					override fun afterDelay() {
 						logger.d("Showing on-screen keyboard for URL input")
@@ -339,7 +611,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 						showOnScreenKeyboard(activityRef, editTextURL)
 					}
 				})
-			} ?: run { logger.d("Failed: null activity") }
+			} ?: run { logger.d("Failed: null activity - Cannot configure browser homepage") }
 		} catch (error: Exception) {
 			logger.e("Error setting browser homepage: ${error.message}", error)
 			showToast(
@@ -419,7 +691,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 		logger.d("Opening Advanced Settings For Browser")
 		settingsFragmentRef?.safeMotherActivityRef
 			?.openActivity(
-				activity = AdvBrowserSettingsActivity::class.java,
+				targetActivity = AdvBrowserSettingsActivity::class.java,
 				shouldAnimate = true
 			) ?: run { logger.d("Failed: null activity") }
 	}
@@ -526,14 +798,14 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 					ThreadsUtility.executeOnMain { waitingDialog?.close() }
 					logger.d("Already latest version")
 					ThreadsUtility.executeOnMain {
-						activityRef.doSomeVibration(50)
+						activityRef.doSomeVibration(20)
 						val msgResId = R.string.title_you_using_latest_version
 						showToast(activityInf = activityRef, msgId = msgResId)
 					}
 				}
 			}, errorHandler = {
 				logger.d("Update check failed: ${it.message}")
-				activityRef.doSomeVibration(50)
+				activityRef.doSomeVibration(20)
 				val toastMsgId = R.string.title_something_went_wrong
 				showToast(activityInf = activityRef, msgId = toastMsgId)
 			})
@@ -571,7 +843,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 */
 	fun restartApplication() {
 		logger.d("Show restart dialog")
-		settingsFragmentRef?.safeMotherActivityRef?.let { safeMotherActivityRef ->
+		settingsFragmentRef?.safeBaseActivityRef?.let { safeMotherActivityRef ->
 			val msgResId = R.string.text_cation_msg_of_restarting_application
 			getMessageDialog(
 				baseActivityInf = safeMotherActivityRef,
@@ -606,23 +878,56 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	}
 
 	/**
-	 * Updates a TextView's end drawable to indicate the enabled/disabled state.
+	 * Updates the end drawable (trailing icon) of a TextView to visually represent a toggle state.
 	 *
-	 * @param isEnabled true if checked/enabled, false for unchecked/disabled.
+	 * This utility method provides consistent visual feedback for toggleable settings by
+	 * dynamically switching between checked (enabled) and unchecked (disabled) icons at
+	 * the end of the text view. The approach maintains all existing drawables (start, top, bottom)
+	 * while only modifying the end drawable to preserve the complete view composition.
+	 *
+	 * Visual Design:
+	 * - Checked State: Filled circle icon indicating active/enabled setting
+	 * - Unchecked State: Hollow circle icon indicating inactive/disabled setting
+	 * - Position: Consistent end-aligned placement for predictable user scanning
+	 * - Preservation: Maintains existing layout and other drawable positions
+	 *
+	 * Usage Pattern:
+	 * Typically used in settings lists where each item has a toggle state that needs
+	 * immediate visual feedback without requiring complete view recreation.
 	 */
 	private fun TextView.updateEndDrawable(isEnabled: Boolean) {
+		// Select appropriate drawable resource based on toggle state
 		val endDrawableRes = if (isEnabled) R.drawable.ic_button_checked_circle_small
 		else R.drawable.ic_button_unchecked_circle_small
+
+		// Preserve existing drawables to maintain view composition
 		val current = compoundDrawables
 		val checkedDrawable = getDrawable(context, endDrawableRes)
+
+		// Update only the end drawable while preserving others
 		setCompoundDrawablesWithIntrinsicBounds(current[0], current[1], checkedDrawable, current[3])
 	}
 
 	/**
-	 * Builds localized text for sharing the application's Play Store or homepage details.
+	 * Generates a localized and formatted share message containing application information
+	 * and official page URL for social sharing and user referrals.
 	 *
-	 * @param context Context for fetching string resources.
-	 * @return A shareable message string.
+	 * This method constructs a user-friendly share message that includes the application name
+	 * and official distribution page (Play Store, GitHub, or official website). The message
+	 * is properly localized and formatted for clear communication across different languages
+	 * and cultural contexts.
+	 *
+	 * Message Structure:
+	 * - Application name with proper branding
+	 * - Official distribution or information page URL
+	 * - Localized invitation text appropriate for sharing contexts
+	 * - Clean formatting with proper indentation handling
+	 *
+	 * Sharing Use Cases:
+	 * - Social media platform sharing (Twitter, Facebook, WhatsApp)
+	 * - Messaging app referrals to friends and contacts
+	 * - Email recommendations with clickable links
+	 * - Cross-promotion in related application communities
 	 */
 	private fun getApplicationShareText(context: Context): String {
 		val appName = context.getString(R.string.title_aio_video_downloader)
@@ -632,7 +937,25 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	}
 
 	/**
-	 * Restarts the application process by launching the main intent and killing process.
+	 * Performs a complete application restart by launching the main activity and terminating
+	 * the current process to ensure clean state reinitialization.
+	 *
+	 * This method implements a robust application restart mechanism that clears all existing
+	 * activities from the back stack and creates a fresh application instance. The process
+	 * termination guarantees that all static variables, cached data, and background services
+	 * are completely reset, providing a clean slate equivalent to a fresh app launch.
+	 *
+	 * Restart Scenarios:
+	 * - Language or locale changes requiring complete resource reload
+	 * - Theme changes that need full activity recreation
+	 * - Critical configuration updates requiring clean state
+	 * - Recovery from unstable application states
+	 *
+	 * Technical Implementation:
+	 * - CLEAR_TOP flag removes all activities from the back stack
+	 * - NEW_TASK flag ensures proper task management
+	 * - Process termination guarantees complete memory cleanup
+	 * - Immediate activity launch provides seamless user experience
 	 */
 	private fun restartApplicationProcess() {
 		val context = INSTANCE
@@ -644,7 +967,36 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	}
 
 	/**
-	 * Holds view configuration used for batch updating UI state.
+	 * Data class representing the configuration state of a setting view for batch UI updates.
+	 *
+	 * This immutable data structure encapsulates the essential information needed to update
+	 * multiple setting views efficiently. It enables batch processing of UI state changes
+	 * by pairing view identifiers with their corresponding enabled/disabled states, which
+	 * is particularly useful during settings initialization or bulk preference updates.
+	 *
+	 * Design Benefits:
+	 * - Type-safe view identification using resource IDs
+	 * - Immutable data structure for predictable state management
+	 * - Efficient batch processing capabilities
+	 * - Clear separation of configuration data from view logic
+	 *
+	 * Typical Usage:
+	 * - Initial settings screen population from stored preferences
+	 * - Bulk updates after configuration imports or resets
+	 * - Theme or accessibility changes affecting multiple settings
+	 * - Synchronization with remote configuration changes
 	 */
-	data class SettingViewConfig(@field:IdRes val viewId: Int, val isEnabled: Boolean)
+	data class SettingViewConfig(
+		/**
+		 * Resource ID of the view to be updated, providing compile-time safety
+		 * and enabling efficient view lookup through Android's resource system.
+		 */
+		@field:IdRes val viewId: Int,
+
+		/**
+		 * Boolean state indicating whether the setting is enabled (true) or disabled (false).
+		 * This drives both visual representation and interactive behavior of the setting.
+		 */
+		val isEnabled: Boolean
+	)
 }

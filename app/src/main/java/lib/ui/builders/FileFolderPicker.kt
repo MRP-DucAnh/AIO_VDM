@@ -19,13 +19,13 @@ class FileFolderPicker(
 	private val onFileSelection: (List<String>) -> Unit = {}) {
 
 	private val logger = LogHelperUtils.from(javaClass)
-	private val safeBaseActivityRef = WeakReference(baseActivity).get()
+	private val activityWeakReference = WeakReference(baseActivity)
 	private var hasUserAbortedTheProcess = false
 	private val selectedFiles = mutableListOf<String>()
 	private var dialogBuilder: DialogBuilder? = null
 
 	init {
-		dialogBuilder = DialogBuilder(baseActivity)
+		dialogBuilder = DialogBuilder(getSafeBaseActivity())
 		dialogBuilder?.apply { initializeDialogComponents() }
 
 	}
@@ -36,6 +36,7 @@ class FileFolderPicker(
 
 	fun close() {
 		dialogBuilder?.close()
+		dialogBuilder = null
 	}
 
 	private fun DialogBuilder.initializeDialogComponents() {
@@ -70,4 +71,6 @@ class FileFolderPicker(
 			positiveButtonTextView.text = positiveButtonText
 		}
 	}
+
+	private fun getSafeBaseActivity(): BaseActivity? = activityWeakReference.get()
 }

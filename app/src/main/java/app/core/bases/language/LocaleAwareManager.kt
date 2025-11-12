@@ -34,9 +34,7 @@ import java.util.Locale
  * broader Android version compatibility. Modern alternatives like setLocales()
  * are only available in API 24+, while this approach supports older devices.
  */
-class LocaleAwareManager(context: Context) {
-
-	private val appContext = context.applicationContext
+class LocaleAwareManager(private val context: Context) {
 
 	/**
 	 * SharedPreferences instance for persisting language preferences.
@@ -47,8 +45,7 @@ class LocaleAwareManager(context: Context) {
 	 * **Commit vs Apply**: This implementation uses commit=true for immediate writing
 	 * to ensure language changes are persisted before configuration updates.
 	 */
-	private val preferences: SharedPreferences =
-		getDefaultSharedPreferences(appContext)
+	private val preferences: SharedPreferences = getDefaultSharedPreferences(context)
 
 	/**
 	 * Applies the currently saved locale to the application context.
@@ -140,12 +137,12 @@ class LocaleAwareManager(context: Context) {
 		Locale.setDefault(locale)
 
 		// Create configuration with new locale settings
-		val config = Configuration(appContext.resources.configuration)
+		val config = Configuration(context.resources.configuration)
 		config.setLocale(locale)          // Apply language to resources
 		config.setLayoutDirection(locale) // Apply RTL support if needed
 
 		// Return context that will use this configuration for all resource access
-		return appContext.createConfigurationContext(config)
+		return context.createConfigurationContext(config)
 	}
 
 	companion object {

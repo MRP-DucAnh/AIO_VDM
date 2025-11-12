@@ -5,7 +5,7 @@ import android.content.pm.PackageManager.GET_META_DATA
 import android.content.pm.PackageManager.NameNotFoundException
 import android.content.res.Configuration
 import androidx.appcompat.app.AppCompatActivity
-import app.core.bases.language.LanguageAwareApplication.Companion.localeAwareManager
+import app.core.AIOApp.Companion.INSTANCE
 import lib.process.LogHelperUtils
 
 /**
@@ -58,7 +58,7 @@ abstract class LanguageAwareActivity : AppCompatActivity() {
 	 * @param context The original context provided by the Android system
 	 */
 	override fun attachBaseContext(context: Context) {
-		val wrappedContext = localeAwareManager?.setLocale() ?: context
+		val wrappedContext = INSTANCE.localeAwareManager?.setLocale() ?: context
 		super.attachBaseContext(wrappedContext)
 	}
 
@@ -135,7 +135,7 @@ abstract class LanguageAwareActivity : AppCompatActivity() {
 	 *         localeAwareManager is unavailable or language change failed
 	 */
 	fun setNewLocale(language: String): Boolean {
-		localeAwareManager?.setNewLocale(language) ?: return false
+		INSTANCE.localeAwareManager?.setNewLocale(language) ?: return false
 		recreate()
 		return true
 	}
