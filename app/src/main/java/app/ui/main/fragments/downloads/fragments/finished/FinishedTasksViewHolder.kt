@@ -71,14 +71,17 @@ class FinishedTasksViewHolder(val layout: View) {
 		dataModel: DownloadDataModel,
 		eventListener: FinishedTasksClickEvents
 	) {
+		logger.d("updateView: Starting for download ${dataModel.downloadId}")
 		clearResources()
 		currentCoroutineJob = coroutineScope.launch {
+			logger.d("updateView: Coroutine started for ${dataModel.downloadId}")
 			refreshDownloadProgress(dataModel)
 			setupItemClickEventListeners(eventListener, dataModel)
 		}
 	}
 
 	fun clearResources() {
+		logger.d("clearResources: Cleaning up ViewHolder resources")
 		try {
 			currentCoroutineJob?.cancel()
 			coroutineScope.coroutineContext.cancelChildren()
@@ -87,6 +90,7 @@ class FinishedTasksViewHolder(val layout: View) {
 			if (rootConLayout.context is BaseActivity) {
 				val activity = rootConLayout.context as BaseActivity
 				if (activity.isDestroyed || !activity.isActivityRunning()) {
+					logger.d("clearResources: Activity not running, skipping Glide cleanup")
 					return
 				}
 			}
@@ -96,12 +100,14 @@ class FinishedTasksViewHolder(val layout: View) {
 
 			thumbImgView.setImageDrawable(null)
 			faviconImgView.setImageDrawable(null)
+			logger.d("clearResources: Cleanup completed successfully")
 		} catch (error: Exception) {
-			error.printStackTrace()
+			logger.e("clearResources: Error during cleanup - ${error.message}", error)
 		}
 	}
 
 	fun cancelAll() {
+		logger.d("cancelAll: Cancelling entire coroutine scope")
 		coroutineScope.cancel()
 	}
 
@@ -110,34 +116,49 @@ class FinishedTasksViewHolder(val layout: View) {
 		dataModel: DownloadDataModel
 	) {
 		withContext(Dispatchers.Main) {
-			if (!isActive) return@withContext
+			if (!isActive) {
+				logger.d("setupItemClickEventListeners: Coroutine not active")
+				return@withContext
+			}
+			logger.d("setupItemClickEventListeners: Setting up listeners for ${dataModel.downloadId}")
 			rootConLayout.apply {
 				isClickable = true
-				setOnClickListener { eventListener.onFinishedDownloadClick(dataModel) }
-				setOnLongClickListener { eventListener.onFinishedDownloadLongClick(dataModel); true }
+				setOnClickListener {
+					logger.d("ClickListener: Download ${dataModel.downloadId} clicked")
+					eventListener.onFinishedDownloadClick(dataModel)
+				}
+				setOnLongClickListener {
+					logger.d("LongClickListener: Download ${dataModel.downloadId} long-clicked")
+					eventListener.onFinishedDownloadLongClick(dataModel); true
+				}
 			}
 		}
 	}
 
 	private suspend fun refreshDownloadProgress(dataModel: DownloadDataModel) {
+		logger.d("refreshDownloadProgress: Starting UI refresh for ${dataModel.downloadId}")
 		updateFilesTitle(dataModel)
 		updateFilesMetaInfo(dataModel)
 		updateFaviconInfo(dataModel)
 		updateThumbnailInfo(dataModel)
 		updateFileTypeIndicator(dataModel)
 		updatePrivateFolderIndicator(dataModel)
+		logger.d("refreshDownloadProgress: Completed UI refresh for ${dataModel.downloadId}")
 	}
 
 	private suspend fun updateFilesTitle(downloadDataModel: DownloadDataModel) {
 		withContext(Dispatchers.Main) {
 			if (!isActive) return@withContext
 			titleTxtView.text = downloadDataModel.fileName
+			logger.d("updateFilesTitle: Set title to ${downloadDataModel.fileName}")
 		}
 	}
 
 	private suspend fun updateFilesMetaInfo(dataModel: DownloadDataModel) {
-		val cacheDetails = detailsCache.get(dataModel.downloadId.toString())
+		val downloadId = dataModel.downloadId.toString()
+		val cacheDetails = detailsCache.get(downloadId)
 		if (cacheDetails != null) {
+			logger.d("updateFilesMetaInfo: Cache hit for $downloadId")
 			withContext(Dispatchers.Main) {
 				if (!isActive) return@withContext
 				metadataTxtView.text = cacheDetails
@@ -146,6 +167,7 @@ class FinishedTasksViewHolder(val layout: View) {
 			return
 		}
 
+		logger.d("updateFilesMetaInfo: Cache miss for $downloadId, generating metadata")
 		val category = dataModel.getUpdatedCategoryName(true)
 		val fileSize = humanReadableSizeOf(dataModel.fileSize.toDouble())
 		val playbackTime = dataModel.mediaFilePlaybackDuration.ifEmpty {
@@ -153,6 +175,7 @@ class FinishedTasksViewHolder(val layout: View) {
 		}
 
 		if (dataModel.mediaFilePlaybackDuration.isEmpty() && playbackTime.isNotEmpty()) {
+			logger.d("updateFilesMetaInfo: Discovered playback time $playbackTime for $downloadId")
 			dataModel.mediaFilePlaybackDuration = playbackTime
 			dataModel.updateInStorage()
 		}
@@ -181,10 +204,12 @@ class FinishedTasksViewHolder(val layout: View) {
 		withContext(Dispatchers.Main) {
 			if (!isActive) return@withContext
 			if (isMedia && mediaDuration.isNotEmpty()) {
+				logger.d("updatePlaybackTimeInfo: Showing duration $mediaDuration for $fileName")
 				showView(durationConLayout, true)
 				showView(playIndicatorView, true)
 				durationTxtView.text = mediaDuration
 			} else {
+				logger.d("updatePlaybackTimeInfo: Hiding duration for $fileName")
 				playIndicatorView.visibility = View.GONE
 				durationConLayout.visibility = View.GONE
 			}
@@ -193,7 +218,12 @@ class FinishedTasksViewHolder(val layout: View) {
 
 	private fun isVideoThumbnailNotAllowed(dataModel: DownloadDataModel): Boolean {
 		val isVideoHidden = dataModel.globalSettings.downloadHideVideoThumbnail
-		return isVideo(dataModel.getDestinationDocumentFile()) && isVideoHidden
+		val isVideoFile = isVideo(dataModel.getDestinationDocumentFile())
+		val result = isVideoFile && isVideoHidden
+		if (result) {
+			logger.d("isVideoThumbnailNotAllowed: Video thumbnail hidden for privacy")
+		}
+		return result
 	}
 
 	private suspend fun updateFaviconInfo(dataModel: DownloadDataModel) {
@@ -204,6 +234,7 @@ class FinishedTasksViewHolder(val layout: View) {
 		}
 
 		if (isVideoThumbnailNotAllowed(dataModel)) {
+			logger.d("updateFaviconInfo: Using default favicon due to privacy settings")
 			withContext(Dispatchers.Main) {
 				if (!isActive) return@withContext
 				Glide.with(faviconImgView)
@@ -217,8 +248,12 @@ class FinishedTasksViewHolder(val layout: View) {
 		try {
 			aioFavicons.getFavicon(dataModel.siteReferrer)?.let { faviconFilePath ->
 				val faviconImgFile = File(faviconFilePath)
-				if (!faviconImgFile.exists() || !faviconImgFile.isFile) return
+				if (!faviconImgFile.exists() || !faviconImgFile.isFile) {
+					logger.d("updateFaviconInfo: Favicon file not found at $faviconFilePath")
+					return
+				}
 
+				logger.d("updateFaviconInfo: Loading favicon from $faviconFilePath")
 				val faviconImgURI = faviconImgFile.toUri()
 				withContext(Dispatchers.Main) {
 					if (!isActive) return@withContext
@@ -228,9 +263,9 @@ class FinishedTasksViewHolder(val layout: View) {
 						.placeholder(defaultFaviconResId)
 						.into(faviconImgView)
 				}
-			}
+			} ?: logger.d("updateFaviconInfo: No favicon available for ${dataModel.siteReferrer}")
 		} catch (error: Exception) {
-			logger.e("Error loading favicon: ${error.message}", error)
+			logger.e("updateFaviconInfo: Error loading favicon - ${error.message}", error)
 			faviconImgView.setImageResource(defaultFaviconResId)
 		}
 	}
@@ -240,7 +275,10 @@ class FinishedTasksViewHolder(val layout: View) {
 		val defaultThumb = dataModel.getThumbnailDrawableID()
 		val defaultThumbDrawable = getDrawable(INSTANCE.resources, defaultThumb, null)
 
+		logger.d("updateThumbnailInfo: Starting for ${dataModel.fileName}")
+
 		if (isVideoThumbnailNotAllowed(dataModel)) {
+			logger.d("updateThumbnailInfo: Using default thumbnail due to privacy settings")
 			withContext(Dispatchers.Main) {
 				if (!isActive) return@withContext
 				Glide.with(thumbImgView)
@@ -251,10 +289,14 @@ class FinishedTasksViewHolder(val layout: View) {
 			return
 		}
 
-		if (loadApkThumbnail(dataModel, thumbImgView, defaultThumb)) return
+		if (loadApkThumbnail(dataModel, thumbImgView, defaultThumb)) {
+			logger.d("updateThumbnailInfo: APK thumbnail loaded successfully")
+			return
+		}
 
 		val cachedThumbPath = dataModel.thumbPath
 		if (cachedThumbPath.isNotEmpty()) {
+			logger.d("updateThumbnailInfo: Loading cached thumbnail from $cachedThumbPath")
 			withContext(Dispatchers.Main) {
 				if (!isActive) return@withContext
 				loadBitmapWithGlide(thumbImgView, dataModel.thumbPath, defaultThumb)
@@ -262,6 +304,7 @@ class FinishedTasksViewHolder(val layout: View) {
 			return
 		}
 
+		logger.d("updateThumbnailInfo: Generating new thumbnail for ${dataModel.fileName}")
 		val bitmapFromFile = getThumbnailFromFile(
 			targetFile = destinationFile,
 			thumbnailUrl = dataModel.videoInfo?.videoThumbnailUrl,
@@ -269,21 +312,26 @@ class FinishedTasksViewHolder(val layout: View) {
 		)
 
 		if (bitmapFromFile != null) {
+			logger.d("updateThumbnailInfo: Thumbnail generated, processing and caching")
 			val isPortrait = bitmapFromFile.height > bitmapFromFile.width
 			val rotatedBitmap = if (isPortrait) rotateBitmap(bitmapFromFile, 270f) else bitmapFromFile
 			val thumbnailName = "${dataModel.downloadId}$THUMB_EXTENSION"
 			saveBitmapToFile(rotatedBitmap, thumbnailName)?.let { filePath ->
 				dataModel.thumbPath = filePath
 				dataModel.updateInStorage()
+				logger.d("updateThumbnailInfo: Thumbnail saved to $filePath")
 				withContext(Dispatchers.Main) {
 					if (!isActive) return@withContext
 					loadBitmapWithGlide(thumbImgView, dataModel.thumbPath, defaultThumb)
 				}
 			}
+		} else {
+			logger.d("updateThumbnailInfo: No thumbnail generated, using default")
 		}
 	}
 
 	private fun loadBitmapWithGlide(target: ImageView, filePath: String, placeHolder: Int) {
+		logger.d("loadBitmapWithGlide: Loading bitmap from $filePath")
 		val imgURI = File(filePath).toUri()
 		Glide.with(target).load(imgURI).placeholder(placeHolder).into(target)
 	}
@@ -292,13 +340,34 @@ class FinishedTasksViewHolder(val layout: View) {
 		withContext(Dispatchers.Main) {
 			if (!isActive) return@withContext
 			val icon = when {
-				isImageByName(dataModel.fileName) -> R.drawable.ic_button_images
-				isAudioByName(dataModel.fileName) -> R.drawable.ic_button_audio
-				isVideoByName(dataModel.fileName) -> R.drawable.ic_button_video
-				isDocumentByName(dataModel.fileName) -> R.drawable.ic_button_document
-				isArchiveByName(dataModel.fileName) -> R.drawable.ic_button_archives
-				isProgramByName(dataModel.fileName) -> R.drawable.ic_button_programs
-				else -> R.drawable.ic_button_file
+				isImageByName(dataModel.fileName) -> {
+					logger.d("updateFileTypeIndicator: Image file type")
+					R.drawable.ic_button_images
+				}
+				isAudioByName(dataModel.fileName) -> {
+					logger.d("updateFileTypeIndicator: Audio file type")
+					R.drawable.ic_button_audio
+				}
+				isVideoByName(dataModel.fileName) -> {
+					logger.d("updateFileTypeIndicator: Video file type")
+					R.drawable.ic_button_video
+				}
+				isDocumentByName(dataModel.fileName) -> {
+					logger.d("updateFileTypeIndicator: Document file type")
+					R.drawable.ic_button_document
+				}
+				isArchiveByName(dataModel.fileName) -> {
+					logger.d("updateFileTypeIndicator: Archive file type")
+					R.drawable.ic_button_archives
+				}
+				isProgramByName(dataModel.fileName) -> {
+					logger.d("updateFileTypeIndicator: Program file type")
+					R.drawable.ic_button_programs
+				}
+				else -> {
+					logger.d("updateFileTypeIndicator: Generic file type")
+					R.drawable.ic_button_file
+				}
 			}
 			Glide.with(fileTypeImgView).load(icon).into(fileTypeImgView)
 		}
@@ -309,8 +378,14 @@ class FinishedTasksViewHolder(val layout: View) {
 			if (!isActive) return@withContext
 			val globalSettings = dataModel.globalSettings
 			val downloadLocation = globalSettings.defaultDownloadLocation
-			val icon = if (downloadLocation == PRIVATE_FOLDER)
-				R.drawable.ic_button_lock else R.drawable.ic_button_folder
+			val isPrivate = downloadLocation == PRIVATE_FOLDER
+			val icon = if (isPrivate) {
+				logger.d("updatePrivateFolderIndicator: Private folder location")
+				R.drawable.ic_button_lock
+			} else {
+				logger.d("updatePrivateFolderIndicator: Standard folder location")
+				R.drawable.ic_button_folder
+			}
 			Glide.with(privateFolderImgView).load(icon).into(privateFolderImgView)
 		}
 	}
@@ -320,20 +395,26 @@ class FinishedTasksViewHolder(val layout: View) {
 		target: ImageView,
 		placeHolder: Int
 	): Boolean = withContext(Dispatchers.Main) {
-		if (!isActive) return@withContext false
+		if (!isActive) {
+			logger.d("loadApkThumbnail: Coroutine not active")
+			return@withContext false
+		}
 
 		val cachedThumbPath = dataModel.thumbPath
 		if (cachedThumbPath.isNotEmpty()) {
+			logger.d("loadApkThumbnail: Using cached APK thumbnail")
 			loadBitmapWithGlide(target, dataModel.thumbPath, placeHolder)
 			return@withContext true
 		}
 
 		val apkFile = dataModel.getDestinationFile()
 		if (!apkFile.exists() || !apkFile.name.endsWith(".apk", true)) {
+			logger.d("loadApkThumbnail: Not an APK file - ${apkFile.name}")
 			Glide.with(target).load(placeHolder).into(target)
 			return@withContext false
 		}
 
+		logger.d("loadApkThumbnail: Extracting APK icon from ${apkFile.name}")
 		val packageManager: PackageManager = layout.context.packageManager
 		try {
 			val packageInfo: PackageInfo? =
@@ -346,19 +427,24 @@ class FinishedTasksViewHolder(val layout: View) {
 				Glide.with(target).load(appIconDrawable)
 					.placeholder(placeHolder).into(target)
 
+				logger.d("loadApkThumbnail: APK icon loaded, caching for future use")
 				withContext(Dispatchers.IO) {
 					ViewUtility.drawableToBitmap(appIconDrawable)?.let { bmp ->
 						val thumbnailName = "${dataModel.downloadId}$THUMB_EXTENSION"
 						saveBitmapToFile(bmp, thumbnailName)?.let { filePath ->
 							dataModel.thumbPath = filePath
 							dataModel.updateInStorage()
+							logger.d("loadApkThumbnail: APK thumbnail cached to $filePath")
 						}
 					}
 				}
 				true
-			} ?: false
+			} ?: run {
+				logger.d("loadApkThumbnail: No package info found for APK")
+				false
+			}
 		} catch (error: Exception) {
-			logger.e("Error loading APK thumbnail: ${error.message}", error)
+			logger.e("loadApkThumbnail: Error extracting APK icon - ${error.message}", error)
 			target.apply {
 				scaleType = ImageView.ScaleType.FIT_CENTER
 				setPadding(0, 0, 0, 0)
