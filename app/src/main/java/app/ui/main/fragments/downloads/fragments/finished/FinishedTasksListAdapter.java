@@ -145,7 +145,10 @@ public class FinishedTasksListAdapter extends BaseAdapter {
         if (rowLayout.getTag() == null) {
             viewHolder = new FinishedTasksViewHolder(rowLayout);
             rowLayout.setTag(viewHolder);
-        } else viewHolder = (FinishedTasksViewHolder) rowLayout.getTag();
+        } else {
+			viewHolder = (FinishedTasksViewHolder) rowLayout.getTag();
+            viewHolder.clearResources();
+		}
         viewHolder.updateView(getItem(position), finishedTasksFragment);
     }
 }
