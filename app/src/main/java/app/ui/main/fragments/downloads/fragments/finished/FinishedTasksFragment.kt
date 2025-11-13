@@ -102,6 +102,15 @@ open class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIO
 		}
 	}
 
+	override fun onDestroyView() {
+		finishedTasksListAdapter.let {
+			for (i in 0 until it.count) {
+				(it.getView(i, null, null).tag as? FinishedTasksViewHolder)?.cancelAll()
+			}
+		}
+		super.onDestroyView()
+	}
+
 	/** Called when a finished download is clicked. Delegates to long-click handler. */
 	override fun onFinishedDownloadClick(downloadModel: DownloadDataModel) {
 		safeMotherActivityRef?.let {

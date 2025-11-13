@@ -22,6 +22,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import lib.device.DateTimeUtils.formatLastModifiedDate
@@ -50,7 +51,7 @@ class FinishedTasksViewHolder(val layout: View) {
 
 	private val detailsCache = object : LruCache<String, Spanned>(100) {}
 	private var currentCoroutineJob: Job? = null
-	private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+	private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
 	private val rootConLayout: RelativeLayout by lazy { layout.findViewById(R.id.button_finish_download_row) }
 	private val thumbImgView: ImageView by lazy { layout.findViewById(R.id.img_file_thumbnail) }
@@ -68,7 +69,7 @@ class FinishedTasksViewHolder(val layout: View) {
 		eventListener: FinishedTasksClickEvents
 	) {
 		clearResources()
-		currentCoroutineJob = scope.launch {
+		currentCoroutineJob = coroutineScope.launch {
 			refreshDownloadProgress(dataModel)
 			setupItemClickEventListeners(eventListener, dataModel)
 		}
@@ -76,6 +77,7 @@ class FinishedTasksViewHolder(val layout: View) {
 
 	fun clearResources() {
 		currentCoroutineJob?.cancel()
+		coroutineScope.cancel()
 		Glide.with(thumbImgView).clear(thumbImgView)
 		Glide.with(faviconImgView).clear(faviconImgView)
 		thumbImgView.setImageDrawable(null)
