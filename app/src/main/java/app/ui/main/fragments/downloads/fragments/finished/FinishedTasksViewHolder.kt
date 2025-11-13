@@ -48,9 +48,7 @@ class FinishedTasksViewHolder(val layout: View) {
 
 	private val logger = LogHelperUtils.from(javaClass)
 
-	private val maxMemory = (Runtime.getRuntime().maxMemory() / 1024).toInt()
-	private val cacheSize = maxMemory / 8 // use 1/8 of available memory
-	private val detailsCache = object : LruCache<String, Spanned>(cacheSize) {}
+	private val detailsCache = object : LruCache<String, Spanned>(100) {}
 	private var currentCoroutineJob: Job? = null
 	private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
@@ -284,7 +282,7 @@ class FinishedTasksViewHolder(val layout: View) {
 		withContext(Dispatchers.Main) {
 			val globalSettings = dataModel.globalSettings
 			val downloadLocation = globalSettings.defaultDownloadLocation
-			Glide.with(fileTypeImgView).load(
+			Glide.with(privateFolderImgView).load(
 				when (downloadLocation) {
 					PRIVATE_FOLDER -> R.drawable.ic_button_lock
 					else -> R.drawable.ic_button_folder
@@ -293,63 +291,64 @@ class FinishedTasksViewHolder(val layout: View) {
 		}
 	}
 
-	private suspend fun loadApkThumbnail(dataModel: DownloadDataModel, target: ImageView, placeHolder: Int): Boolean {
-		withContext(Dispatchers.Main) {
-			// First check if we already have a cached thumbnail
-			val cachedThumbPath = dataModel.thumbPath
-			if (cachedThumbPath.isNotEmpty()) {
-				loadBitmapWithGlide(
-					target = target,
-					filePath = dataModel.thumbPath,
-					placeHolder = placeHolder
-				)
-				return@withContext true
-			}
+	private suspend fun loadApkThumbnail(
+		dataModel: DownloadDataModel,
+		target: ImageView,
+		placeHolder: Int
+	): Boolean = withContext(Dispatchers.Main) {
+		// First check if we already have a cached thumbnail
+		val cachedThumbPath = dataModel.thumbPath
+		if (cachedThumbPath.isNotEmpty()) {
+			loadBitmapWithGlide(
+				target = target,
+				filePath = dataModel.thumbPath,
+				placeHolder = placeHolder
+			)
+			return@withContext true
+		}
 
-			val apkFile = dataModel.getDestinationFile()
-			if (!apkFile.exists() || !apkFile.name.lowercase().endsWith(suffix = ".apk")) {
-				Glide.with(target).load(placeHolder).into(target)
-				return@withContext false
-			}
+		val apkFile = dataModel.getDestinationFile()
+		if (!apkFile.exists() || !apkFile.name.lowercase().endsWith(suffix = ".apk")) {
+			Glide.with(target).load(placeHolder).into(target)
+			return@withContext false
+		}
 
-			val packageManager: PackageManager = layout.context.packageManager
-			return@withContext try {
-				val getActivities = PackageManager.GET_ACTIVITIES
-				val apkFileAbsolutePath = apkFile.absolutePath
-				val packageInfo: PackageInfo? =
-					packageManager.getPackageArchiveInfo(apkFileAbsolutePath, getActivities)
+		val packageManager: PackageManager = layout.context.packageManager
+		return@withContext try {
+			val getActivities = PackageManager.GET_ACTIVITIES
+			val apkFileAbsolutePath = apkFile.absolutePath
+			val packageInfo: PackageInfo? =
+				packageManager.getPackageArchiveInfo(apkFileAbsolutePath, getActivities)
 
-				packageInfo?.applicationInfo?.let { appInfo ->
-					appInfo.sourceDir = apkFileAbsolutePath
-					appInfo.publicSourceDir = apkFileAbsolutePath
-					val appIconDrawable: Drawable = appInfo.loadIcon(packageManager)
-					Glide.with(target).load(appIconDrawable)
-						.placeholder(placeHolder).into(target)
+			packageInfo?.applicationInfo?.let { appInfo ->
+				appInfo.sourceDir = apkFileAbsolutePath
+				appInfo.publicSourceDir = apkFileAbsolutePath
+				val appIconDrawable: Drawable = appInfo.loadIcon(packageManager)
+				Glide.with(target).load(appIconDrawable)
+					.placeholder(placeHolder).into(target)
 
-					// Save the APK icon as a thumbnail for future use
-					withContext(Dispatchers.IO) {
-						ViewUtility.drawableToBitmap(appIconDrawable)?.let {
-							val appIconBitmap = it
-							val thumbnailName = "${dataModel.downloadId}$THUMB_EXTENSION"
-							saveBitmapToFile(appIconBitmap, thumbnailName)?.let { filePath ->
-								dataModel.thumbPath = filePath
-								dataModel.updateInStorage()
-							}
+				// Save the APK icon as a thumbnail for future use
+				withContext(Dispatchers.IO) {
+					ViewUtility.drawableToBitmap(appIconDrawable)?.let {
+						val appIconBitmap = it
+						val thumbnailName = "${dataModel.downloadId}$THUMB_EXTENSION"
+						saveBitmapToFile(appIconBitmap, thumbnailName)?.let { filePath ->
+							dataModel.thumbPath = filePath
+							dataModel.updateInStorage()
 						}
 					}
-					true
-				} ?: run { false }
-			} catch (error: Exception) {
-				logger.e("Error loading APK thumbnail: ${error.message}", error)
-				target.apply {
-					scaleType = ImageView.ScaleType.FIT_CENTER
-					setPadding(0, 0, 0, 0)
-					Glide.with(target).load(placeHolder)
-						.placeholder(placeHolder).into(target)
 				}
-				false
+				true
+			} ?: run { false }
+		} catch (error: Exception) {
+			logger.e("Error loading APK thumbnail: ${error.message}", error)
+			target.apply {
+				scaleType = ImageView.ScaleType.FIT_CENTER
+				setPadding(0, 0, 0, 0)
+				Glide.with(target).load(placeHolder)
+					.placeholder(placeHolder).into(target)
 			}
+			false
 		}
-		return false
 	}
 }
