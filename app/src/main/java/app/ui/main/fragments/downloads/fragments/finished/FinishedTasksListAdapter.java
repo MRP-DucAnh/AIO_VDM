@@ -25,18 +25,18 @@ import lib.process.LogHelperUtils;
 
 public class FinishedTasksListAdapter extends BaseAdapter {
 
-	private final LogHelperUtils logger = LogHelperUtils.from(getClass());
+	private final LogHelperUtils log = LogHelperUtils.from(getClass());
 	private final WeakReference<FinishedTasksFragment> fragmentRef;
-	private final LayoutInflater layoutInflater;
+	private final LayoutInflater inflater;
 	private final DownloadSystem downloadSystem;
 	private int existingTaskCount;
 
-	private final ExecutorService backgroundExecutor = Executors.newSingleThreadExecutor();
-	private Future<?> currentBackgroundTask = null;
+	private final ExecutorService executor = Executors.newSingleThreadExecutor();
+	private Future<?> backgroundJob;
 
 	public FinishedTasksListAdapter(@NonNull FinishedTasksFragment fragment) {
 		this.fragmentRef = new WeakReference<>(fragment);
-		this.layoutInflater = from(fragment.getSafeBaseActivityRef());
+		this.inflater = from(fragment.getSafeBaseActivityRef());
 		this.downloadSystem = AIOApp.INSTANCE.getDownloadManager();
 	}
 
@@ -60,9 +60,9 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 	public View getView(int position, View convertView, ViewGroup parent) {
 		if (convertView == null) {
 			int layoutResId = layout.frag_down_4_finish_1_row_1;
-			convertView = layoutInflater.inflate(layoutResId, null);
+			convertView = inflater.inflate(layoutResId, null);
 		}
-		verifyAndUpdateViewHolder(convertView, position);
+		updateViewHolder(convertView, position);
 		return convertView;
 	}
 
@@ -71,8 +71,8 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 		FinishedTasksFragment fragment = fragmentRef.get();
 		if (fragment == null) return;
 
-		int newTaskCount = fragment.getFinishedDownloadModels().size();
-		if (newTaskCount != existingTaskCount) {
+		int newCount = fragment.getFinishedDownloadModels().size();
+		if (newCount != existingTaskCount) {
 			super.notifyDataSetChanged();
 			existingTaskCount = getCount();
 			scheduleMediaStoreUpdate();
@@ -81,63 +81,63 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 
 	private void scheduleMediaStoreUpdate() {
 		try {
-			if (currentBackgroundTask != null &&
-					!currentBackgroundTask.isDone()) {
-				currentBackgroundTask.cancel(true);
+			if (backgroundJob != null && !backgroundJob.isDone()) {
+				backgroundJob.cancel(true);
 			}
-		} catch (Exception error) {
-			logger.e("Error found while scheduling media store update", error);
-		}
 
-		currentBackgroundTask = backgroundExecutor.submit(() -> {
-			try {
-				int count = getCount();
-				for (int i = 0; i < count; i++) {
-					if (Thread.currentThread().isInterrupted()) return;
-					DownloadDataModel model = getItem(i);
-					if (model == null) continue;
-					File file = model.getDestinationFile();
-					addToMediaStore(file);
+			backgroundJob = executor.submit(() -> {
+				try {
+					int count = getCount();
+					for (int i = 0; i < count; i++) {
+						if (Thread.currentThread().isInterrupted()) return;
+						DownloadDataModel model = getItem(i);
+						if (model == null) continue;
+
+						File file = model.getDestinationFile();
+						addToMediaStore(file);
+					}
+					log.d("Media store updated for " + count + " files.");
+				} catch (Exception e) {
+					log.e("Error updating media store", e);
 				}
-			} catch (Exception error) {
-				logger.e("Error found in add to media file into gallery", error);
-			}
-		});
+			});
+		} catch (Exception e) {
+			log.e("Failed to schedule media store update", e);
+		}
 	}
 
-	public void notifyDataSetChangedOnSort(Boolean isForceRefresh) {
+	public void notifyDataSetChangedOnSort(boolean forceRefresh) {
 		try {
-			if (isForceRefresh) super.notifyDataSetChanged();
+			if (forceRefresh) super.notifyDataSetChanged();
 			else notifyDataSetChanged();
-		} catch (Exception error) {
-			logger.e("Error while notifying data set change", error);
+		} catch (Exception e) {
+			log.e("notifyDataSetChangedOnSort error", e);
 		}
 	}
 
-	private void verifyAndUpdateViewHolder(View rowLayout, int position) {
-		FinishedTasksViewHolder viewHolder;
+	private void updateViewHolder(View rowLayout, int position) {
+		FinishedTasksViewHolder holder;
 		if (rowLayout.getTag() == null) {
-			viewHolder = new FinishedTasksViewHolder(rowLayout);
-			rowLayout.setTag(viewHolder);
+			holder = new FinishedTasksViewHolder(rowLayout);
+			rowLayout.setTag(holder);
 		} else {
-			viewHolder = (FinishedTasksViewHolder) rowLayout.getTag();
-			viewHolder.clearResources();
+			holder = (FinishedTasksViewHolder) rowLayout.getTag();
+			holder.clearResources();
 		}
+
 		FinishedTasksFragment fragment = fragmentRef.get();
-		if (fragment != null) {
-			viewHolder.updateView(getItem(position), fragment);
-		}
+		if (fragment != null) holder.updateView(getItem(position), fragment);
 	}
 
 	public void clearResources() {
 		try {
-			if (currentBackgroundTask != null &&
-					!currentBackgroundTask.isDone()) {
-				currentBackgroundTask.cancel(true);
+			if (backgroundJob != null && !backgroundJob.isDone()) {
+				backgroundJob.cancel(true);
 			}
-			backgroundExecutor.shutdownNow();
-		} catch (Exception error) {
-			error.printStackTrace();
+			executor.shutdownNow();
+			log.d("Resources cleared, executor shut down.");
+		} catch (Exception e) {
+			log.e("Error clearing resources", e);
 		}
 	}
 }
