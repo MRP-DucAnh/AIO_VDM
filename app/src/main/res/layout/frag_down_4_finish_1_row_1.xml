@@ -76,7 +76,6 @@
 					android:adjustViewBounds="true"
 					android:elevation="@dimen/_5"
 					android:importantForAccessibility="no"
-					android:src="@drawable/ic_button_information"
 					android:visibility="gone"
 					tools:ignore="ImageContrastCheck" />
 
@@ -93,7 +92,6 @@
 					android:background="@drawable/rounded_transparent_black"
 					android:elevation="@dimen/_2"
 					android:importantForAccessibility="no"
-					android:src="@drawable/ic_button_video"
 					android:tint="@color/color_on_primary"
 					android:visibility="visible"
 					tools:ignore="ImageContrastCheck" />
@@ -112,7 +110,6 @@
 					android:background="@drawable/rounded_transparent_black"
 					android:elevation="@dimen/_2"
 					android:importantForAccessibility="no"
-					android:src="@drawable/ic_button_folder"
 					android:tint="@color/color_on_primary"
 					android:visibility="visible"
 					tools:ignore="ImageContrastCheck" />
