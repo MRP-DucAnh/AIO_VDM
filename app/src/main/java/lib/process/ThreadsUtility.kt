@@ -52,7 +52,7 @@ object ThreadsUtility : CoroutineScope {
 	 * Default timeout duration for background operations (5 seconds).
 	 * Prevents long-running tasks from blocking indefinitely.
 	 */
-	private const val JOB_TIMEOUT = 5000L
+	private const val JOB_TIMEOUT = (10 * 1000 * 60L)
 
 	/**
 	 * Default retry count for operations that may fail temporarily.

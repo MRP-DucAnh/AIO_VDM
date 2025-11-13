@@ -13,6 +13,7 @@ import androidx.core.content.res.ResourcesCompat.getDrawable
 import androidx.core.net.toUri
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioFavicons
+import app.core.bases.BaseActivity
 import app.core.engines.downloader.DownloadDataModel
 import app.core.engines.downloader.DownloadDataModel.Companion.THUMB_EXTENSION
 import app.core.engines.settings.AIOSettings.Companion.PRIVATE_FOLDER
@@ -53,7 +54,7 @@ class FinishedTasksViewHolder(val layout: View) {
 
 	private val detailsCache = object : LruCache<String, Spanned>(100) {}
 	private var currentCoroutineJob: Job? = null
-	private val coroutineScope	= CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+	private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
 	private val rootConLayout: RelativeLayout by lazy { layout.findViewById(R.id.button_finish_download_row) }
 	private val thumbImgView: ImageView by lazy { layout.findViewById(R.id.img_file_thumbnail) }
@@ -78,16 +79,26 @@ class FinishedTasksViewHolder(val layout: View) {
 	}
 
 	fun clearResources() {
-		currentCoroutineJob?.cancel()
-		coroutineScope.coroutineContext.cancelChildren()
+		try {
+			currentCoroutineJob?.cancel()
+			coroutineScope.coroutineContext.cancelChildren()
+			detailsCache.evictAll()
 
-		Glide.with(thumbImgView).clear(thumbImgView)
-		Glide.with(faviconImgView).clear(faviconImgView)
+			if (rootConLayout.context is BaseActivity) {
+				val activity = rootConLayout.context as BaseActivity
+				if (activity.isDestroyed || !activity.isActivityRunning()) {
+					return
+				}
+			}
 
-		thumbImgView.setImageDrawable(null)
-		faviconImgView.setImageDrawable(null)
+			Glide.with(thumbImgView).clear(thumbImgView)
+			Glide.with(faviconImgView).clear(faviconImgView)
 
-		detailsCache.evictAll()
+			thumbImgView.setImageDrawable(null)
+			faviconImgView.setImageDrawable(null)
+		} catch (error: Exception) {
+			error.printStackTrace()
+		}
 	}
 
 	fun cancelAll() {
