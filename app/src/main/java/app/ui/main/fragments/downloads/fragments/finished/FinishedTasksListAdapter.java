@@ -25,7 +25,7 @@ import lib.process.LogHelperUtils;
 
 public class FinishedTasksListAdapter extends BaseAdapter {
 
-	private final LogHelperUtils log = LogHelperUtils.from(getClass());
+	private final LogHelperUtils logger = LogHelperUtils.from(getClass());
 	private final WeakReference<FinishedTasksFragment> fragmentRef;
 	private final LayoutInflater inflater;
 	private final DownloadSystem downloadSystem;
@@ -88,21 +88,21 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 			backgroundJob = executor.submit(() -> {
 				try {
 					int count = getCount();
-					for (int i = 0; i < count; i++) {
+					for (int index = 0; index < count; index++) {
 						if (Thread.currentThread().isInterrupted()) return;
-						DownloadDataModel model = getItem(i);
+						DownloadDataModel model = getItem(index);
 						if (model == null) continue;
 
 						File file = model.getDestinationFile();
 						addToMediaStore(file);
 					}
-					log.d("Media store updated for " + count + " files.");
-				} catch (Exception e) {
-					log.e("Error updating media store", e);
+					logger.d("Media store updated for " + count + " files.");
+				} catch (Exception error) {
+					logger.e("Error updating media store", error);
 				}
 			});
-		} catch (Exception e) {
-			log.e("Failed to schedule media store update", e);
+		} catch (Exception error) {
+			logger.e("Failed to schedule media store update", error);
 		}
 	}
 
@@ -110,8 +110,8 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 		try {
 			if (forceRefresh) super.notifyDataSetChanged();
 			else notifyDataSetChanged();
-		} catch (Exception e) {
-			log.e("notifyDataSetChangedOnSort error", e);
+		} catch (Exception error) {
+			logger.e("notifyDataSetChangedOnSort error", error);
 		}
 	}
 
@@ -135,9 +135,9 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 				backgroundJob.cancel(true);
 			}
 			executor.shutdownNow();
-			log.d("Resources cleared, executor shut down.");
-		} catch (Exception e) {
-			log.e("Error clearing resources", e);
+			logger.d("Resources cleared, executor shut down.");
+		} catch (Exception error) {
+			logger.e("Error clearing resources", error);
 		}
 	}
 }
