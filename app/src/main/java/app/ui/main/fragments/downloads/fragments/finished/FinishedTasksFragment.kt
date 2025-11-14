@@ -29,18 +29,17 @@ class FinishedTasksFragment : BaseFragment(),
 	FinishedTasksClickEvents, AIOTimerListener {
 
 	private val logger = LogHelperUtils.from(javaClass)
-	private val weakReferenceOfFragment = WeakReference(this)
-	val safeMotherActivityRef by lazy { WeakReference(safeBaseActivityRef as MotherActivity).get() }
-	val safeFinishTasksFragment by lazy { WeakReference(this).get() }
-
-	private lateinit var emptyDownloadContainer: View
-	private lateinit var buttonOpenActiveTasks: View
-	private lateinit var openActiveTasksAnim: LottieAnimationView
-	private lateinit var buttonHowToDownload: View
-	private lateinit var taskListView: ListView
-
-	lateinit var finishedTasksListAdapter: FinishedTasksListAdapter
+	private val weakSelfReference = WeakReference(this)
+	private var emptyDownloadContainer: View? = null
+	private var buttonOpenActiveTasks: View? = null
+	private var openActiveTasksAnim: LottieAnimationView? = null
+	private var buttonHowToDownload: View? = null
+	private var taskListView: ListView? = null
 	private var lastCheckedFinishedTasks = 0
+
+	var finishedTasksListAdapter: FinishedTasksListAdapter? = null
+	val safeMotherActivityRef: MotherActivity? get() = safeBaseActivityRef as MotherActivity
+	val safeFinishTasksFragment: FinishedTasksFragment? get() = weakSelfReference.get()
 
 	override fun getLayoutResId(): Int {
 		return R.layout.frag_down_4_finish_1
@@ -48,8 +47,8 @@ class FinishedTasksFragment : BaseFragment(),
 
 	override fun onAfterLayoutLoad(layoutView: View, state: Bundle?) {
 		safeFinishTasksFragment?.let {
-			selfReferenceRegisterIntoDownloadSystem()
-			initializeViewsAndListAdapter(layoutView)
+			registerIntoDownloadSystem(it)
+			initializeViewsAndListAdapter(layoutView, it)
 		}
 	}
 
@@ -72,10 +71,10 @@ class FinishedTasksFragment : BaseFragment(),
 	}
 
 	override fun onDestroyView() {
-		finishedTasksListAdapter.let { adapter ->
+		finishedTasksListAdapter?.let { adapter ->
 			adapter.clearResources()
-			for (i in 0 until adapter.count) {
-				(adapter.getView(i, null, null).tag as?
+			for (index in 0 until adapter.count) {
+				(adapter.getView(index, null, null).tag as?
 						FinishedTasksViewHolder)?.cancelAll()
 			}
 		}
@@ -86,7 +85,7 @@ class FinishedTasksFragment : BaseFragment(),
 		safeMotherActivityRef?.let {
 			val globalSettings = downloadModel.globalSettings
 			val downloadLocation = globalSettings.defaultDownloadLocation
-			val finishTaskOptions = FinishedDownloadOptions(weakReferenceOfFragment.get())
+			val finishTaskOptions = FinishedDownloadOptions(weakSelfReference.get())
 
 			fun openOptions() {
 				if (aioSettings.openDownloadedFileOnSingleClick) {
@@ -106,7 +105,7 @@ class FinishedTasksFragment : BaseFragment(),
 	override fun onFinishedDownloadLongClick(downloadModel: DownloadDataModel) {
 		safeMotherActivityRef?.let {
 			fun openOptions() {
-				val opt = FinishedDownloadOptions(weakReferenceOfFragment.get())
+				val opt = FinishedDownloadOptions(weakSelfReference.get())
 				safeMotherActivityRef?.doSomeVibration(50)
 				opt.show(downloadModel)
 			}
@@ -119,30 +118,29 @@ class FinishedTasksFragment : BaseFragment(),
 		}
 	}
 
-	open fun getFinishedDownloadModels(): ArrayList<DownloadDataModel> {
+	fun getFinishedDownloadModels(): ArrayList<DownloadDataModel> {
 		return downloadSystem.finishedDownloadDataModels
 	}
 
-	private fun initializeViewsAndListAdapter(layoutView: View) {
-		safeFinishTasksFragment?.let {
-			emptyDownloadContainer = layoutView.findViewById(R.id.container_empty_downloads)
+	private fun initializeViewsAndListAdapter(layout: View, fragment: FinishedTasksFragment) {
+		val activityRef = safeMotherActivityRef
+		emptyDownloadContainer = layout.findViewById(R.id.container_empty_downloads)
 
-			buttonHowToDownload = layoutView.findViewById(R.id.btn_how_to_download)
-			buttonHowToDownload.setOnClickListener { GuidePlatformPicker(safeMotherActivityRef).show() }
+		buttonHowToDownload = layout.findViewById(R.id.btn_how_to_download)
+		buttonHowToDownload?.setOnClickListener { GuidePlatformPicker(activityRef).show() }
 
-			buttonOpenActiveTasks = layoutView.findViewById(R.id.btn_open_active_downloads)
-			buttonOpenActiveTasks.setOnClickListener { openActiveTasksFragment() }
+		buttonOpenActiveTasks = layout.findViewById(R.id.btn_open_active_downloads)
+		buttonOpenActiveTasks?.setOnClickListener { openActiveTasksFragment() }
 
-			openActiveTasksAnim = layoutView.findViewById(R.id.img_open_active_downloads)
-			loadOpenActiveTasksAnimation()
+		openActiveTasksAnim = layout.findViewById(R.id.img_open_active_downloads)
+		loadOpenActiveTasksAnimation()
 
-			taskListView = layoutView.findViewById(R.id.container_download_tasks_finished)
-			finishedTasksListAdapter = FinishedTasksListAdapter(it)
-			taskListView.adapter = finishedTasksListAdapter
+		taskListView = layout.findViewById(R.id.container_download_tasks_finished)
+		finishedTasksListAdapter = FinishedTasksListAdapter(fragment)
+		taskListView?.adapter = finishedTasksListAdapter
 
-			toggleEmptyDownloadListviewVisibility(emptyDownloadContainer, taskListView)
-			toggleOpenActiveTasksButtonVisibility(buttonOpenActiveTasks)
-		}
+		toggleEmptyDownloadListviewVisibility(emptyDownloadContainer, taskListView)
+		toggleOpenActiveTasksButtonVisibility(buttonOpenActiveTasks)
 	}
 
 	private fun openActiveTasksFragment() {
@@ -160,21 +158,22 @@ class FinishedTasksFragment : BaseFragment(),
 		}
 	}
 
-	private fun toggleEmptyDownloadListviewVisibility(emptyView: View, listView: ListView) {
+	private fun toggleEmptyDownloadListviewVisibility(emptyView: View?, listView: ListView?) {
 		if (downloadSystem.isInitializing) return
+		if (emptyView == null || listView == null) return
 		if (getFinishedDownloadModels().isEmpty()) {
 			hideView(listView, true, 100).let { showView(emptyView, true, 300) }
 		} else {
 			hideView(emptyView, true, 100).let { showView(listView, true, 300) }
 		}
-		finishedTasksListAdapter.notifyDataSetChangedOnSort(false)
+		finishedTasksListAdapter?.notifyDataSetChangedOnSort(false)
 	}
 
 	private fun selfReferenceRegisterToDownloadFragment() {
 		safeFinishTasksFragment?.let {
-			val f = parentFragment as? DownloadsFragment
-			f?.finishedTasksFragment = it
-			updateDownloadFragmentTitle(f)
+			val fragment = parentFragment as? DownloadsFragment
+			fragment?.finishedTasksFragment = it
+			updateDownloadFragmentTitle(fragment)
 		}
 	}
 
@@ -185,18 +184,17 @@ class FinishedTasksFragment : BaseFragment(),
 			if (total == lastCheckedFinishedTasks && total > 0) return
 			val title = it.findViewById<TextView>(R.id.txt_current_frag_name)
 			val fixedName = getText(R.string.title_downloaded_files)
-			title?.text = "$fixedName ($total)"
+			val titleText = "$fixedName ($total)"
+			title?.text = titleText
 		}
 	}
 
-	private fun selfReferenceRegisterIntoDownloadSystem() {
-		safeFinishTasksFragment?.let {
-			downloadSystem.downloadsUIManager.finishedTasksFragment = it
-		}
+	private fun registerIntoDownloadSystem(finishedFragment: FinishedTasksFragment) {
+		downloadSystem.downloadsUIManager.finishedTasksFragment = finishedFragment
 	}
 
 	private fun loadOpenActiveTasksAnimation() {
-		openActiveTasksAnim.apply {
+		openActiveTasksAnim?.apply {
 			clipToCompositionBounds = false
 			setScaleType(ImageView.ScaleType.FIT_XY)
 			aioRawFiles.getDownloadFoundAnimationComposition()?.let {

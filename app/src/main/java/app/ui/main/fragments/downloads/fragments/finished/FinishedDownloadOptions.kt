@@ -461,9 +461,9 @@ class FinishedDownloadOptions(finishedTasksFragment: FinishedTasksFragment?) : O
 								dialogBuilder?.close()
 								// Delay to ensure UI updates cleanly before refreshing the list
 								delay(300, object : OnTaskFinishListener {
-									override fun afterDelay() =
-										safeFinishedDownloadFragmentRef.finishedTasksListAdapter
-											.notifyDataSetChangedOnSort(true)
+									override fun afterDelay() {
+										safeFinishedDownloadFragmentRef.finishedTasksListAdapter?.notifyDataSetChangedOnSort(true)
+									}
 								})
 							}
 						}
@@ -615,7 +615,7 @@ class FinishedDownloadOptions(finishedTasksFragment: FinishedTasksFragment?) : O
 									"${downloadDataModel.fileName} to private storage")
 
 							// Refresh UI
-							safeFinishedFragmentRef.finishedTasksListAdapter.notifyDataSetChangedOnSort(true)
+							safeFinishedFragmentRef.finishedTasksListAdapter?.notifyDataSetChangedOnSort(true)
 							safeMotherActivityRef.homeFragment?.refreshRecentDownloadListUI()
 
 							waitingDialog.close()
@@ -675,7 +675,7 @@ class FinishedDownloadOptions(finishedTasksFragment: FinishedTasksFragment?) : O
 									"${downloadDataModel.fileName} to gallery")
 
 							// Refresh UI
-							safeFinishedFragmentRef.finishedTasksListAdapter.notifyDataSetChangedOnSort(true)
+							safeFinishedFragmentRef.finishedTasksListAdapter?.notifyDataSetChangedOnSort(true)
 							safeMotherActivityRef.homeFragment?.refreshRecentDownloadListUI()
 
 							waitingDialog.close()
@@ -723,7 +723,7 @@ class FinishedDownloadOptions(finishedTasksFragment: FinishedTasksFragment?) : O
 
 					// Notify adapter to refresh list with updated state
 					val finishedTasksListAdapter = finishedFragment.finishedTasksListAdapter
-					finishedTasksListAdapter.notifyDataSetChangedOnSort(true)
+					finishedTasksListAdapter?.notifyDataSetChangedOnSort(true)
 
 					logger.d("Thumbnail visibility toggled successfully")
 					safeMotherActivityRef.homeFragment?.refreshRecentDownloadListUI()
