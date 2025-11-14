@@ -296,7 +296,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 			// Configure theme appearance based on user preferences or system settings
 			// Ensures consistent visual experience across the application
 			logger.d("Applying theme appearance from user preferences")
-			setThemeAppearance()
+			//setThemeAppearance()
 
 			// Initialize scoped storage helper for modern file access on Android 10+
 			// Handles permissions and provides abstraction for storage operations

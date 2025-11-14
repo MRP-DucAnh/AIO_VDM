@@ -68,9 +68,11 @@ class FinishedTasksViewHolder(val layout: View) {
 	private val privateFolderImgView: ImageView by lazy { layout.findViewById(R.id.img_private_folder_indicator) }
 
 	fun updateView(
-		dataModel: DownloadDataModel,
-		eventListener: FinishedTasksClickEvents
+		dataModel: DownloadDataModel?,
+		eventListener: FinishedTasksClickEvents?
 	) {
+		if (dataModel == null) return
+		if (eventListener == null) return
 		logger.d("updateView: Starting for download ${dataModel.downloadId}")
 		clearResources()
 		currentCoroutineJob = coroutineScope.launch {
@@ -100,6 +102,10 @@ class FinishedTasksViewHolder(val layout: View) {
 
 			thumbImgView.setImageDrawable(null)
 			faviconImgView.setImageDrawable(null)
+			rootConLayout.setOnClickListener(null)
+			rootConLayout.setOnLongClickListener(null)
+			rootConLayout.isClickable = false
+			layout.tag = null
 			logger.d("clearResources: Cleanup completed successfully")
 		} catch (error: Exception) {
 			logger.e("clearResources: Error during cleanup - ${error.message}", error)

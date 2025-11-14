@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
@@ -27,8 +28,8 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 
 	private final LogHelperUtils logger = LogHelperUtils.from(getClass());
 	private final WeakReference<FinishedTasksFragment> fragmentRef;
-	private final LayoutInflater inflater;
-	private final DownloadSystem downloadSystem;
+	private LayoutInflater inflater;
+	private DownloadSystem downloadSystem;
 	private int existingTaskCount;
 
 	private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -42,11 +43,14 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 
 	@Override
 	public int getCount() {
+		if (downloadSystem == null) return 0;
 		return downloadSystem.getFinishedDownloadDataModels().size();
 	}
 
 	@Override
+	@Nullable
 	public DownloadDataModel getItem(int index) {
+		if (downloadSystem == null) return null;
 		return downloadSystem.getFinishedDownloadDataModels().get(index);
 	}
 
@@ -131,6 +135,9 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 
 	public void clearResources() {
 		try {
+			fragmentRef.clear();
+			inflater = null;
+			downloadSystem = null;
 			if (backgroundJob != null && !backgroundJob.isDone()) {
 				backgroundJob.cancel(true);
 			}
