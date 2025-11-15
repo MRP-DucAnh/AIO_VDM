@@ -60,298 +60,626 @@ import java.io.Serializable
 @Entity
 class DownloadDataModel : Serializable {
 
-	/** Unique identifier for the objectbox database */
+	/**
+	 * Unique identifier for the ObjectBox database entity as primary key.
+	 * Auto-generated value used for database indexing, relationships, and persistence.
+	 * Value of 0 indicates new entity not yet persisted to database storage.
+	 */
 	@Id @JvmField @JsonAttribute(name = "id")
 	var id: Long = 0L
 
-	/** Unique identifier for the download task */
+	/**
+	 * Unique identifier for the download task within application operation scope.
+	 * Used for tracking download lifecycle, event correlation, and operational management.
+	 * Distinct from database ID to maintain separation between storage and business logic.
+	 */
 	@JvmField @JsonAttribute(name = "downloadID")
 	var downloadId: Int = 0
 
-	/** Current operational status (see DownloadStatus constants) */
+	/**
+	 * Current operational status using constants defined in DownloadStatus class.
+	 * Controls UI state, background service behavior, and user notification triggers.
+	 * Examples: DOWNLOADING, PAUSED, COMPLETED, ERROR states for state machine management.
+	 */
 	@JvmField @JsonAttribute(name = "status")
 	var status: Int = DownloadStatus.CLOSE
 
-	/** Indicates if the download process is currently active */
+	/**
+	 * Indicates if the download process is currently active and transferring data.
+	 * True when download engine is actively processing and moving data from source to destination.
+	 * Used for background service management, battery optimization, and activity indicators.
+	 */
 	@JvmField @JsonAttribute(name = "isRunning")
 	var isRunning: Boolean = false
 
-	/** Indicates if the download completed successfully */
+	/**
+	 * Indicates if the download completed successfully with all verification checks passed.
+	 * True when file transfer finished, integrity verified, and file is fully accessible.
+	 * Triggers completion workflows, notifications, and transition to finished state management.
+	 */
 	@JvmField @JsonAttribute(name = "isComplete")
 	var isComplete: Boolean = false
 
-	/** Indicates if the download was explicitly deleted by user or system */
+	/**
+	 * Indicates if the download was explicitly marked for deletion by user or system process.
+	 * True when download record and associated files are scheduled for permanent removal.
+	 * Used for soft-delete patterns before physical deletion and recovery window provision.
+	 */
 	@JvmField @JsonAttribute(name = "isDeleted")
 	var isDeleted: Boolean = false
 
-	/** Indicates if the download was removed from UI but may still exist in storage */
+	/**
+	 * Indicates if the download was removed from UI visibility but retained in storage.
+	 * Used for archive functionality where downloads are hidden from main view but preserved.
+	 * Allows user recovery of hidden downloads through archive management interface.
+	 */
 	@JvmField @JsonAttribute(name = "isRemoved")
 	var isRemoved: Boolean = false
 
-	/** Flag indicating if file was saved to private/secure storage location */
+	/**
+	 * Flag indicating if file was saved to private/secure storage with restricted access.
+	 * True when download destination is app-private directory preventing external app access.
+	 * Enhances security for sensitive files and provides controlled access management.
+	 */
 	@JvmField @JsonAttribute(name = "isWentToPrivateFolder")
 	var isWentToPrivateFolder: Boolean = false
 
-	/** Flag indicating if the source download URL has expired or become invalid */
+	/**
+	 * Flag indicating if the source download URL has expired or become permanently invalid.
+	 * True when server returns 404, 410, or resource-not-found errors during access attempts.
+	 * Triggers URL refresh mechanisms and user notifications for updated link acquisition.
+	 */
 	@JvmField @JsonAttribute(name = "isFileUrlExpired")
 	var isFileUrlExpired: Boolean = false
 
-	/** Flag indicating if yt-dlp encountered processing issues during download */
+	/**
+	 * Flag indicating if yt-dlp encountered processing issues during media download extraction.
+	 * True when yt-dlp returns non-zero exit code, parsing errors, or format detection failures.
+	 * Used for fallback strategies, error reporting, and alternative download method selection.
+	 */
 	@JvmField @JsonAttribute(name = "isYtdlpHavingProblem")
 	var isYtdlpHavingProblem: Boolean = false
 
-	/** Detailed error message from yt-dlp when processing issues occur */
+	/**
+	 * Detailed error message from yt-dlp containing specific processing failure information.
+	 * Includes stderr output, exception details, parsing failures, or format compatibility issues.
+	 * Used for user error reporting, debugging assistance, and recovery procedure guidance.
+	 */
 	@JvmField @JsonAttribute(name = "ytdlpProblemMsg")
 	var ytdlpProblemMsg: String = ""
 
-	/** Flag indicating if the expected destination file does not exist after download */
+	/**
+	 * Flag indicating if the expected destination file does not exist after reported completion.
+	 * True when filesystem verification fails despite download engine reporting successful transfer.
+	 * Triggers corruption detection, re-download attempts, and file recovery procedures.
+	 */
 	@JvmField @JsonAttribute(name = "isDestinationFileNotExisted")
 	var isDestinationFileNotExisted: Boolean = false
 
-	/** Flag indicating if file integrity check via checksum validation failed */
+	/**
+	 * Flag indicating if file integrity verification via cryptographic checksum validation failed.
+	 * True when computed file hash doesn't match expected value indicating potential corruption.
+	 * Prevents use of corrupted files and triggers automatic integrity recovery mechanisms.
+	 */
 	@JvmField @JsonAttribute(name = "isFileChecksumValidationFailed")
 	var isFileChecksumValidationFailed: Boolean = false
 
-	/** Flag indicating download is paused waiting for network connectivity */
+	/**
+	 * Flag indicating download is paused waiting for network connectivity restoration.
+	 * True when download suspended due to network unavailability, airplane mode, or connectivity loss.
+	 * Automatically resumes transfer when stable network connection is detected and available.
+	 */
 	@JvmField @JsonAttribute(name = "isWaitingForNetwork")
 	var isWaitingForNetwork: Boolean = false
 
-	/** Flag indicating failure to access or read from source file location */
+	/**
+	 * Flag indicating failure to access or read from source file location during operations.
+	 * True when file permissions, storage mounting issues, or I/O errors prevent successful access.
+	 * Used for storage troubleshooting, permission request flows, and alternative access methods.
+	 */
 	@JvmField @JsonAttribute(name = "isFailedToAccessFile")
 	var isFailedToAccessFile: Boolean = false
 
-	/** Flag indicating if URL expiration dialog has been shown to user */
+	/**
+	 * Flag indicating if URL expiration notification dialog has been displayed to user.
+	 * Prevents duplicate notifications and user annoyance for known expired URL conditions.
+	 * Reset when new URL is provided, download is retried, or expiration condition changes.
+	 */
 	@JvmField @JsonAttribute(name = "isExpiredURLDialogShown")
 	var isExpiredURLDialogShown: Boolean = false
 
-	/** Flag indicating if automatic file categorization has been processed */
+	/**
+	 * Flag indicating if automatic file categorization engine has processed and classified file.
+	 * True when smart categorization has analyzed file type, content, and metadata for organization.
+	 * Enables intelligent storage organization, search optimization, and contextual file management.
+	 */
 	@JvmField @JsonAttribute(name = "isSmartCategoryDirProcessed")
 	var isSmartCategoryDirProcessed: Boolean = false
 
-	/** Message to display to user via dialog or notification */
+	/**
+	 * Message to display to user via dialog, notification, or status display mechanisms.
+	 * Contains user-friendly error messages, status updates, action requests, or information alerts.
+	 * Cleared after user acknowledgement, action completion, or message display timeout.
+	 */
 	@JvmField @JsonAttribute(name = "msgToShowUserViaDialog")
 	var msgToShowUserViaDialog: String = ""
 
-	/** Flag indicating if download was initiated from browser context */
+	/**
+	 * Flag indicating if download was initiated from browser context or web view integration.
+	 * True when download triggered via browser extension, web view intercept, or browser intent.
+	 * Affects referral handling, cookie management, source tracking, and context-aware behavior.
+	 */
 	@JvmField @JsonAttribute(name = "isDownloadFromBrowser")
 	var isDownloadFromBrowser: Boolean = false
 
-	/** Flag indicating if basic yt-dlp metadata extraction completed successfully */
+	/**
+	 * Flag indicating if basic yt-dlp metadata extraction completed successfully for media files.
+	 * True when essential media metadata including title, format, duration, and quality is available.
+	 * Enables media-specific features, preview generation, and informed format selection pre-download.
+	 */
 	@JvmField @JsonAttribute(name = "isBasicYtdlpModelInitialized")
 	var isBasicYtdlpModelInitialized: Boolean = false
 
-	/** Custom HTTP headers to include in download requests */
+	/**
+	 * Custom HTTP headers to include in download requests for authentication and API requirements.
+	 * Key-value pairs for authentication tokens, API keys, custom parameters, or server requirements.
+	 * Merged with default headers providing flexible request configuration and protocol compliance.
+	 */
 	@JvmField @JsonAttribute(name = "additionalWebHeaders")
 	var additionalWebHeaders: Map<String, String>? = null
 
-	/** Name of the target file being downloaded */
+	/**
+	 * Name of the target file being downloaded after processing and conflict resolution.
+	 * Final filename determined from URL parsing, content-disposition, and user preferences.
+	 * Used for storage organization, file type detection, and user interface display elements.
+	 */
 	@JvmField @JsonAttribute(name = "fileName")
 	var fileName: String = ""
 
-	/** Source URL from which the file is being downloaded */
+	/**
+	 * Source URL from which the file is being downloaded including protocol and full path.
+	 * Complete HTTP/HTTPS URL used for download initiation, resume operations, and source verification.
+	 * Supports various protocols including http, https, ftp, and custom scheme implementations.
+	 */
 	@JvmField @JsonAttribute(name = "fileURL")
 	var fileURL: String = ""
 
-	/** HTTP Referrer header value for the download request */
+	/**
+	 * HTTP Referrer header value indicating source webpage that initiated download request.
+	 * Contains URL of webpage where download link was clicked for referral tracking and analytics.
+	 * Used for server-side authentication, session context maintenance, and relative URL resolution.
+	 */
 	@JvmField @JsonAttribute(name = "siteReferrer")
 	var siteReferrer: String = ""
 
-	/** Target directory path where file will be saved */
+	/**
+	 * Target directory path where downloaded file will be permanently stored and organized.
+	 * Absolute filesystem path representing final storage location for file preservation and access.
+	 * Supports internal app storage, external shared storage, and custom directory structures.
+	 */
 	@JvmField @JsonAttribute(name = "fileDirectory")
 	var fileDirectory: String = ""
 
-	/** MIME type of the file being downloaded */
+	/**
+	 * MIME type identifying file format and content type for proper handling and validation.
+	 * Internet media type from server response or file extension analysis determining file nature.
+	 * Used for application association, content negotiation, security checks, and type validation.
+	 */
 	@JvmField @JsonAttribute(name = "fileMimeType")
 	var fileMimeType: String = ""
 
-	/** Content-Disposition header value from server response */
+	/**
+	 * Content-Disposition header value providing server-suggested filename and handling instructions.
+	 * Server-provided metadata suggesting filename, download behavior, and content treatment.
+	 * Overrides URL-derived filename when present and valid according to HTTP specification.
+	 */
 	@JvmField @JsonAttribute(name = "fileContentDisposition")
 	var fileContentDisposition: String = ""
 
-	/** Cookie string for authenticated download requests */
+	/**
+	 * Cookie string containing authentication tokens and session identifiers for secure requests.
+	 * Session cookies, authentication tokens, or site-specific identifiers for protected resources.
+	 * Enables access to user-specific content, personalized downloads, and authenticated services.
+	 */
 	@JvmField @JsonAttribute(name = "siteCookieString")
 	var siteCookieString: String = ""
 
-	/** Local filesystem path to the downloaded file's thumbnail */
+	/**
+	 * Local filesystem path to cached thumbnail image for media files and visual preview generation.
+	 * Path to locally stored thumbnail image extracted from media or generated during processing.
+	 * Used for quick previews, visual identification, and enhanced user interface presentation.
+	 */
 	@JvmField @JsonAttribute(name = "thumbPath")
 	var thumbPath: String = ""
 
-	/** Remote URL source for the file's thumbnail image */
+	/**
+	 * Remote URL source pointing to external thumbnail, poster, or preview image for media files.
+	 * External URL providing visual representation of file content for preview and identification.
+	 * Used for thumbnail downloading, cache population, and fallback visual representation.
+	 */
 	@JvmField @JsonAttribute(name = "thumbnailUrl")
 	var thumbnailUrl: String = ""
 
-	/** Temporary file path used during yt-dlp processing phase */
+	/**
+	 * Temporary file path used during yt-dlp processing phase for intermediate storage operations.
+	 * Intermediate storage location during media extraction, format conversion, and processing stages.
+	 * Cleaned up automatically after successful processing completion and file reorganization.
+	 */
 	@JvmField @JsonAttribute(name = "tempYtdlpDestinationFilePath")
 	var tempYtdlpDestinationFilePath: String = ""
 
-	/** Temporary status information during yt-dlp processing */
+	/**
+	 * Temporary status information providing progress feedback during yt-dlp processing operations.
+	 * Progress messages, stage information, and intermediate states from yt-dlp execution output.
+	 * Provides real-time user feedback during complex media processing and extraction operations.
+	 */
 	@JvmField @JsonAttribute(name = "tempYtdlpStatusInfo")
 	var tempYtdlpStatusInfo: String = ""
 
-	/** URI representation of the target directory location */
+	/**
+	 * URI representation of target directory location for platform-agnostic storage access methods.
+	 * Content URI or file scheme URI supporting Storage Access Framework and document providers.
+	 * Enables consistent storage access across different Android versions and storage providers.
+	 */
 	@JvmField @JsonAttribute(name = "fileDirectoryURI")
 	var fileDirectoryURI: String = ""
 
-	/** Automatically determined category name for the file */
+	/**
+	 * Automatically determined category name from intelligent file analysis and classification.
+	 * Smart classification based on file type, content analysis, metadata, and user behavior patterns.
+	 * Enables organized storage structure, intelligent search, and contextual file relationships.
+	 */
 	@JvmField @JsonAttribute(name = "fileCategoryName")
 	var fileCategoryName: String = ""
 
-	/** Formatted timestamp string indicating download start time */
+	/**
+	 * Formatted timestamp string indicating download start time in user-friendly format.
+	 * Locale-aware display string showing date and time when download was initiated.
+	 * Examples: "Jan 15, 2024 2:30 PM", "15/01/2024 14:30". Empty string indicates
+	 * download hasn't started or timing data is unavailable.
+	 */
 	@JvmField @JsonAttribute(name = "startTimeDateInFormat")
 	var startTimeDateInFormat: String = ""
 
-	/** Unix timestamp in milliseconds indicating download start time */
+	/**
+	 * Unix timestamp in milliseconds indicating precise download start time.
+	 * Machine-readable timestamp representing milliseconds since January 1, 1970 UTC.
+	 * Used for duration calculations, sorting, and time-based analytics. Value of 0L
+	 * indicates download not yet started or timestamp not recorded.
+	 */
 	@JvmField @JsonAttribute(name = "startTimeDate")
 	var startTimeDate: Long = 0L
 
-	/** Formatted timestamp string of last file modification time */
+	/**
+	 * Formatted timestamp string of last file modification time in user-friendly format.
+	 * Display string showing when the source file was last modified on the server.
+	 * Examples: "Jan 14, 2024 10:15 AM", "14/01/2024 10:15". Used for version
+	 * tracking and change detection. Empty string indicates modification time unknown.
+	 */
 	@JvmField @JsonAttribute(name = "lastModifiedTimeDateInFormat")
 	var lastModifiedTimeDateInFormat: String = ""
 
-	/** Unix timestamp in milliseconds of last file modification */
+	/**
+	 * Unix timestamp in milliseconds of last file modification on source server.
+	 * Machine-readable timestamp from server's Last-Modified header or filesystem metadata.
+	 * Used for cache validation, conditional downloads, and update checking.
+	 * Value of 0L indicates modification time not available from server.
+	 */
 	@JvmField @JsonAttribute(name = "lastModifiedTimeDate")
 	var lastModifiedTimeDate: Long = 0L
 
-	/** Flag indicating if file size could not be determined from source */
+	/**
+	 * Flag indicating if file size could not be determined from source server.
+	 * True when server doesn't provide Content-Length header or returns unknown size.
+	 * Affects progress calculation strategy - switches to indeterminate progress
+	 * mode and disables accurate ETA calculations when true.
+	 */
 	@JvmField @JsonAttribute(name = "isUnknownFileSize")
 	var isUnknownFileSize: Boolean = false
 
-	/** Total file size in bytes */
+	/**
+	 * Total file size in bytes as reported by server Content-Length header.
+	 * Expected complete size of the file being downloaded. Used for progress
+	 * percentage calculations, storage space verification, and download completion
+	 * validation. Value of 0L indicates size unknown or not yet retrieved.
+	 */
 	@JvmField @JsonAttribute(name = "fileSize")
 	var fileSize: Long = 0L
 
-	/** Cryptographic hash/checksum for file integrity verification */
+	/**
+	 * Cryptographic hash/checksum for file integrity verification and duplication detection.
+	 * Typically MD5, SHA-1, or SHA-256 hash provided by server or computed post-download.
+	 * Used to verify file integrity, detect corruption, and identify duplicate files.
+	 * Default "--" indicates checksum not available, not computed, or not provided by server.
+	 */
 	@JvmField @JsonAttribute(name = "fileChecksum")
 	var fileChecksum: String = "--"
 
-	/** Human-readable formatted string representation of file size */
+	/**
+	 * Human-readable formatted string representation of file size for UI display.
+	 * Automatically converted to appropriate units (B, KB, MB, GB, TB) with locale-aware
+	 * formatting and decimal precision. Examples: "1.5 MB", "2.3 GB", "450 KB".
+	 * Empty string indicates size calculation pending or size unknown.
+	 */
 	@JvmField @JsonAttribute(name = "fileSizeInFormat")
 	var fileSizeInFormat: String = ""
 
-	/** Average download speed in bytes per second */
+	/**
+	 * Average download speed in bytes per second calculated across entire active transfer period.
+	 * Computed as totalBytesDownloaded / totalActiveTransferTime. Provides consistent
+	 * performance metric unaffected by temporary network fluctuations. Used for overall
+	 * connection quality assessment and historical performance analysis.
+	 */
 	@JvmField @JsonAttribute(name = "averageSpeed")
 	var averageSpeed: Long = 0L
 
-	/** Maximum achieved download speed in bytes per second */
+	/**
+	 * Maximum achieved download speed in bytes per second during the download session.
+	 * Tracks peak performance to measure network capability and identify optimal transfer
+	 * conditions. Used for connection quality benchmarking and user performance feedback.
+	 * Reset when download is restarted or resumed after significant interruption.
+	 */
 	@JvmField @JsonAttribute(name = "maxSpeed")
 	var maxSpeed: Long = 0L
 
-	/** Current real-time download speed in bytes per second */
+	/**
+	 * Current real-time download speed in bytes per second updated frequently during active transfer.
+	 * Calculated over a short time window (typically 1-3 seconds) to provide immediate
+	 * feedback on network performance. Highly variable and responsive to current network
+	 * conditions. Used for live progress updates and dynamic ETA adjustments.
+	 */
 	@JvmField @JsonAttribute(name = "realtimeSpeed")
 	var realtimeSpeed: Long = 0L
 
-	/** Formatted string representation of average download speed */
+	/**
+	 * Formatted string representation of average download speed throughout the entire download session.
+	 * Calculated as total bytes downloaded divided by total active download time. Displayed in
+	 * human-readable format (e.g., "1.2 MB/s", "450 KB/s"). Default "--" indicates insufficient
+	 * data for calculation or download not started.
+	 */
 	@JvmField @JsonAttribute(name = "averageSpeedInFormat")
 	var averageSpeedInFormat: String = "--"
 
-	/** Formatted string representation of maximum download speed */
+	/**
+	 * Formatted string representation of maximum download speed achieved during the session.
+	 * Tracks peak performance for analytics and user feedback. Displayed in human-readable format
+	 * (e.g., "2.5 MB/s", "800 KB/s"). Default "--" indicates no speed data recorded yet.
+	 */
 	@JvmField @JsonAttribute(name = "maxSpeedInFormat")
 	var maxSpeedInFormat: String = "--"
 
-	/** Formatted string representation of current download speed */
+	/**
+	 * Formatted string representation of current real-time download speed.
+	 * Updated frequently (typically every 1-2 seconds) during active transfers. Displayed in
+	 * human-readable format (e.g., "1.8 MB/s", "320 KB/s"). Default "--" indicates no current
+	 * transfer activity or speed calculation unavailable.
+	 */
 	@JvmField @JsonAttribute(name = "realtimeSpeedInFormat")
 	var realtimeSpeedInFormat: String = "--"
 
-	/** Flag indicating if the download supports resumption after interruption */
+	/**
+	 * Flag indicating if the download supports resumption after network interruption or pause.
+	 * True when server supports byte-range requests and file supports partial downloads.
+	 * Enables pause/resume functionality and recovery from network failures.
+	 */
 	@JvmField @JsonAttribute(name = "isResumeSupported")
 	var isResumeSupported: Boolean = false
 
-	/** Flag indicating if multi-threaded downloading is supported for this file */
+	/**
+	 * Flag indicating if multi-threaded parallel downloading is supported for this file.
+	 * True when server supports concurrent connections and file is large enough to benefit
+	 * from chunked downloading. Enables faster downloads through parallel segment transfers.
+	 */
 	@JvmField @JsonAttribute(name = "isMultiThreadSupported")
 	var isMultiThreadSupported: Boolean = false
 
-	/** Total number of connection retry attempts made */
+	/**
+	 * Total number of connection retry attempts made during resume sessions.
+	 * Incremented each time the download engine attempts to re-establish connection
+	 * after interruption. Used for retry limit enforcement and connection quality assessment.
+	 */
 	@JvmField @JsonAttribute(name = "resumeSessionRetryCount")
 	var resumeSessionRetryCount: Int = 0
 
-	/** Total number of connection retries that were tracked */
+	/**
+	 * Total number of connection retries tracked across all resume attempts.
+	 * Provides comprehensive retry statistics for network reliability analysis and
+	 * performance monitoring. Differs from resumeSessionRetryCount by tracking all
+	 * retry events, not just per-session.
+	 */
 	@JvmField @JsonAttribute(name = "totalTrackedConnectionRetries")
 	var totalTrackedConnectionRetries: Int = 0
 
-	/** Download completion percentage (0-100) */
+	/**
+	 * Download completion percentage represented as long integer (0-100).
+	 * Calculated as (downloadedByte / fileSize) * 100. Used for progress bars
+	 * and completion tracking. Ranges from 0 (not started) to 100 (complete).
+	 */
 	@JvmField @JsonAttribute(name = "progressPercentage")
 	var progressPercentage: Long = 0L
 
-	/** Formatted string representation of completion percentage */
+	/**
+	 * Formatted string representation of completion percentage for UI display.
+	 * Typically includes percentage symbol and decimal precision (e.g., "45.2%", "100%").
+	 * Empty string indicates progress calculation pending or unavailable.
+	 */
 	@JvmField @JsonAttribute(name = "progressPercentageInFormat")
 	var progressPercentageInFormat: String = ""
 
-	/** Total number of bytes downloaded so far */
+	/**
+	 * Total number of bytes successfully downloaded so far.
+	 * Accumulates across all download sessions including resumes. Used for progress
+	 * calculation and verification against total file size.
+	 */
 	@JvmField @JsonAttribute(name = "downloadedByte")
 	var downloadedByte: Long = 0L
 
-	/** Formatted string representation of downloaded bytes */
+	/**
+	 * Formatted string representation of downloaded bytes for user display.
+	 * Converted to human-readable format with appropriate units (e.g., "45.2 MB", "1.2 GB").
+	 * Default "--" indicates no bytes downloaded or calculation pending.
+	 */
 	@JvmField @JsonAttribute(name = "downloadedByteInFormat")
 	var downloadedByteInFormat: String = "--"
 
-	/** Array tracking starting byte positions for each download chunk (18 chunks max) */
+	/**
+	 * Array tracking starting byte positions for each download chunk in parallel transfers.
+	 * Uses fixed-size array of 18 elements where each element represents the starting byte
+	 * offset (0-based) for a specific chunk. Essential for range request construction and
+	 * chunk boundary management.
+	 */
 	@JvmField @JsonAttribute(name = "partStartingPoint")
 	var partStartingPoint: LongArray = LongArray(18)
 
-	/** Array tracking ending byte positions for each download chunk (18 chunks max) */
+	/**
+	 * Array tracking ending byte positions for each download chunk in parallel transfers.
+	 * Uses fixed-size array of 18 elements where each element represents the inclusive ending
+	 * byte position for a specific chunk. Combined with partStartingPoint to define exact
+	 * byte ranges for each parallel segment.
+	 */
 	@JvmField @JsonAttribute(name = "partEndingPoint")
 	var partEndingPoint: LongArray = LongArray(18)
 
-	/** Array tracking total size of each download chunk (18 chunks max) */
+	/**
+	 * Array tracking total size (in bytes) allocated to each download chunk.
+	 * Uses fixed-size array of 18 elements where each element represents the total
+	 * byte count assigned to a specific chunk. Used for chunk progress calculation
+	 * and download distribution planning.
+	 */
 	@JvmField @JsonAttribute(name = "partChunkSizes")
 	var partChunkSizes: LongArray = LongArray(18)
 
-	/** Array tracking bytes downloaded for each chunk (18 chunks max) */
+	/**
+	 * Array tracking bytes successfully downloaded for each individual chunk.
+	 * Uses fixed-size array of 18 elements where each element represents the
+	 * cumulative bytes transferred for a specific chunk. Enables per-chunk
+	 * progress tracking and identification of stalled segments.
+	 */
 	@JvmField @JsonAttribute(name = "partsDownloadedByte")
 	var partsDownloadedByte: LongArray = LongArray(18)
 
-	/** Array tracking completion percentage for each download chunk (18 chunks max) */
+	/**
+	 * Array tracking completion percentage for each download chunk in parallel downloads.
+	 * Uses fixed-size array of 18 elements (0-17) where each element represents the progress
+	 * percentage (0-100) of an individual download segment. Enables progress visualization
+	 * for multi-part downloads and resumable transfers.
+	 */
 	@JvmField @JsonAttribute(name = "partProgressPercentage")
 	var partProgressPercentage: IntArray = IntArray(18)
 
-	/** Total time spent on download in milliseconds */
+	/**
+	 * Total cumulative time spent actively downloading in milliseconds.
+	 * Includes only the time when data transfer was occurring, excluding pauses,
+	 * network interruptions, or user waiting time. Used for performance analytics
+	 * and download speed calculations.
+	 */
 	@JvmField @JsonAttribute(name = "timeSpentInMilliSec")
 	var timeSpentInMilliSec: Long = 0L
 
-	/** Estimated remaining time to complete download in seconds */
+	/**
+	 * Estimated remaining time to complete download in seconds.
+	 * Calculated based on current download speed and remaining file size.
+	 * Dynamic value that updates during active downloads. Shows "--" or 0 when
+	 * estimation is unavailable or download is complete.
+	 */
 	@JvmField @JsonAttribute(name = "remainingTimeInSec")
 	var remainingTimeInSec: Long = 0L
 
-	/** Formatted string representation of time spent downloading */
+	/**
+	 * Human-readable formatted string representation of time spent downloading.
+	 * Display format varies based on duration (e.g., "45s", "2m 30s", "1h 15m").
+	 * Default value "--" indicates no active download time or calculation pending.
+	 */
 	@JvmField @JsonAttribute(name = "timeSpentInFormat")
 	var timeSpentInFormat: String = "--"
 
-	/** Formatted string representation of estimated remaining time */
+	/**
+	 * Human-readable formatted string representation of estimated remaining time.
+	 * Display format varies based on estimated duration (e.g., "30s", "5m", "2h").
+	 * Default value "--" indicates estimation unavailable, complete, or paused.
+	 */
 	@JvmField @JsonAttribute(name = "remainingTimeInFormat")
 	var remainingTimeInFormat: String = "--"
 
-	/** Current status message for display purposes */
+	/**
+	 * Current status message for user display and progress tracking.
+	 * Provides descriptive text about download state (e.g., "Downloading...",
+	 * "Paused", "Completed", "Error: Network unavailable"). Used in UI
+	 * notifications and progress dialogs.
+	 */
 	@JvmField @JsonAttribute(name = "statusInfo")
 	var statusInfo: String = "--"
 
-	/** Video-specific metadata for media downloads (transient - not persisted in DB) */
+	/**
+	 * Video-specific metadata container for media downloads.
+	 * Transient annotation excludes from database persistence - reconstructed
+	 * as needed from external sources. Contains video title, description,
+	 * thumbnail URLs, and other media-specific properties.
+	 */
 	@io.objectbox.annotation.Transient
 	@JvmField @JsonAttribute(name = "videoInfo")
 	var videoInfo: VideoInfo? = null
 
-	/** Video format and codec information (transient - not persisted in DB) */
+	/**
+	 * Video format and codec information for media processing.
+	 * Transient annotation excludes from database persistence - typically
+	 * populated during format selection phase. Contains resolution, codec,
+	 * bitrate, and container format details for video downloads.
+	 */
 	@io.objectbox.annotation.Transient
 	@JvmField @JsonAttribute(name = "videoFormat")
 	var videoFormat: VideoFormat? = null
 
-	/** Remote file metadata obtained from server or yt-dlp (transient - not persisted in DB) */
+	/**
+	 * Remote file metadata obtained from server or yt-dlp information extraction.
+	 * Transient annotation excludes from database persistence - fetched dynamically
+	 * when needed. Contains file size, available formats, duration, and other
+	 * server-side file properties obtained before download initiation.
+	 */
 	@io.objectbox.annotation.Transient
 	@JvmField @JsonAttribute(name = "remoteFileInfo")
 	var remoteFileInfo: RemoteFileInfo? = null
 
-	/** Command string used to execute the download process */
+	/**
+	 * Command string used to execute the download process.
+	 * Contains system commands or instructions for initiating and managing
+	 * the download operation. May include parameters, URLs, and execution flags
+	 * required by the download engine.
+	 */
 	@JvmField @JsonAttribute(name = "executionCommand")
 	var executionCommand: String = ""
 
-	/** Playback duration string for media files (e.g., "02:30" for 2 minutes 30 seconds) */
+	/**
+	 * Playback duration string for media files in formatted time representation.
+	 * Used for audio and video files to display length (e.g., "02:30" for 2 minutes 30 seconds).
+	 * Empty for non-media files. Format typically follows HH:MM:SS or MM:SS based on duration.
+	 */
 	@JvmField @JsonAttribute(name = "mediaFilePlaybackDuration")
 	var mediaFilePlaybackDuration: String = ""
 
-	/** Indicator reflecting whether the download data model is synced to cloud backup */
+	/**
+	 * Synchronization status indicator for cloud backup integration.
+	 * True when the download data model has been successfully synced to cloud storage,
+	 * false when pending sync or cloud backup is disabled. Used to manage data
+	 * consistency across devices and prevent duplicate cloud entries.
+	 */
 	@JvmField @JsonAttribute(name = "isSyncToCloudBackup")
 	var isSyncToCloudBackup: Boolean = false
 
-	/** Snapshot of global application settings at the time download was initiated (transient - not persisted in DB) */
+	/**
+	 * User interaction tracker for file access monitoring.
+	 * True if the user has opened or accessed the downloaded file at least once,
+	 * false for unopened downloads. Used for analytics, user behavior tracking,
+	 * and potentially for highlighting new/unviewed content in the UI.
+	 */
+	@JvmField @JsonAttribute(name = "hasUserOpenedTheFile")
+	var hasUserOpenedTheFile: Boolean = false
+
+	/**
+	 * Snapshot of global application settings captured when download was initiated (transient).
+	 * Preserves configuration state at download creation time for consistent behavior across sessions.
+	 * Deep copy ensures settings isolation; ID reset to 0L prevents database conflicts.
+	 */
 	@io.objectbox.annotation.Transient
 	@JvmField @JsonAttribute(name = "globalSettings")
 	var globalSettings: AIOSettings = (deepCopy(aioSettings) ?: aioSettings).apply { id = 0L }
@@ -374,36 +702,37 @@ class DownloadDataModel : Serializable {
 
 		/**
 		 * Key used for identifying download model in intent extras or shared preferences
+		 * during activity transitions, background operations, and inter-process communication.
 		 */
 		const val DOWNLOAD_MODEL_ID_KEY = "DOWNLOAD_MODEL_ID_KEY"
 
 		/**
-		 * File extension for JSON-formatted download model files
-		 * Format: {downloadId}_download.json
+		 * File extension for JSON-formatted download model files storing serialized download data.
+		 * Format: {downloadId}_download.json for human-readable persistence and manual inspection.
 		 */
 		const val DOWNLOAD_MODEL_FILE_JSON_EXTENSION = "_download.json"
 
 		/**
-		 * File extension for binary-formatted download model files
-		 * Format: {downloadId}_download.dat
+		 * File extension for binary-formatted download model files with optimized storage.
+		 * Format: {downloadId}_download.dat for efficient serialization and faster read/write operations.
 		 */
 		const val DOWNLOAD_MODEL_FILE_BINARY_EXTENSION: String = "_download.dat"
 
 		/**
-		 * File extension for cookie files associated with downloads
-		 * Format: {downloadId}_cookies.txt
+		 * File extension for cookie files storing authentication data for download sessions.
+		 * Format: {downloadId}_cookies.txt preserving session cookies for resume and retry operations.
 		 */
 		const val DOWNLOAD_MODEL_COOKIES_EXTENSION = "_cookies.txt"
 
 		/**
-		 * File extension for download thumbnail images
-		 * Format: {downloadId}_download.jpg
+		 * File extension for download thumbnail images generated for media file previews.
+		 * Format: {downloadId}_download.jpg for consistent thumbnail naming and cache management.
 		 */
 		const val THUMB_EXTENSION = "_download.jpg"
 
 		/**
-		 * File extension for temporary download files
-		 * These files are created during active downloads and removed upon completion
+		 * File extension for temporary download files created during active transfer operations.
+		 * These files are created during active downloads and removed upon completion or cancellation.
 		 */
 		const val TEMP_EXTENSION = ".aio_download"
 
