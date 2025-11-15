@@ -28,7 +28,7 @@ object SupportedURLs {
 	private val supportedBaseDomains = setOf(
 		"youtube", "youtu", "facebook", "instagram", "twitter", "x",
 		"tiktok", "reddit", "tumblr", "soundcloud", "bandcamp", "9gag",
-		"vk", "imdb", "dailymotion", "bilibili", "twitch", "likee",
+		"vk", "imdb", "dailymotion", "bilibili", "twitch", "likee", "vimeo",
 		"snapchat", "pinterest", "linkedin", "mixcloud", "audiomack",
 		"periscope", "jiosaavn", "hotstar", "youku", "rumble", "odysee",
 		"peertube", "bitchute", "liveleak"
@@ -313,6 +313,18 @@ object SupportedURLs {
 
 			// Dailymotion video link
 			Regex("""^https?://(www\.)?dailymotion\.com/video/[A-Za-z0-9]+/?(\?.*)?$""", IGNORE_CASE),
+
+			// Vimeo normal video: https://vimeo.com/123456789
+			Regex("""^https?://(www\.)?vimeo\.com/\d+/?(\?.*)?$""", IGNORE_CASE),
+
+			// Vimeo player links: https://player.vimeo.com/video/123456789
+			Regex("""^https?://player\.vimeo\.com/video/\d+/?(\?.*)?$""", IGNORE_CASE),
+
+			// Vimeo channel videos: https://vimeo.com/channels/staffpicks/123456789
+			Regex("""^https?://(www\.)?vimeo\.com/channels/[^/]+/\d+/?(\?.*)?$""", IGNORE_CASE),
+
+			// Vimeo album videos: https://vimeo.com/album/12345/video/67890123
+			Regex("""^https?://(www\.)?vimeo\.com/album/\d+/video/\d+/?(\?.*)?$""", IGNORE_CASE),
 		)
 
 		return patterns.any { it.matches(webpageUrl) }
