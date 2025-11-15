@@ -69,7 +69,10 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 * settings controller doesn't retain references to destroyed UI components while
 	 * still allowing access to the fragment when it's active and visible.
 	 */
-	private val settingsFragmentRef = WeakReference(settingsFragment).get()
+	private val weakReferenceOfSettingFrag = WeakReference(settingsFragment)
+
+	private val settingsFragmentRef: SettingsFragment?
+		get() = weakReferenceOfSettingFrag.get()
 
 	/**
 	 * Launches the username editor interface with haptic feedback and feature availability notice.
@@ -471,6 +474,10 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 			val singleClickOpen = aioSettings.openDownloadedFileOnSingleClick
 			aioSettings.openDownloadedFileOnSingleClick = !singleClickOpen
 			aioSettings.updateInStorage()
+
+			settingsFragmentRef?.safeMotherActivityRef?.downloadFragment?.
+			finishedTasksFragment?.finishedTasksListAdapter?.notifyDataSetChangedOnSort(true)
+
 			logger.d("Single-click open file is now: $singleClickOpen")
 			updateSettingStateUI()
 		} catch (error: Exception) {

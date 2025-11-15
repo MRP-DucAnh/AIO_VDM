@@ -33,6 +33,16 @@
 
 	<font
 		android:font="@font/font_family_sp"
+		android:fontStyle="normal"
+		android:fontWeight="800" />
+
+	<font
+		android:font="@font/font_family_sp"
+		android:fontStyle="normal"
+		android:fontWeight="900" />
+
+	<font
+		android:font="@font/font_family_sp"
 		android:fontStyle="italic"
 		android:fontWeight="200" />
 
@@ -60,5 +70,15 @@
 		android:font="@font/font_family_sp"
 		android:fontStyle="italic"
 		android:fontWeight="700" />
+
+	<font
+		android:font="@font/font_family_sp"
+		android:fontStyle="italic"
+		android:fontWeight="800" />
+
+	<font
+		android:font="@font/font_family_sp"
+		android:fontStyle="italic"
+		android:fontWeight="900" />
 
 </font-family>

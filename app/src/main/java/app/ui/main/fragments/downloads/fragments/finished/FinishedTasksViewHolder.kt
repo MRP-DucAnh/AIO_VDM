@@ -13,6 +13,7 @@ import androidx.core.content.res.ResourcesCompat.getDrawable
 import androidx.core.net.toUri
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioFavicons
+import app.core.AIOApp.Companion.aioSettings
 import app.core.bases.BaseActivity
 import app.core.engines.downloader.DownloadDataModel
 import app.core.engines.downloader.DownloadDataModel.Companion.THUMB_EXTENSION
@@ -65,6 +66,7 @@ class FinishedTasksViewHolder(val layout: View) {
 	private val durationConLayout: View by lazy { layout.findViewById(R.id.container_media_duration) }
 	private val playIndicatorView: View by lazy { layout.findViewById(R.id.img_media_play_indicator) }
 	private val fileTypeImgView: ImageView by lazy { layout.findViewById(R.id.img_file_type_indicator) }
+	private val openFileIndicatorImgView: ImageView by lazy { layout.findViewById(R.id.btn_open_download_file) }
 	private val privateFolderImgView: ImageView by lazy { layout.findViewById(R.id.img_private_folder_indicator) }
 
 	fun updateView(
@@ -149,6 +151,7 @@ class FinishedTasksViewHolder(val layout: View) {
 		updateThumbnailInfo(dataModel)
 		updateFileTypeIndicator(dataModel)
 		updatePrivateFolderIndicator(dataModel)
+		updateOpenFileIndicator(dataModel)
 		logger.d("refreshDownloadProgress: Completed UI refresh for ${dataModel.downloadId}")
 	}
 
@@ -393,6 +396,14 @@ class FinishedTasksViewHolder(val layout: View) {
 				R.drawable.ic_button_folder
 			}
 			Glide.with(privateFolderImgView).load(icon).into(privateFolderImgView)
+		}
+	}
+
+	private suspend fun updateOpenFileIndicator(dataModel: DownloadDataModel) {
+		withContext(Dispatchers.Main) {
+			val imgResId = if (!aioSettings.openDownloadedFileOnSingleClick)
+				R.drawable.ic_button_open_v2 else R.drawable.ic_button_player
+			openFileIndicatorImgView.setImageResource(imgResId)
 		}
 	}
 

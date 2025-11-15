@@ -142,6 +142,7 @@
 	<string name="title_others">Others</string>
 	<string name="title_preparing_video_please_wait">Preparing Video, Please Wait…</string>
 	<string name="title_paste_video_link_here">Paste The Video Link Here…</string>
+	<string name="title_add_new_download">Add New Download</string>
 	<string name="title_downloads_manager">Downloads Manager</string>
 	<string name="title_missing_associate_webpage">Missing Associate Webpage</string>
 	<string name="title_search_and_download_your_videos">Search And Download Your Videos</string>
@@ -605,5 +606,8 @@
 	<string name="title_select_download_folder">Select Default Download Folder</string>
 	<string name="title_select_folder">Select Folder</string>
 	<string name="title_storage_permission_needed">Storage Permission Needed</string>
+	<string name="title_sort_list_by">Sort The List</string>
+	<string name="title_toggle_private_files">Toggle Privates</string>
+	<string name="title_total_downloads">Total Downloads</string>
 
 </resources>

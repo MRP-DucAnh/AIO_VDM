@@ -56,8 +56,6 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 
 	override fun onPauseFragment() {
 		logger.d("onPauseFragment() → unregistering UI + timer")
-		unregisterIntoDownloadSystem()
-		unregisterToDownloadFragment()
 		safeFinishTasksFragment?.let { AIOApp.aioTimer.unregister(it) }
 	}
 
@@ -84,7 +82,8 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 		openActiveTasksAnim = null
 
 		safeFinishTasksFragment?.let { AIOApp.aioTimer.unregister(it) }
-		downloadSystem.downloadsUIManager.finishedTasksFragment = null
+		unregisterIntoDownloadSystem()
+		unregisterToDownloadFragment()
 
 		logger.d("onDestroyView() → completed cleanup")
 		super.onDestroyView()
@@ -253,7 +252,7 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 		logger.d("Updating fragment title → total=$total")
 
 		val title = container.findViewById<TextView>(R.id.txt_current_frag_name)
-		val fixedName = getText(R.string.title_downloaded_files)
+		val fixedName = getText(R.string.title_total_downloads)
 		val text = "$fixedName ($total)"
 		title?.text = text
 	}

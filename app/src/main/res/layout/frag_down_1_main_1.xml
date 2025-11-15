@@ -63,8 +63,8 @@
 				android:gravity="center_vertical"
 				android:maxLines="1"
 				android:text="@string/title_downloads_manager"
-				android:textSize="@dimen/title_text_size"
-				android:textFontWeight="600"/>
+				android:textFontWeight="600"
+				android:textSize="@dimen/title_text_size" />
 
 			<!-- Search button (initially hidden) -->
 			<RelativeLayout
@@ -94,7 +94,7 @@
 				android:id="@+id/btn_actionbar_add_download"
 				android:layout_width="@dimen/_50"
 				android:layout_height="match_parent"
-				android:layout_alignParentEnd="true"
+				android:layout_toStartOf="@+id/btn_actionbar_options"
 				android:background="@drawable/ic_button_negative_selector"
 				android:clickable="true"
 				tools:ignore="SpeakableTextPresentCheck">
@@ -111,7 +111,114 @@
 					tools:ignore="ImageContrastCheck" />
 			</RelativeLayout>
 
+			<!-- Add new download button -->
+			<RelativeLayout
+				android:id="@+id/btn_actionbar_options"
+				android:layout_width="@dimen/_50"
+				android:layout_height="match_parent"
+				android:layout_alignParentEnd="true"
+				android:background="@drawable/ic_button_negative_selector"
+				android:clickable="true"
+				tools:ignore="SpeakableTextPresentCheck">
+
+				<ImageView
+					android:id="@+id/btn_right_most_actionbar_img"
+					android:layout_width="@dimen/_30"
+					android:layout_height="wrap_content"
+					android:layout_centerInParent="true"
+					android:adjustViewBounds="true"
+					android:importantForAccessibility="no"
+					android:src="@drawable/ic_button_actionbar_menu"
+					android:tint="@color/color_secondary"
+					tools:ignore="ImageContrastCheck" />
+			</RelativeLayout>
+
 		</RelativeLayout>
+	</androidx.cardview.widget.CardView>
+
+	<androidx.cardview.widget.CardView
+		android:id="@+id/container_top_sorts_private"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginStart="@dimen/_10"
+		android:layout_marginTop="@dimen/_5"
+		android:layout_marginEnd="@dimen/_10"
+		android:layout_marginBottom="@dimen/_6"
+		android:orientation="vertical"
+		app:cardBackgroundColor="@color/color_cardview_bg"
+		app:cardCornerRadius="@dimen/_10">
+
+		<LinearLayout
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:layout_marginStart="@dimen/_8"
+			android:layout_marginTop="@dimen/_3"
+			android:layout_marginEnd="@dimen/_8"
+			android:layout_marginBottom="@dimen/_3"
+			android:baselineAligned="false"
+			android:orientation="horizontal">
+
+			<RelativeLayout
+				android:id="@+id/btn_sort_the_list"
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_gravity="center_vertical"
+				android:layout_margin="@dimen/_0"
+				android:layout_weight="1"
+				android:background="@drawable/ic_button_negative_selector"
+				android:clickable="true"
+				tools:ignore="TouchTargetSizeCheck">
+
+				<TextView
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:layout_centerInParent="true"
+					android:layout_margin="@dimen/_8"
+					android:drawableStart="@drawable/ic_button_sort"
+					android:drawablePadding="@dimen/_5"
+					android:drawableTint="@color/color_secondary"
+					android:fontFamily="@font/application_font_family"
+					android:gravity="center_vertical"
+					android:text="@string/title_sort_list_by"
+					android:textFontWeight="500"
+					android:textSize="@dimen/normal_text_size" />
+			</RelativeLayout>
+
+			<View
+				android:layout_width="@dimen/_2"
+				android:layout_height="match_parent"
+				android:layout_marginHorizontal="@dimen/_5"
+				android:layout_marginVertical="@dimen/_2"
+				android:alpha=".5"
+				android:background="@drawable/rounded_border_color"
+				/>
+
+			<RelativeLayout
+				android:id="@+id/btn_toggle_private_files"
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_gravity="center_vertical"
+				android:layout_margin="@dimen/_0"
+				android:layout_weight="1"
+				android:background="@drawable/ic_button_negative_selector"
+				android:clickable="true"
+				tools:ignore="TouchTargetSizeCheck">
+
+				<TextView
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:layout_centerInParent="true"
+					android:layout_margin="@dimen/_8"
+					android:drawableStart="@drawable/ic_button_hide_eye"
+					android:drawablePadding="@dimen/_5"
+					android:drawableTint="@color/color_secondary"
+					android:fontFamily="@font/application_font_family"
+					android:gravity="center_vertical"
+					android:text="@string/title_toggle_private_files"
+					android:textFontWeight="500"
+					android:textSize="@dimen/normal_text_size" />
+			</RelativeLayout>
+		</LinearLayout>
 	</androidx.cardview.widget.CardView>
 
 	<!-- Container for the view pager that holds different fragments -->
