@@ -803,7 +803,7 @@
     },
     {
       "id": "9:4808231721176100847",
-      "lastPropertyId": "69:5719833993768012258",
+      "lastPropertyId": "70:682849658308711800",
       "name": "DownloadDataModel",
       "properties": [
         {
@@ -1150,6 +1150,11 @@
         {
           "id": "69:5719833993768012258",
           "name": "isSyncToCloudBackup",
+          "type": 1
+        },
+        {
+          "id": "70:682849658308711800",
+          "name": "hasUserOpenedTheFile",
           "type": 1
         }
       ],
