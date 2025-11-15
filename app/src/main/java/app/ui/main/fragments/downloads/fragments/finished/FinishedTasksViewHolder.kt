@@ -6,6 +6,8 @@ import android.graphics.drawable.Drawable
 import android.text.Spanned
 import android.util.LruCache
 import android.view.View
+import android.view.View.GONE
+import android.view.View.VISIBLE
 import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
@@ -68,6 +70,7 @@ class FinishedTasksViewHolder(val layout: View) {
 	private val fileTypeImgView: ImageView by lazy { layout.findViewById(R.id.img_file_type_indicator) }
 	private val openFileIndicatorImgView: ImageView by lazy { layout.findViewById(R.id.btn_open_download_file) }
 	private val privateFolderImgView: ImageView by lazy { layout.findViewById(R.id.img_private_folder_indicator) }
+	private val newIndicatorTxtView: TextView by lazy { layout.findViewById(R.id.txt_new_indicator) }
 
 	fun updateView(
 		dataModel: DownloadDataModel?,
@@ -152,6 +155,7 @@ class FinishedTasksViewHolder(val layout: View) {
 		updateFileTypeIndicator(dataModel)
 		updatePrivateFolderIndicator(dataModel)
 		updateOpenFileIndicator(dataModel)
+		updateNewFileIndicator(dataModel)
 		logger.d("refreshDownloadProgress: Completed UI refresh for ${dataModel.downloadId}")
 	}
 
@@ -219,8 +223,8 @@ class FinishedTasksViewHolder(val layout: View) {
 				durationTxtView.text = mediaDuration
 			} else {
 				logger.d("updatePlaybackTimeInfo: Hiding duration for $fileName")
-				playIndicatorView.visibility = View.GONE
-				durationConLayout.visibility = View.GONE
+				playIndicatorView.visibility = GONE
+				durationConLayout.visibility = GONE
 			}
 		}
 	}
@@ -404,6 +408,12 @@ class FinishedTasksViewHolder(val layout: View) {
 			val imgResId = if (!aioSettings.openDownloadedFileOnSingleClick)
 				R.drawable.ic_button_open_v2 else R.drawable.ic_button_player
 			openFileIndicatorImgView.setImageResource(imgResId)
+		}
+	}
+
+	private suspend fun updateNewFileIndicator(dataModel: DownloadDataModel) {
+		withContext(Dispatchers.Main) {
+			newIndicatorTxtView.visibility = if (dataModel.hasUserOpenedTheFile) GONE else VISIBLE
 		}
 	}
 

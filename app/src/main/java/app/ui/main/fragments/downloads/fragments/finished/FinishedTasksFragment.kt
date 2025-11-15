@@ -110,6 +110,9 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 			val globalSettings = downloadModel.globalSettings
 			val downloadLocation = globalSettings.defaultDownloadLocation
 			val opts = FinishedDownloadOptions(safeFinishTasksFragment)
+			downloadModel.hasUserOpenedTheFile = true
+			downloadModel.updateInStorage()
+			finishedTasksListAdapter?.notifyDataSetChangedOnSort(true)
 
 			fun openOptions() {
 				if (aioSettings.openDownloadedFileOnSingleClick) {
@@ -133,6 +136,10 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 		logger.d("Finished item long-clicked: id=${downloadModel.id}")
 
 		safeMotherActivityRef?.let { activity ->
+			downloadModel.hasUserOpenedTheFile = true
+			downloadModel.updateInStorage()
+			finishedTasksListAdapter?.notifyDataSetChangedOnSort(true)
+
 			fun openOptions() {
 				val opts = FinishedDownloadOptions(safeFinishTasksFragment)
 				activity.doSomeVibration()
