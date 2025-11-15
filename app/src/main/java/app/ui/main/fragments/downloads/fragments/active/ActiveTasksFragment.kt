@@ -36,11 +36,6 @@ open class ActiveTasksFragment : BaseFragment(), AIOTimerListener {
 
 	open val safeActiveTasksFragmentRef by lazy { WeakReference(this).get() }
 
-	// Options dialog for active download items
-	private val activeTasksOptions by lazy {
-		ActiveTasksOptions(motherActivity = safeMotherActivityRef)
-	}
-
 	// Container view for the list of active downloads
 	open val activeTasksListContainer: LinearLayout? by lazy {
 		safeFragmentLayoutRef?.findViewById(R.id.container_download_tasks_queue)
@@ -136,7 +131,7 @@ open class ActiveTasksFragment : BaseFragment(), AIOTimerListener {
 	 * @param downloadModel The DownloadDataModel associated with clicked item
 	 */
 	fun onDownloadUIItemClick(downloadModel: DownloadDataModel) {
-		activeTasksOptions.show(downloadModel)
+		ActiveTasksOptions(motherActivity = safeMotherActivityRef).show(downloadModel)
 	}
 
 	/**

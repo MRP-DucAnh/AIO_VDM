@@ -94,8 +94,8 @@
 					android:gravity="center"
 					android:text="@string/title_how_to_download"
 					android:textColor="@color/color_on_secondary"
-					android:textSize="@dimen/normal_text_size"
-					android:textFontWeight="600" />
+					android:textFontWeight="600"
+					android:textSize="@dimen/normal_text_size" />
 			</RelativeLayout>
 
 		</LinearLayout>
