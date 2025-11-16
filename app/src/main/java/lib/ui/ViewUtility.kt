@@ -100,9 +100,6 @@ import kotlin.math.roundToInt
  * - **Memory Optimization**: Systematic resource cleanup through drawable unbinding  and view hierarchy
  *    deconstruction to prevent memory leaks during view destruction  and configuration changes
  *
- * - **Efficient Event Handling**: Batch assignment of click listeners across multiple views with safe context
- * 	 handling using WeakReference patterns to prevent memory leaks
- *
  * - **View Retrieval & Navigation**: Safe view lookup within hierarchies using tags, IDs, and parent relationships
  *   with comprehensive null safety and error handling
  *
@@ -306,19 +303,21 @@ object ViewUtility {
 	}
 
 	/**
-	 * Sets a common [View.OnClickListener] on multiple [View]s within an [Activity] with memory safety.
+	 * Sets a common [View.OnClickListener] on multiple [View]s within an [Activity].
 	 *
-	 * This function provides batch click listener assignment for multiple views identified by
-	 * their resource IDs. Uses WeakReference for the activity context to prevent potential
-	 * memory leaks if listeners outlive the activity lifecycle. Useful for setting up
-	 * consistent click behavior across related UI elements in activity layouts.
+	 * This function provides efficient batch click listener assignment for multiple views
+	 * identified by their resource IDs, eliminating repetitive findViewById calls and
+	 * listener assignments. Particularly useful for setting up consistent click behavior
+	 * across related UI elements like button groups, navigation items, or form controls
+	 * in activity layouts.
 	 *
 	 * @param clickListener The [View.OnClickListener] to assign to all specified views.
-	 *                      Can be null to clear existing click listeners from the views.
-	 * @param activity The [Activity] context containing the target views. Uses WeakReference
-	 *                 for safe access and to prevent memory leaks from context retention.
+	 *                      Can be null to clear existing click listeners from the views,
+	 *                      useful for resetting UI state or during cleanup operations.
+	 * @param activity The [Activity] context containing the target views.
 	 * @param ids A vararg of integer resource IDs ([IdRes]) identifying the views to receive
-	 *            the click listener. Invalid IDs are safely ignored.
+	 *            the click listener. Invalid or non-existent IDs are safely ignored without
+	 *            affecting other view assignments in the batch operation.
 	 */
 	@JvmStatic
 	fun setViewOnClickListener(
@@ -385,11 +384,10 @@ object ViewUtility {
 	 *
 	 * This function applies a continuous rotating animation to create spinning loader effects,
 	 * commonly used for progress indicators or loading states. The animation runs indefinitely
-	 * until explicitly stopped. Uses WeakReference for safe activity context access to prevent
-	 * memory leaks during long-running animations.
+	 * until explicitly stopped.
 	 *
 	 * @param activity The [Activity] context used to load animation resources.
-	 *                 Uses WeakReference to prevent memory leaks from context retention.
+	 *
 	 * @param view The [View] to animate with continuous clockwise rotation.
 	 *             If null, no animation is started.
 	 */
@@ -411,7 +409,7 @@ object ViewUtility {
 	 * responsive UIs that maintain proportional dimensions regardless of display density.
 	 *
 	 * @param context The [Context] used to retrieve display density metrics.
-	 *                Uses WeakReference for safe context access and memory management.
+	 *
 	 * @param dp The value in Density-independent Pixels (DP) to convert to physical pixels.
 	 *           Represents consistent visual size across different screen densities.
 	 * @return The equivalent value in device-specific Pixels (PX) as integer, or -1 if
@@ -434,7 +432,7 @@ object ViewUtility {
 	 * Helps maintain consistent spacing and sizing across different screen densities.
 	 *
 	 * @param context The [Context] used to retrieve display density metrics.
-	 *                Uses WeakReference for safe context access and memory management.
+	 *
 	 * @param px The value in device-specific Pixels (PX) to convert to density-independent units.
 	 *           Represents actual physical pixels on the device screen.
 	 * @return The equivalent value in Density-independent Pixels (DP) as float, or -1.0f if
@@ -455,10 +453,10 @@ object ViewUtility {
 	 * This function programmatically triggers the soft keyboard to appear and assigns focus
 	 * to the specified view, enabling immediate text input without user interaction.
 	 * Essential for improving user experience in forms, search interfaces, and input-heavy
-	 * applications. Uses WeakReference for safe activity context access.
+	 * applications.
 	 *
 	 * @param activity The [Activity] context used to access system input method services.
-	 *                 Uses WeakReference to prevent memory leaks from context retention.
+	 *
 	 * @param focusedView The [View] that should receive focus and trigger keyboard display.
 	 *             Typically an EditText or other input-capable view. If null,
 	 *             keyboard cannot be shown as no target view is available.
@@ -481,10 +479,10 @@ object ViewUtility {
 	 * This function uses the InputMethodManager to programmatically close the soft keyboard
 	 * that is currently associated with the focused view's window token. Essential for
 	 * improving user experience when keyboard dismissal is required after text input
-	 * completion or during screen transitions. Uses WeakReference for safe activity access.
+	 * completion or during screen transitions.
 	 *
 	 * @param activity The [Activity] context used to access system input method services.
-	 *                 Uses WeakReference to prevent memory leaks from context retention.
+	 *
 	 * @param focusedView The [View] that currently has input focus, providing the window token
 	 *                    needed to identify which keyboard session to dismiss. If null,
 	 *                    function cannot hide keyboard as token is unavailable.
@@ -570,11 +568,10 @@ object ViewUtility {
 	 * This function detects keyboard visibility by comparing the visible display frame height
 	 * with the total screen height. When the keyboard appears, it reduces the available visible
 	 * area, creating a measurable difference. Uses a threshold of 100 pixels to distinguish
-	 * between keyboard presence and normal UI variations. Handles null contexts safely with
-	 * WeakReference to prevent memory leaks.
+	 * between keyboard presence and normal UI variations.
 	 *
 	 * @param activity The [Activity] context used to access window and view hierarchy.
-	 *                 Uses WeakReference for safe context access and memory management.
+	 *
 	 * @return `true` if the on-screen keyboard is currently visible and occupying screen space,
 	 *         `false` if keyboard is hidden, activity is null, or measurement fails.
 	 */
@@ -650,11 +647,7 @@ object ViewUtility {
 	 *                    Applies to both fade-in and fade-out transitions.
 	 */
 	@JvmStatic
-	fun toggleViewVisibility(
-		targetView: View,
-		shouldAnimate: Boolean = false,
-		animTimeout: Long = 300
-	) {
+	fun toggleViewVisibility(targetView: View, shouldAnimate: Boolean = false, animTimeout: Long = 300) {
 		if (shouldAnimate) {
 			if (targetView.isVisible) {
 				// Animate fade-out and set GONE after animation completes
@@ -853,11 +846,10 @@ object ViewUtility {
 	 *                    Longer durations create more gradual, noticeable fade effects.
 	 */
 	@JvmStatic
-	fun hideView(
-		targetView: View,
-		shouldAnimate: Boolean = false,
-		animTimeout: Long = 500
-	) {
+	fun hideView(targetView: View?, shouldAnimate: Boolean = false, animTimeout: Long = 500) {
+		//Early return if null target view is passed
+		if (targetView == null) return
+
 		// Early return if view is already hidden to prevent redundant operations
 		if (!targetView.isVisible) return
 
@@ -888,11 +880,10 @@ object ViewUtility {
 	 *                    Longer durations create more gradual, noticeable fade effects.
 	 */
 	@JvmStatic
-	fun showView(
-		targetView: View,
-		shouldAnimate: Boolean = false,
-		animTimeout: Long = 500
-	) {
+	fun showView(targetView: View?, shouldAnimate: Boolean = false, animTimeout: Long = 500) {
+		//Early return if null target view is passed
+		if (targetView == null) return
+
 		// Early return if view is already visible to prevent redundant operations
 		if (targetView.isVisible) return
 
@@ -917,7 +908,7 @@ object ViewUtility {
 	 * from being obscured by modern screen designs.
 	 *
 	 * @param activity The [Activity] context used to access window insets and display metrics.
-	 *                 Uses WeakReference to prevent memory leaks from context retention.
+	 *
 	 * @return The height of the top cutout area in pixels, or 0 if no cutout exists,
 	 *         activity is null, or device doesn't support display cutout API.
 	 */
@@ -943,7 +934,6 @@ object ViewUtility {
 	 * @param view The [View] to adjust top margin for cutout accommodation. If null,
 	 *             function exits silently without any layout modifications.
 	 * @param activity The [Activity] context used to determine cutout dimensions.
-	 *                 Uses WeakReference for safe context access and memory management.
 	 */
 	@JvmStatic
 	fun setTopMarginWithCutout(view: View?, activity: Activity?) {
@@ -1066,11 +1056,7 @@ object ViewUtility {
 	 *                 create more gradual, smoother fade transitions.
 	 */
 	@JvmStatic
-	fun animateViewVisibility(
-		targetView: View,
-		visibility: Int,
-		duration: Int
-	) {
+	fun animateViewVisibility(targetView: View, visibility: Int, duration: Int) {
 		val alpha = if (visibility == VISIBLE) 1f else 0f
 		targetView
 			.animate()
@@ -1095,11 +1081,7 @@ object ViewUtility {
 	 *                       Defines how long the complete shaking effect will continue.
 	 */
 	@JvmStatic
-	fun shakeAnimationOnView(
-		targetView: View,
-		durationOfShake: Long,
-		durationOfAnim: Long
-	) {
+	fun shakeAnimationOnView(targetView: View, durationOfShake: Long, durationOfAnim: Long) {
 		// Create horizontal translation animation with decreasing amplitude for natural shake effect
 		val shakeX = ofFloat(
 			targetView, "translationX",
@@ -1207,16 +1189,15 @@ object ViewUtility {
 	}
 
 	/**
-	 * Sets the text of a [TextView] within an [Activity] with safe null handling.
+	 * Safely updates the text of a [TextView] inside an [Activity].
 	 *
-	 * This utility method provides a concise way to update TextView content while
-	 * gracefully handling null activities and missing views. Uses weak reference
-	 * patterns implicitly through null-safe calls to prevent memory leaks.
+	 * This method checks for a valid Activity and TextView before applying the text,
+	 * preventing crashes when the Activity is null, finishing, or the view is not found.
+	 * No extra references are stored, so it avoids memory-related issues.
 	 *
-	 * @param activity The [Activity] context where the TextView is located.
-	 *                 Uses null safety to handle destroyed or unavailable activities.
-	 * @param id The resource ID of the [TextView] to update with new text content.
-	 * @param text The text content to display in the specified TextView.
+	 * @param activity The Activity that contains the target TextView. If null, the call is ignored.
+	 * @param id The view ID of the TextView to update.
+	 * @param text The text value to set on the TextView.
 	 */
 	@JvmStatic
 	fun setTextViewText(activity: Activity?, @IdRes id: Int, text: String) {
@@ -1958,8 +1939,6 @@ object ViewUtility {
 	 * for complete visual harmony.
 	 *
 	 * @param activity The current activity where the theme should be applied and rendered.
-	 *                 Uses WeakReference internally to prevent memory leaks and ensure
-	 *                 safe access during configuration changes.
 	 */
 	@JvmStatic
 	fun changesSystemTheme(activity: BaseActivity) {
@@ -2011,14 +1990,17 @@ object ViewUtility {
 	 * @param endMatch The suffix pattern to prioritize for removal during text shrinking operations
 	 */
 	@JvmStatic
-	fun shrinkTextToFitView(textView: TextView, text: String, endMatch: String) {
+	fun shrinkTextToFitView(textView: TextView?, text: String, endMatch: String) {
+		// Safely return if null conditions are matched
+		if (textView == null) return
+
 		// Calculate available width accounting for padding to get true display area
 		val availableWidth = textView.width - textView.paddingStart - textView.paddingEnd
 		logger.d("Fit text: \"$text\" endMatch=\"$endMatch\"")
 
 		// If view width isn't available yet, retry after layout pass when dimensions are known
 		if (availableWidth <= 0) {
-			textView.post { shrinkTextToFitView(textView, text, endMatch) }
+			textView.doOnLayout { shrinkTextToFitView(textView, text, endMatch) }
 			return
 		}
 
