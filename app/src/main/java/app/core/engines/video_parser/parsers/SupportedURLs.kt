@@ -197,6 +197,21 @@ object SupportedURLs {
 		}
 	}
 
+	fun isVimeoUrl(url: String): Boolean {
+		return try {
+			val host = URL(url).host.lowercase()
+
+			// Vimeo main + player + shortened hosts
+			host.contains("vimeo.com") ||
+					host.contains("player.vimeo.com")
+
+		} catch (error: Exception) {
+			logger.e("Error while checking Vimeo URL: ${error.message}", error)
+			false
+		}
+	}
+
+
 	/**
 	 * Checks whether the given URL is from a supported social media platform
 	 * (Facebook, Instagram, TikTok, YouTube).

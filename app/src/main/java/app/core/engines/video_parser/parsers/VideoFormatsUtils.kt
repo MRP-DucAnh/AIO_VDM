@@ -363,9 +363,9 @@ object VideoFormatsUtils {
 	 * val format2 = VideoFormat(formatAcodec = "video only") // Returns: true
 	 * val format3 = VideoFormat(formatAcodec = "mp4a.40.2") // Returns: false
 	 */
-	fun isFormatHasNoAudio(videoFormat: VideoFormat) =
+	fun isFormatVideoOnly(videoFormat: VideoFormat) =
 		videoFormat.formatAcodec.isEmpty() ||
-				videoFormat.formatAcodec.lowercase().contains("video only")
+				videoFormat.formatAcodec.lowercase().contains("video only", true)
 
 	/**
 	 * Cleans file size string by removing non-numeric prefixes and extraneous characters.

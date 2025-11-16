@@ -673,7 +673,7 @@ class VideoResolutionPicker(
 					downloadModel.videoFormat = videoFormat
 					if (videoInfo.videoDuration > 0L) {
 						downloadModel.mediaFilePlaybackDuration =
-							formatVideoDuration(videoInfo.videoDuration)
+							"(${formatVideoDuration(videoInfo.videoDuration)})"
 					}
 
 					// Set cookies and referrer

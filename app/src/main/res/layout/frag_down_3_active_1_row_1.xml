@@ -31,7 +31,7 @@
 			<androidx.cardview.widget.CardView
 				android:id="@+id/container_img_thumbnail"
 				android:layout_width="@dimen/_90"
-				android:layout_height="@dimen/_70"
+				android:layout_height="@dimen/_57"
 				android:layout_marginStart="@dimen/_5"
 				android:layout_marginTop="@dimen/_5"
 				android:layout_marginEnd="@dimen/_5"
@@ -213,7 +213,7 @@
 				<RelativeLayout
 					android:layout_width="match_parent"
 					android:layout_height="wrap_content"
-					android:layout_marginTop="@dimen/_2"
+					android:layout_marginTop="@dimen/_3"
 					android:background="@drawable/rounded_surface_color"
 					android:orientation="horizontal">
 
@@ -227,6 +227,7 @@
 						android:layout_marginTop="@dimen/_2"
 						android:layout_marginEnd="@dimen/_5"
 						android:layout_marginBottom="@dimen/_2"
+						android:layout_toStartOf="@id/img_active_indicator"
 						android:ellipsize="none"
 						android:fontFamily="@font/application_font_family"
 						android:gravity="center_vertical"
@@ -235,6 +236,21 @@
 						android:textColor="@color/color_text_hint"
 						android:textSize="@dimen/smallest_text_size"
 						tools:ignore="TextContrastCheck" />
+
+					<ImageView
+						android:id="@+id/img_active_indicator"
+						android:layout_width="@dimen/_15"
+						android:layout_height="wrap_content"
+						android:layout_alignParentEnd="true"
+						android:layout_centerVertical="true"
+						android:layout_marginEnd="@dimen/_5"
+						android:adjustViewBounds="true"
+						android:importantForAccessibility="yes"
+						android:src="@drawable/ic_button_dot"
+						android:tint="@color/color_secondary"
+						android:visibility="visible"
+						tools:ignore="ContentDescription" />
+
 				</RelativeLayout>
 			</LinearLayout>
 		</RelativeLayout>

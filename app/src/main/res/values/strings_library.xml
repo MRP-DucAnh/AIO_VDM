@@ -609,5 +609,7 @@
 	<string name="title_sort_list_by">Sort The List</string>
 	<string name="title_toggle_private_files">Toggle Privates</string>
 	<string name="title_total_downloads">Total Downloads</string>
+	<string name="title_sample_storage_info">97.4 GB Used / 108.0 GB (Available: 11.1GB)</string>
+	<string name="title_new">NEW</string>
 
 </resources>

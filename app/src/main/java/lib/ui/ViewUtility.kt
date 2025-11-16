@@ -1306,11 +1306,13 @@ object ViewUtility {
 				val url = URL(thumbnailUrl)
 				val connection = url.openConnection() as HttpURLConnection
 				connection.doInput = true
+				connection.connectTimeout = 5000
+				connection.readTimeout = 5000
 				connection.connect()
 
 				// Get the input stream and decode the image into a bitmap
 				val input: InputStream = connection.inputStream
-				val bitmap = decodeStream(input)
+				val bitmap = decodeStream(input) ?: return@executeInBackground
 
 				// Check if the image is in portrait orientation (height > width)
 				val isPortrait = bitmap.height > bitmap.width
@@ -1326,6 +1328,8 @@ object ViewUtility {
 					Glide.with(targetImageView.context)
 						.load(rotatedBitmap).into(targetImageView)
 				}
+				input.close()
+				connection.disconnect()
 			} catch (error: Exception) {
 				logger.e("Error while loading thumbnail from a remote url:", error)
 				// Set placeholder image if provided, or leave it unchanged
@@ -1404,10 +1408,10 @@ object ViewUtility {
 		}
 
 		// If the file is an APK, retrieve its icon/thumbnail
-		else if (targetFile.name.lowercase().endsWith(".apk", true)) {
-			getApkThumbnail(targetFile, onApkIconFound = { bitmap ->
-				return@getApkThumbnail bitmap
-			})
+		else if (targetFile.name.endsWith(".apk", true)) {
+			var apkBitmap: Bitmap? = null
+			getApkThumbnail(targetFile, onApkIconFound = { bmp -> apkBitmap = bmp; bmp })
+			if (apkBitmap != null) return apkBitmap
 		}
 
 		// For video files or unknown types, attempt to extract a frame as the thumbnail
@@ -1429,6 +1433,7 @@ object ViewUtility {
 
 			// Scale the bitmap to the required width, maintaining the aspect ratio
 			originalBitmap?.let {
+				if (it.width <= 0) return null
 				val aspectRatio = it.height.toFloat() / it.width
 				val targetHeight = (requiredThumbWidth * aspectRatio).toInt()
 				return it.scale(requiredThumbWidth, targetHeight, false)
@@ -1468,7 +1473,7 @@ object ViewUtility {
 		val apkExtension = ".apk".lowercase(Locale.ROOT)
 		if (!apkFile.exists() || !apkFile.name.endsWith(apkExtension)) {
 			// Apply fallback drawable and return failure for invalid APK files
-			imageViewHolder?.setImageDrawable(defaultThumbDrawable)
+			imageViewHolder?.apply { scaleType = ImageView.ScaleType.CENTER_INSIDE }
 			return false
 		}
 
@@ -1478,7 +1483,7 @@ object ViewUtility {
 
 			// Extract package information from APK file to access application metadata
 			val packageInfo = packageManager.getPackageArchiveInfo(
-				apkPath, PackageManager.GET_ACTIVITIES
+				apkPath, PackageManager.GET_META_DATA
 			)
 
 			// Process application info if package was successfully parsed
@@ -1618,7 +1623,7 @@ object ViewUtility {
 			val optionsBounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
 			decodeByteArray(embeddedPicture, 0, embeddedPicture.size, optionsBounds)
 
-			// Define a reasonable max dimension for album art (e.g., 512x512)
+			// Define a reasonable max dimension for album art (e.g., 412x412)
 			val maxSize = 412
 			val scale = maxOf(1, maxOf(optionsBounds.outWidth, optionsBounds.outHeight) / maxSize)
 
@@ -1667,7 +1672,7 @@ object ViewUtility {
 			}
 
 			if (connection?.responseCode == HTTP_OK &&
-				connection.contentType?.startsWith("image/") == true) {
+				connection.contentType?.contains("image", true) == true) {
 				inputStream = BufferedInputStream(connection.inputStream)
 				decodeStream(inputStream)
 			} else null

@@ -21,6 +21,7 @@ import app.core.engines.video_parser.parsers.SupportedURLs.isYouTubeUrl
 import app.core.engines.video_parser.parsers.VideoFormat
 import app.core.engines.video_parser.parsers.VideoFormatsUtils.cleanYtdlpLoggingSting
 import app.core.engines.video_parser.parsers.VideoFormatsUtils.formatDownloadSpeedForYtDlp
+import app.core.engines.video_parser.parsers.VideoFormatsUtils.isFormatVideoOnly
 import app.core.engines.video_parser.parsers.VideoFormatsUtils.isValidSpeedFormat
 import app.core.engines.video_parser.parsers.VideoParserUtility.getSanitizedTitle
 import app.core.engines.video_parser.parsers.VideoParserUtility.getVideoTitleFromURL
@@ -683,7 +684,7 @@ class M3U8VideoDownloader(
 		} else {
 			logger.d("Format ID does not match package name; using provided format ID.")
 			// Case 2: Normal formats → just return the formatId
-			videoFormat.formatId
+			if (isFormatVideoOnly(videoFormat)) "${videoFormat.formatId}+ba" else videoFormat.formatId
 		}
 
 		logger.d("Generated yt-dlp command: $command")

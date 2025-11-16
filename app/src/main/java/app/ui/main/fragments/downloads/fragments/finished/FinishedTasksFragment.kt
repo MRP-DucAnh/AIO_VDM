@@ -139,12 +139,6 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 		finishedTasksListAdapter?.let { adapter ->
 			logger.d("Cleaning adapter resources… count=${adapter.count}")
 			adapter.clearResources()
-
-			// Clear resources for all view holders in the adapter
-			for (index in 0 until adapter.count) {
-				val holder = (adapter.getView(index, null, null).tag as? FinishedTasksViewHolder)
-				holder?.clearResources()
-			}
 		}
 
 		// Clear all references to prevent memory leaks
@@ -208,7 +202,6 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 			// Mark file as opened and persist the change
 			downloadModel.hasUserOpenedTheFile = true
 			downloadModel.updateInStorage()
-			finishedTasksListAdapter?.notifyDataSetChangedOnSort(true)
 
 			val opts = FinishedDownloadOptions(safeFinishTasksFragment)
 
@@ -253,7 +246,6 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 			// Mark file as opened and persist the change
 			downloadModel.hasUserOpenedTheFile = true
 			downloadModel.updateInStorage()
-			finishedTasksListAdapter?.notifyDataSetChangedOnSort(true)
 
 			/**
 			 * Shows options dialog with haptic feedback

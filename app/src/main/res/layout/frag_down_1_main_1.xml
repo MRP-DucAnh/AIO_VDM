@@ -190,8 +190,7 @@
 				android:layout_marginHorizontal="@dimen/_5"
 				android:layout_marginVertical="@dimen/_2"
 				android:alpha=".5"
-				android:background="@drawable/rounded_border_color"
-				/>
+				android:background="@drawable/rounded_border_color" />
 
 			<RelativeLayout
 				android:id="@+id/btn_toggle_private_files"
@@ -221,18 +220,77 @@
 		</LinearLayout>
 	</androidx.cardview.widget.CardView>
 
-	<!-- Container for the view pager that holds different fragments -->
-	<RelativeLayout
+	<androidx.constraintlayout.widget.ConstraintLayout
 		android:layout_width="match_parent"
 		android:layout_height="match_parent">
 
-		<!-- Non-swappable view pager for fragment navigation -->
-		<lib.ui.builders.NonSwappableViewPager
-			android:id="@+id/fragment_viewpager"
-			android:layout_width="match_parent"
-			android:layout_height="match_parent"
-			android:layout_alignParentTop="true"
+		<!-- Content area -->
+		<RelativeLayout
+			android:id="@+id/container_fragment_area"
+			android:layout_width="0dp"
+			android:layout_height="0dp"
+			android:layout_marginBottom="@dimen/_5"
 			android:background="@color/transparent"
-			tools:ignore="SpeakableTextPresentCheck" />
-	</RelativeLayout>
+			app:layout_constraintBottom_toTopOf="@id/container_bottom_storage_info"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toTopOf="parent">
+
+			<lib.ui.builders.NonSwappableViewPager
+				android:id="@+id/fragment_viewpager"
+				android:layout_width="match_parent"
+				android:layout_height="match_parent"
+				tools:ignore="SpeakableTextPresentCheck" />
+
+		</RelativeLayout>
+
+		<!-- Fixed bottom card -->
+		<androidx.cardview.widget.CardView
+			android:id="@+id/container_bottom_storage_info"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="@dimen/_10"
+			android:layout_marginTop="@dimen/_5"
+			android:layout_marginEnd="@dimen/_10"
+			android:layout_marginBottom="@dimen/_3"
+			android:orientation="vertical"
+			app:cardBackgroundColor="@color/color_cardview_bg"
+			app:cardCornerRadius="@dimen/_10"
+			app:layout_constraintBottom_toBottomOf="parent"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent">
+
+			<LinearLayout
+				android:layout_width="match_parent"
+				android:layout_height="match_parent"
+				android:layout_marginStart="@dimen/_8"
+				android:layout_marginTop="@dimen/_3"
+				android:layout_marginEnd="@dimen/_8"
+				android:layout_marginBottom="@dimen/_3"
+				android:baselineAligned="false"
+				android:orientation="horizontal"
+				tools:ignore="UseCompoundDrawables">
+
+				<ImageView
+					android:layout_width="@dimen/_20"
+					android:layout_height="@dimen/_20"
+					android:layout_gravity="center_vertical"
+					android:adjustViewBounds="true"
+					android:importantForAccessibility="no"
+					android:src="@drawable/ic_button_sd_card"
+					android:tint="@color/color_secondary" />
+
+				<TextView
+					android:id="@+id/txt_device_storage_info"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content"
+					android:layout_gravity="center_vertical"
+					android:layout_marginHorizontal="@dimen/_5"
+					android:text="@string/title_sample_storage_info"
+					android:textFontWeight="500"
+					android:textSize="@dimen/small_text_size" />
+
+			</LinearLayout>
+		</androidx.cardview.widget.CardView>
+	</androidx.constraintlayout.widget.ConstraintLayout>
 </LinearLayout>
