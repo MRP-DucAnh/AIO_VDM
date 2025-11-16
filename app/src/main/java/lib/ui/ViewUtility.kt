@@ -22,6 +22,7 @@ import android.graphics.BitmapFactory.decodeStream
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
@@ -849,10 +850,19 @@ object ViewUtility {
 	@JvmStatic
 	fun animateFadInOutAnim(targetView: View?) {
 		if (targetView == null) return
-		val anim = AlphaAnimation(0f, 1f)
-		anim.duration = 500
-		anim.repeatCount = Animation.INFINITE
-		anim.repeatMode = Animation.REVERSE
+
+		// Check if animation already running
+		val current = targetView.animation
+		if (current != null && !current.hasEnded()) {
+			return   // already animating
+		}
+
+		val anim = AlphaAnimation(0f, 1f).apply {
+			duration = 500
+			repeatCount = Animation.INFINITE
+			repeatMode = Animation.REVERSE
+		}
+
 		targetView.startAnimation(anim)
 	}
 
@@ -1582,6 +1592,46 @@ object ViewUtility {
 			Configuration.ORIENTATION_LANDSCAPE -> "landscape"
 			Configuration.ORIENTATION_PORTRAIT -> "portrait"
 			else -> "undefined"
+		}
+	}
+
+	private fun shrinkTextToFitView(textView: TextView, text: String, endMatch: String) {
+		// Calculate available width accounting for padding
+		val availableWidth = textView.width - textView.paddingStart - textView.paddingEnd
+		logger.d("Fit text: \"$text\" endMatch=\"$endMatch\"")
+
+		// If view width isn't available yet, retry after layout pass
+		if (availableWidth <= 0) {
+			textView.post { shrinkTextToFitView(textView, text, endMatch) }
+			return
+		}
+
+		var newText = text
+		// Create a copy of the TextView's paint for text measurement
+		val paint = Paint(textView.paint)
+
+		try {
+			// Only attempt to trim if the text ends with the specified pattern
+			if (newText.endsWith(endMatch, ignoreCase = true)) {
+				logger.d("Trimming text end \"$endMatch\" if needed")
+				// Gradually remove characters until text fits or becomes too short
+				while (paint.measureText(newText) > availableWidth && newText.length > 4) {
+					newText = if (newText.endsWith(endMatch, ignoreCase = true)) {
+						// Preferentially remove the endMatch pattern first
+						newText.dropLast(endMatch.length)
+					} else {
+						// Fall back to removing single characters
+						newText.dropLast(1)
+					}
+				}
+				logger.d("Trimmed text: \"$newText\"")
+			}
+			// Apply the potentially modified text to the TextView
+			textView.text = newText
+		} catch (error: Exception) {
+			// Fall back to original text if measurement fails
+			logger.e("ShrinkText : Font measurement failed for text=$text", error)
+			textView.text = text
 		}
 	}
 }
