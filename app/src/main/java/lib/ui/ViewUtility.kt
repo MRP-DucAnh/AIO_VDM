@@ -1151,7 +1151,7 @@ object ViewUtility {
 	 * @param view The [View] to stop all animations on and reset to default state.
 	 */
 	@JvmStatic
-	fun closeAnyAnimation(view: View) = view.clearAnimation()
+	fun closeAnyAnimation(view: View?) = view?.clearAnimation()
 
 	/**
 	 * Fades out a view with smooth alpha transition and optional completion callback.
@@ -1169,9 +1169,11 @@ object ViewUtility {
 	 */
 	@JvmStatic
 	fun fadeOutView(
-		view: View, duration: Long = 300L,
+		view: View?, duration: Long = 300L,
 		onAnimationEnd: (() -> Unit)? = null
 	) {
+		//Early return for null view provided
+		if (view == null) return
 		// Create alpha animation from fully opaque to fully transparent
 		val fadeOut = AlphaAnimation(1.0f, 0.0f).apply {
 			this.duration = duration

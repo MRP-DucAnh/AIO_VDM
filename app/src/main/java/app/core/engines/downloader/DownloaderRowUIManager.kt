@@ -1,8 +1,8 @@
 package app.core.engines.downloader
 
-import android.graphics.Paint
 import android.view.View
 import android.view.View.GONE
+import android.view.View.VISIBLE
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat.getDrawable
@@ -31,150 +31,70 @@ import lib.process.ThreadsUtility
 import lib.process.ThreadsUtility.executeOnMain
 import lib.texts.CommonTextUtils.getText
 import lib.ui.MsgDialogUtils
+import lib.ui.ViewUtility.animateFadInOutAnim
+import lib.ui.ViewUtility.closeAnyAnimation
 import lib.ui.ViewUtility.getThumbnailFromFile
 import lib.ui.ViewUtility.hideView
 import lib.ui.ViewUtility.isBlackThumbnail
 import lib.ui.ViewUtility.rotateBitmap
 import lib.ui.ViewUtility.saveBitmapToFile
 import lib.ui.ViewUtility.showView
+import lib.ui.ViewUtility.shrinkTextToFitView
 import java.io.File
 import java.lang.ref.WeakReference
 
-/**
- * UI controller class for managing individual download row views in the download list.
- * This class handles all UI updates and visual state management for a single download item,
- * including thumbnails, progress indicators, status text, and various icons.
- *
- * The class uses lazy initialization for view components and weak references to prevent memory leaks.
- * It maintains state for dialog visibility, thumbnail caching, and settings changes.
- */
-class DownloaderRowUIManager(private val downloadRowView: View) {
+class DownloaderRowUIManager(downloadRowView: View) {
 
-	/** Logger instance for tracking UI events and debugging */
 	private val logger = LogHelperUtils.from(javaClass)
+	private val weakReferenceOfLayout = WeakReference(downloadRowView)
+	private val safeLayoutRef: View?
+		get() = weakReferenceOfLayout.get()
 
-	/** Weak reference to the row view to prevent memory leaks in lists */
-	private val rowViewRef = WeakReference(downloadRowView)
-
-	/** Tracks whether any dialog is currently being shown to prevent multiple overlapping dialogs */
 	private var isShowingAnyDialog = false
-
-	/** Flag indicating if the thumbnail has been loaded and cached to avoid redundant loading */
 	private var cachedThumbLoaded = false
-
-	/** Tracks changes in thumbnail settings to trigger UI updates when preferences change */
 	private var isThumbnailSettingsChanged = false
 
-	// Lazy-initialized view components for the download row
+	private val thumbnailView: ImageView? by lazy { safeLayoutRef?.findViewById(R.id.img_file_thumbnail) }
+	private val statusIconView: ImageView? by lazy { safeLayoutRef?.findViewById(R.id.img_status_indicator) }
+	private val fileNameTxtView: TextView? by lazy { safeLayoutRef?.findViewById(R.id.txt_file_name) }
+	private val statusTextView: TextView? by lazy { safeLayoutRef?.findViewById(R.id.txt_download_status) }
+	private val siteFaviconView: ImageView? by lazy { safeLayoutRef?.findViewById(R.id.img_site_favicon) }
+	private val mediaDurationView: TextView? by lazy { safeLayoutRef?.findViewById(R.id.txt_media_duration) }
+	private val mediaDurationContainer: View? by lazy { safeLayoutRef?.findViewById(R.id.container_media_duration) }
+	private val fileTypeIconView: ImageView? by lazy { safeLayoutRef?.findViewById(R.id.img_file_type_indicator) }
+	private val mediaPlayIconView: ImageView? by lazy { safeLayoutRef?.findViewById(R.id.img_media_play_indicator) }
+	private val privateFolderIconView: ImageView? by lazy { safeLayoutRef?.findViewById(R.id.img_private_folder_indicator) }
+	private val activeIndicatorImgView: ImageView? by lazy { safeLayoutRef?.findViewById(R.id.img_active_indicator) }
 
-	/** ImageView for displaying the file thumbnail or default icon */
-	private val thumbnailView: ImageView by lazy { downloadRowView.findViewById(R.id.img_file_thumbnail) }
-
-	/** ImageView for showing status indicator (e.g., downloading, paused, completed) */
-	private val statusIconView: ImageView by lazy { downloadRowView.findViewById(R.id.img_status_indicator) }
-
-	/** TextView for displaying the filename or placeholder text */
-	private val fileNameView: TextView by lazy { downloadRowView.findViewById(R.id.txt_file_name) }
-
-	/** TextView for showing download progress, speed, and status information */
-	private val statusTextView: TextView by lazy { downloadRowView.findViewById(R.id.txt_download_status) }
-
-	/** ImageView for displaying the website favicon for browser-initiated downloads */
-	private val siteFaviconView: ImageView by lazy { downloadRowView.findViewById(R.id.img_site_favicon) }
-
-	/** TextView for displaying media duration (audio/video files only) */
-	private val mediaDurationView: TextView by lazy { downloadRowView.findViewById(R.id.txt_media_duration) }
-
-	/** Container view that holds the media duration text (shown/hidden based on file type) */
-	private val mediaDurationContainer: View by lazy { downloadRowView.findViewById(R.id.container_media_duration) }
-
-	/** ImageView for showing file type icon (document, image, video, audio, etc.) */
-	private val fileTypeIconView: ImageView by lazy { downloadRowView.findViewById(R.id.img_file_type_indicator) }
-
-	/** ImageView for showing play icon indicator on media files (audio/video) */
-	private val mediaPlayIconView: ImageView by lazy { downloadRowView.findViewById(R.id.img_media_play_indicator) }
-
-	/** ImageView for indicating whether file is saved to private (locked) or public folder */
-	private val privateFolderIconView: ImageView by lazy { downloadRowView.findViewById(R.id.img_private_folder_indicator) }
-
-	/**
-	 * Updates all UI components of the download row with the current state from the download model.
-	 * This method serves as the central coordinator for refreshing the download row's visual
-	 * representation, ensuring all UI elements accurately reflect the download's current status.
-	 *
-	 * The method performs a comprehensive update of all visual components in sequence:
-	 * - Row visibility (shown/hidden based on download state)
-	 * - File name display
-	 * - Progress indicators and status
-	 * - Thumbnail image
-	 * - Website favicon (for browser downloads)
-	 * - Media playback controls (for audio/video files)
-	 * - File duration display (for media files)
-	 * - File type icon
-	 * - Private folder indicator
-	 * - Error dialogs (if applicable)
-	 *
-	 * @param downloadModel The DownloadDataModel containing current download state and metadata
-	 */
 	fun updateView(downloadModel: DownloadDataModel) {
 		logger.d("UI update: id=${downloadModel.downloadId}, status=${downloadModel.status}")
-
-		// Safely retrieve the row view reference - skip update if view is no longer available
-		rowViewRef.get()?.let {
-			// Update row visibility based on download state (e.g., hidden if removed/deleted)
+		safeLayoutRef?.let {
 			updateRowVisibility(downloadModel)
-
-			// Update the primary file name label
 			updateFileNameLabel(downloadModel)
-
-			// Refresh progress bars, percentage, speed, and status text
 			refreshProgressState(downloadModel)
-
-			// Load or update the file thumbnail image
 			refreshThumbnail(downloadModel)
-
-			// Display website favicon for browser-initiated downloads
 			refreshFavicon(downloadModel)
-
-			// Show/hide media play icon for audio/video files
 			refreshMediaPlayIcon(downloadModel)
-
-			// Display duration for media files (audio/video)
 			refreshMediaDuration(downloadModel)
-
-			// Show appropriate file type icon based on file extension
 			refreshFileTypeIcon(downloadModel)
-
-			// Display private folder indicator if file saved to secure storage
 			refreshPrivateFolderIcon(downloadModel)
-
-			// Show error dialog if download failed and has error message
+			refreshActiveIndicator(downloadModel)
 			showDownloadErrorDialog(downloadModel)
 		} ?: logger.d("Row ref lost, skipping update")
 	}
 
-	/**
-	 * Updates the visibility of the download row based on the download model's state.
-	 * This method determines whether the row should be visible or hidden in the UI
-	 * based on various completion, removal, and user preference flags.
-	 *
-	 * The row will be hidden if any of the following conditions are met:
-	 * - Download has been removed from the UI (isRemoved)
-	 * - Download has completed successfully (isComplete)
-	 * - File has been moved to private folder (isWentToPrivateFolder)
-	 * - User has enabled setting to hide download progress from UI
-	 *
-	 * @param downloadModel The DownloadDataModel containing the current state flags
-	 */
 	private fun updateRowVisibility(downloadModel: DownloadDataModel) {
-		rowViewRef.get()?.let {
-			logger.d("Visibility: id=${downloadModel.downloadId}, " +
-					"removed=${downloadModel.isRemoved}, " +
-					"complete=${downloadModel.isComplete}")
+		safeLayoutRef?.let {
+			logger.d(
+				"Visibility: id=${downloadModel.downloadId}, " +
+						"removed=${downloadModel.isRemoved}, complete=${downloadModel.isComplete}"
+			)
+
 			if (downloadModel.isRemoved ||
 				downloadModel.isComplete ||
 				downloadModel.isWentToPrivateFolder ||
-				downloadModel.globalSettings.hideDownloadProgressFromUI) {
+				downloadModel.globalSettings.hideDownloadProgressFromUI
+			) {
 				if (it.visibility != GONE) {
 					logger.d("Hiding row: id=${downloadModel.downloadId}")
 					it.visibility = GONE
@@ -183,85 +103,17 @@ class DownloaderRowUIManager(private val downloadRowView: View) {
 		}
 	}
 
-	/**
-	 * Updates the file name label in the download row with the current filename.
-	 * This method displays the actual filename from the download model, or shows
-	 * a placeholder message if the filename hasn't been retrieved from the server yet.
-	 *
-	 * @param downloadModel The DownloadDataModel containing the filename to display
-	 */
 	private fun updateFileNameLabel(downloadModel: DownloadDataModel) {
-		fileNameView.text = downloadModel.fileName.ifEmpty {
+		fileNameTxtView?.text = downloadModel.fileName.ifEmpty {
 			logger.d("No filename for id=${downloadModel.downloadId}, showing placeholder")
 			getText(R.string.title_getting_name_from_server)
 		}
 	}
 
-	/**
-	 * Refreshes the progress indicators and status display for the download row.
-	 * This method serves as the entry point for updating all progress-related UI
-	 * components including progress bars, percentage text, speed indicators, and
-	 * status messages based on the current download state.
-	 *
-	 * @param downloadModel The DownloadDataModel containing progress and status information
-	 */
 	private fun refreshProgressState(downloadModel: DownloadDataModel) {
 		logger.d("Progress: id=${downloadModel.downloadId}, " +
 				"${downloadModel.progressPercentage}% ${downloadModel.status}")
 		renderProgressDetails(downloadModel)
-	}
-
-	/**
-	 * Dynamically shrinks text to fit within a TextView's available width while preserving a specific ending.
-	 * This method recursively adjusts the text content by removing characters from the end (before the specified
-	 * endMatch string) until the text fits within the available view width, or until the text becomes too short.
-	 *
-	 * The method handles cases where the view width isn't available yet by posting a retry to the message queue.
-	 *
-	 * @param textView The TextView whose text needs to be fitted
-	 * @param text The original text content to be displayed
-	 * @param endMatch The string pattern at the end that should be preserved if possible (e.g., file extension)
-	 *
-	 * Usage example: Shrinking "very_long_filename.mp4" to fit, preserving ".mp4" extension
-	 */
-	private fun shrinkTextToFitView(textView: TextView, text: String, endMatch: String) {
-		// Calculate available width accounting for padding
-		val availableWidth = textView.width - textView.paddingStart - textView.paddingEnd
-		logger.d("Fit text: \"$text\" endMatch=\"$endMatch\"")
-
-		// If view width isn't available yet, retry after layout pass
-		if (availableWidth <= 0) {
-			textView.post { shrinkTextToFitView(textView, text, endMatch) }
-			return
-		}
-
-		var newText = text
-		// Create a copy of the TextView's paint for text measurement
-		val paint = Paint(textView.paint)
-
-		try {
-			// Only attempt to trim if the text ends with the specified pattern
-			if (newText.endsWith(endMatch, ignoreCase = true)) {
-				logger.d("Trimming text end \"$endMatch\" if needed")
-				// Gradually remove characters until text fits or becomes too short
-				while (paint.measureText(newText) > availableWidth && newText.length > 4) {
-					newText = if (newText.endsWith(endMatch, ignoreCase = true)) {
-						// Preferentially remove the endMatch pattern first
-						newText.dropLast(endMatch.length)
-					} else {
-						// Fall back to removing single characters
-						newText.dropLast(1)
-					}
-				}
-				logger.d("Trimmed text: \"$newText\"")
-			}
-			// Apply the potentially modified text to the TextView
-			textView.text = newText
-		} catch (error: Exception) {
-			// Fall back to original text if measurement fails
-			logger.e("ShrinkText : Font measurement failed for text=$text", error)
-			textView.text = text
-		}
 	}
 
 	/**
@@ -275,18 +127,20 @@ class DownloaderRowUIManager(private val downloadRowView: View) {
 	 * @param downloadModel The DownloadDataModel containing status and progress information
 	 */
 	private fun renderProgressDetails(downloadModel: DownloadDataModel) {
-		val context = statusTextView.context
+		if (statusTextView == null) return
+		if (statusTextView?.context == null) return
+
 		// Check if there's a yt-dlp error message to display (and not currently downloading)
 		if (downloadModel.status != DOWNLOADING && downloadModel.ytdlpProblemMsg.isNotEmpty()) {
 			logger.d("yt-dlp error for id=${downloadModel.downloadId}: ${downloadModel.ytdlpProblemMsg}")
-			statusTextView.text = downloadModel.ytdlpProblemMsg
-			statusTextView.setTextColor(context.getColor(R.color.color_error))
+			statusTextView?.text = downloadModel.ytdlpProblemMsg
+			statusTextView?.setTextColor(statusTextView!!.context.getColor(R.color.color_error))
 		} else {
 			// Generate and display normal download status information
 			val infoInString = downloadModel.generateDownloadInfoInString()
 			// Shrink text to fit view while preserving the time format at the end
-			shrinkTextToFitView(statusTextView, infoInString, "|  --:-- ")
-			statusTextView.setTextColor(context.getColor(R.color.color_text_hint))
+			statusTextView?.post { shrinkTextToFitView(statusTextView, infoInString, "|  --:-- ") }
+			statusTextView?.setTextColor(statusTextView!!.context.getColor(R.color.color_text_hint))
 		}
 	}
 
@@ -313,13 +167,13 @@ class DownloaderRowUIManager(private val downloadRowView: View) {
 		}
 
 		// Load thumbnail if not cached or if settings changed
-		if (thumbnailView.tag == null || isThumbnailSettingsChanged) {
+		if (thumbnailView?.tag == null || isThumbnailSettingsChanged) {
 			val imageUri = downloadModel.getThumbnailURI()
 			if (shouldHideThumbnail && imageUri != null) {
 				// Show actual thumbnail from file URI when hiding is disabled
 				logger.d("Setting actual thumbnail URI for id=${downloadModel.downloadId}")
-				thumbnailView.setImageURI(imageUri)
-				thumbnailView.tag = true
+				thumbnailView?.setImageURI(imageUri)
+				thumbnailView?.tag = true
 				isThumbnailSettingsChanged = shouldHideThumbnail
 			} else {
 				// Use default thumbnail logic when hiding is enabled
@@ -347,7 +201,7 @@ class DownloaderRowUIManager(private val downloadRowView: View) {
 	 */
 	private fun refreshFileTypeIcon(downloadDataModel: DownloadDataModel) {
 		logger.d("Updating file type indicator for download ID: ${downloadDataModel.downloadId}")
-		fileTypeIconView.setImageResource(
+		fileTypeIconView?.setImageResource(
 			when {
 				isImageByName(downloadDataModel.fileName) -> R.drawable.ic_button_images
 				isAudioByName(downloadDataModel.fileName) -> R.drawable.ic_button_audio
@@ -386,10 +240,10 @@ class DownloaderRowUIManager(private val downloadRowView: View) {
 				if (cleanedData.isNotEmpty() && !cleanedData.contentEquals("--:--", true)) {
 					executeOnMain {
 						showView(mediaDurationContainer, true)
-						mediaDurationView.text = cleanedData
+						mediaDurationView?.text = cleanedData
 					}
 				} else executeOnMain { hideView(mediaDurationContainer, shouldAnimate = false) }
-			} else executeOnMain { mediaDurationContainer.visibility = GONE }
+			} else executeOnMain { mediaDurationContainer?.visibility = GONE }
 		})
 	}
 
@@ -403,8 +257,8 @@ class DownloaderRowUIManager(private val downloadRowView: View) {
 	private fun refreshMediaPlayIcon(downloadDataModel: DownloadDataModel) {
 		val fileName = downloadDataModel.fileName
 		if (isVideoByName(fileName) || isAudioByName(fileName))
-			mediaPlayIconView.visibility = View.VISIBLE
-		else mediaPlayIconView.visibility = GONE
+			mediaPlayIconView?.visibility = VISIBLE
+		else mediaPlayIconView?.visibility = GONE
 	}
 
 	/**
@@ -424,13 +278,13 @@ class DownloaderRowUIManager(private val downloadRowView: View) {
 		logger.d("Updating favicon for download ID: ${downloadDataModel.downloadId}")
 		val defaultFaviconResId = R.drawable.ic_image_default_favicon
 		val defaultFaviconDrawable = ResourcesCompat.getDrawable(
-			rowViewRef.get()?.context?.resources ?: INSTANCE.resources, defaultFaviconResId, null
+			weakReferenceOfLayout.get()?.context?.resources ?: INSTANCE.resources, defaultFaviconResId, null
 		)
 
 		// Skip favicon loading if video thumbnails are not allowed
 		if (shouldHideVideoThumbnail(downloadDataModel)) {
 			logger.d("Video thumbnails not allowed, using default favicon")
-			executeOnMainThread { siteFaviconView.setImageDrawable(defaultFaviconDrawable) }
+			executeOnMainThread { siteFaviconView?.setImageDrawable(defaultFaviconDrawable) }
 			return
 		}
 
@@ -453,20 +307,20 @@ class DownloaderRowUIManager(private val downloadRowView: View) {
 					try {
 						logger.d("Setting favicon from URI")
 						showView(siteFaviconView, true)
-						siteFaviconView.setImageURI(faviconImgURI)
+						siteFaviconView?.setImageURI(faviconImgURI)
 					} catch (error: Exception) {
 						// Fall back to default favicon if URI loading fails
 						logger.d("Error setting favicon: ${error.message}")
 						error.printStackTrace()
 						showView(siteFaviconView, true)
-						siteFaviconView.setImageResource(defaultFaviconResId)
+						siteFaviconView?.setImageResource(defaultFaviconResId)
 					}
 				}
 			}
 		}, errorHandler = { error ->
 			// Handle any errors during favicon loading process
 			logger.e("Error loading favicon: ${error.message}", error)
-			siteFaviconView.setImageDrawable(defaultFaviconDrawable)
+			siteFaviconView?.setImageDrawable(defaultFaviconDrawable)
 		})
 	}
 
@@ -515,7 +369,7 @@ class DownloaderRowUIManager(private val downloadRowView: View) {
 		// Early return for unknown file sizes - use default icon
 		if (downloadModel.isUnknownFileSize) {
 			displayDefaultThumbnailIcon(downloadModel)
-			thumbnailView.tag = true
+			thumbnailView?.tag = true
 			return
 		}
 
@@ -615,11 +469,11 @@ class DownloaderRowUIManager(private val downloadRowView: View) {
 	private fun loadBitmapToImageView(thumbFilePath: String, defaultThumb: Int) {
 		try {
 			// Attempt to load thumbnail from the specified file path
-			thumbnailView.setImageURI(File(thumbFilePath).toUri())
+			thumbnailView?.setImageURI(File(thumbFilePath).toUri())
 		} catch (error: Exception) {
 			// Fall back to default thumbnail if file loading fails
 			logger.e("Error loading thumbnail: ${error.message}", error)
-			thumbnailView.setImageResource(defaultThumb)
+			thumbnailView?.setImageResource(defaultThumb)
 		}
 	}
 
@@ -635,10 +489,10 @@ class DownloaderRowUIManager(private val downloadRowView: View) {
 	 */
 	private fun displayDefaultThumbnailIcon(downloadModel: DownloadDataModel) {
 		logger.d("Showing default thumb for id=${downloadModel.downloadId}")
-		val context = rowViewRef.get()?.context ?: INSTANCE
+		val context = weakReferenceOfLayout.get()?.context ?: INSTANCE
 		val drawableID = downloadModel.getThumbnailDrawableID()
 		val drawable = getDrawable(context, drawableID)
-		thumbnailView.setImageDrawable(drawable)
+		thumbnailView?.setImageDrawable(drawable)
 	}
 
 	/**
@@ -655,12 +509,19 @@ class DownloaderRowUIManager(private val downloadRowView: View) {
 		logger.d("Updating private folder indicator UI state")
 		val downloadLocation = downloadModel.globalSettings.defaultDownloadLocation
 		logger.d("Current download location: $downloadLocation")
-		privateFolderIconView.setImageResource(
+		privateFolderIconView?.setImageResource(
 			when (downloadLocation) {
 				PRIVATE_FOLDER -> R.drawable.ic_button_lock
 				else -> R.drawable.ic_button_folder
 			}
 		)
+	}
+
+	private fun refreshActiveIndicator(downloadModel: DownloadDataModel) {
+		logger.d("Updating download active and pause state indicator")
+		activeIndicatorImgView?.visibility = if (downloadModel.isRunning) VISIBLE else GONE
+		if (downloadModel.isRunning) animateFadInOutAnim(activeIndicatorImgView)
+		else closeAnyAnimation(activeIndicatorImgView)
 	}
 
 	/**
