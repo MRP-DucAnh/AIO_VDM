@@ -40,7 +40,6 @@ import lib.files.FileSystemUtility.isAudioByName
 import lib.files.FileSystemUtility.isDocumentByName
 import lib.files.FileSystemUtility.isImageByName
 import lib.files.FileSystemUtility.isProgramByName
-import lib.files.FileSystemUtility.isVideo
 import lib.files.FileSystemUtility.isVideoByName
 import lib.networks.DownloaderUtils.getAudioPlaybackTimeIfAvailable
 import lib.process.LogHelperUtils
@@ -594,15 +593,11 @@ class FinishedTasksViewHolder(layout: View) : RecyclerView.ViewHolder(layout) {
 	 */
 	private fun isVideoThumbnailNotAllowed(dataModel: DownloadDataModel): Boolean {
 		// Check user preference for video thumbnail visibility from global settings
-		val isVideoHidden = dataModel.globalSettings.downloadHideVideoThumbnail
-		// Verify if the current file is actually a video file type
-		val isVideoFile = isVideo(dataModel.getDestinationDocumentFile())
-		// Thumbnail is not allowed only if both conditions are true
-		val result = isVideoFile && isVideoHidden
-		if (result) {
+		val isThumbHidden = dataModel.globalSettings.downloadHideVideoThumbnail
+		if (isThumbHidden) {
 			logger.d("isVideoThumbnailNotAllowed: Video thumbnail hidden for privacy")
 		}
-		return result
+		return isThumbHidden
 	}
 
 	/**

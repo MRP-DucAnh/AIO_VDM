@@ -3,9 +3,10 @@ package app.ui.main.fragments.downloads.fragments.finished
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
-import android.widget.ListView
 import android.widget.TextView
 import androidx.core.view.isVisible
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import app.core.AIOApp
 import app.core.AIOApp.Companion.aioRawFiles
 import app.core.AIOApp.Companion.aioSettings
@@ -57,7 +58,7 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 	private var buttonOpenActiveTasks: View? = null
 	private var openActiveTasksAnim: LottieAnimationView? = null
 	private var buttonHowToDownload: View? = null
-	private var taskListView: ListView? = null
+	private var downloadsListView: RecyclerView? = null
 
 	// State tracking variables for optimization and performance monitoring
 	private var lastCheckedFinishedTasks = 0
@@ -137,17 +138,17 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 
 		// Clean up adapter and view holders to prevent memory leaks
 		finishedTasksListAdapter?.let { adapter ->
-			logger.d("Cleaning adapter resources… count=${adapter.count}")
-			adapter.clearResources()
+			logger.d("Cleaning adapter resources… count=${adapter.itemCount}")
+			adapter.clearResources(downloadsListView)
 		}
 
 		// Clear all references to prevent memory leaks
-		weakSelfReference.clear()
+		downloadsListView?.recycledViewPool?.clear()
+		downloadsListView?.adapter = null
 		finishedTasksListAdapter = null
-		taskListView?.adapter = null
 
 		// Nullify UI component references
-		taskListView = null
+		downloadsListView = null
 		emptyDownloadContainer = null
 		buttonOpenActiveTasks = null
 		buttonHowToDownload = null
@@ -158,6 +159,7 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 		unregisterIntoDownloadSystem()
 		unregisterToDownloadFragment()
 
+		weakSelfReference.clear()
 		logger.d("onDestroyView() → completed cleanup")
 		super.onDestroyView()
 	}
@@ -179,7 +181,7 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 		logger.d("onAIOTimerTick() → UI update")
 		safeFinishTasksFragment?.let {
 			updateDownloadFragmentTitle(parentFragment as? DownloadsFragment)
-			toggleEmptyListVisibility(emptyDownloadContainer, taskListView)
+			toggleEmptyListVisibility(emptyDownloadContainer, downloadsListView)
 			toggleOpenActiveTasksButtonVisibility(buttonOpenActiveTasks)
 		}
 	}
@@ -305,14 +307,15 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 			loadOpenActiveTasksAnimation()
 
 			// Set up list view and adapter for finished downloads display
-			taskListView = layout.findViewById(R.id.container_download_tasks_finished)
+			downloadsListView = layout.findViewById(R.id.container_download_tasks_finished)
+			downloadsListView?.layoutManager = LinearLayoutManager(fragment.safeBaseActivityRef)
 			finishedTasksListAdapter = FinishedTasksListAdapter(fragment)
-			taskListView?.adapter = finishedTasksListAdapter
-
+			downloadsListView?.adapter = finishedTasksListAdapter
+			
 			logger.d("Views + adapter initialization complete")
 
 			// Set initial UI states based on current download data
-			toggleEmptyListVisibility(emptyDownloadContainer, taskListView)
+			toggleEmptyListVisibility(emptyDownloadContainer, downloadsListView)
 			toggleOpenActiveTasksButtonVisibility(buttonOpenActiveTasks)
 		}
 	}
@@ -352,9 +355,9 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 	 * Waits for download system initialization to complete before making visibility decisions.
 	 *
 	 * @param emptyView The container view displaying empty state message, graphics, and guidance
-	 * @param listView The ListView containing the scrollable collection of finished download items
+	 * @param listView The RecycleView containing the scrollable collection of finished download items
 	 */
-	private fun toggleEmptyListVisibility(emptyView: View?, listView: ListView?) {
+	private fun toggleEmptyListVisibility(emptyView: View?, listView: RecyclerView?) {
 		// Skip if download system is still initializing
 		if (downloadSystem.isInitializing) return
 		if (emptyView == null || listView == null) return
