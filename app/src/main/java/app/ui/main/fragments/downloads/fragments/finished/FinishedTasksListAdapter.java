@@ -15,6 +15,8 @@ import androidx.annotation.Nullable;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -84,6 +86,17 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 	 */
 	private Future<?> backgroundJob;
 
+	private List<DownloadDataModel> originalList = new ArrayList<>();
+	private List<DownloadDataModel> filteredList = new ArrayList<>();
+
+	public interface TaskFilter {
+		boolean accept(DownloadDataModel model);
+	}
+
+	@Nullable
+	private TaskFilter customFilter;
+
+
 	/**
 	 * Constructs a new FinishedTasksListAdapter with fragment context and system dependencies.
 	 * <p>
@@ -102,6 +115,7 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 		this.inflater = from(fragment.getSafeBaseActivityRef());
 		// Obtain download system instance for accessing finished download data models
 		this.downloadSystem = AIOApp.INSTANCE.getDownloadManager();
+		this.rebuildCache();
 	}
 
 	/**
@@ -118,7 +132,7 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 	@Override
 	public int getCount() {
 		if (downloadSystem == null) return 0;
-		return downloadSystem.getFinishedDownloadDataModels().size();
+		return filteredList == null ? 0 : filteredList.size();
 	}
 
 	/**
@@ -137,7 +151,8 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 	@Nullable
 	public DownloadDataModel getItem(int index) {
 		if (downloadSystem == null) return null;
-		return downloadSystem.getFinishedDownloadDataModels().get(index);
+		if (filteredList == null || index < 0 || index >= filteredList.size()) return null;
+		return filteredList.get(index);
 	}
 
 	/**
@@ -183,6 +198,7 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 		return convertView;
 	}
 
+
 	/**
 	 * Notifies the adapter that the underlying data has changed with change detection optimization.
 	 * <p>
@@ -198,6 +214,8 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 		FinishedTasksFragment fragment = weakReferenceOfFinishedFrag.get();
 		if (fragment == null) return;  // Skip if fragment is destroyed
 
+		rebuildCache();
+
 		// Get current download count from fragment for change detection
 		int newCount = fragment.getFinishedDownloadModels().size();
 
@@ -207,6 +225,36 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 			existingTaskCount = getCount(); // Update internal count tracking
 			scheduleMediaStoreUpdate();    // Update system media database for new files
 		}
+	}
+
+	public boolean isFilterActive() {
+		return customFilter != null && filteredList.size() != originalList.size();
+	}
+
+	public void setFilter(@Nullable TaskFilter filter) {
+		this.customFilter = filter;
+		applyFilter();
+		rebuildCache();
+		super.notifyDataSetChanged();
+	}
+
+	private void applyFilter() {
+		if (customFilter == null) {
+			filteredList = new ArrayList<>(originalList);
+			return;
+		}
+		List<DownloadDataModel> out = new ArrayList<>();
+		for (DownloadDataModel model : originalList) {
+			if (model != null && customFilter.accept(model)) out.add(model);
+		}
+		filteredList = out;
+	}
+
+
+	private void rebuildCache() {
+		if (downloadSystem == null) return;
+		originalList = downloadSystem.getFinishedDownloadDataModels();
+		applyFilter();
 	}
 
 	/**
@@ -265,8 +313,10 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 	 */
 	public void notifyDataSetChangedOnSort(boolean forceRefresh) {
 		try {
-			if (forceRefresh) super.notifyDataSetChanged();  // Force complete UI refresh
-			else notifyDataSetChanged();        // Standard dataset change notification
+			if (forceRefresh) {
+				rebuildCache();
+				super.notifyDataSetChanged();  // Force complete UI refresh
+			} else notifyDataSetChanged();        // Standard dataset change notification
 		} catch (Exception error) {
 			// Log UI update errors but don't crash - ensures adapter remains functional
 			logger.e("notifyDataSetChangedOnSort error", error);
