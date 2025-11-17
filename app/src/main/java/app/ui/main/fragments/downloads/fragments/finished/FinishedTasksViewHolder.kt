@@ -223,7 +223,8 @@ class FinishedTasksViewHolder(layout: View) : RecyclerView.ViewHolder(layout) {
 	}
 
 	/**
-	 * Current data model associated with this ViewHolder to prevent unnecessary reloads
+	 * Current data model associated with this ViewHolder to track loaded content
+	 * and prevent unnecessary UI reloads during scrolling and recycling.
 	 */
 	private var currentDataModel: DownloadDataModel? = null
 
@@ -277,7 +278,8 @@ class FinishedTasksViewHolder(layout: View) : RecyclerView.ViewHolder(layout) {
 
 	/**
 	 * Immediately sets basic data to prevent flickering during async loading.
-	 * This provides instant visual feedback while detailed data loads in background.
+	 * Sets default thumbnail and basic file info for instant visual feedback
+	 * while detailed content loads in the background.
 	 */
 	private fun setDataImmediately(dataModel: DownloadDataModel) {
 		thumbImgView?.setImageResource(R.drawable.image_no_thumb_available)
@@ -285,6 +287,8 @@ class FinishedTasksViewHolder(layout: View) : RecyclerView.ViewHolder(layout) {
 
 	/**
 	 * Sets file type indicator immediately based on file name extension.
+	 * Determines appropriate icon for images, audio, video, documents, archives,
+	 * programs, or generic files without async processing.
 	 */
 	private fun setFileTypeIndicatorImmediately(fileName: String?) {
 		val icon = when {
@@ -301,6 +305,8 @@ class FinishedTasksViewHolder(layout: View) : RecyclerView.ViewHolder(layout) {
 
 	/**
 	 * Clears the view immediately when data is null or during recycling.
+	 * Resets all UI elements to prevent showing stale data when the ViewHolder
+	 * is reused for different content or when no data is available.
 	 */
 	private fun clearViewImmediately() {
 		titleTxtView?.text = ""
