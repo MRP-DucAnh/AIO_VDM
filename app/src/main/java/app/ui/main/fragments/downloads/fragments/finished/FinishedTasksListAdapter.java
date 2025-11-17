@@ -89,11 +89,11 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 
 		rebuildCache();
 
-		int newCount = frag.getFinishedDownloadModels().size();
+		int newCount = getCount();
 
 		if (newCount != existingTaskCount) {
+			existingTaskCount = newCount;
 			super.notifyDataSetChanged();
-			existingTaskCount = getCount();
 			scheduleMediaStoreUpdate();
 		}
 	}

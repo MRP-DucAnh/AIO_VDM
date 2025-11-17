@@ -831,7 +831,7 @@ class FinishedTasksViewHolder(layout: View) {
 				R.drawable.ic_button_lock  // Lock icon for private/secured storage
 			} else {
 				logger.d("updatePrivateFolderIndicator: Standard folder location")
-				R.drawable.ic_button_folder  // Folder icon for standard storage
+				R.drawable.ic_button_unlock_v1  // Folder icon for standard storage
 			}
 
 			// Load and display the selected icon using Glide for smooth rendering

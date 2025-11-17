@@ -228,7 +228,7 @@
 					android:layout_height="wrap_content"
 					android:layout_centerInParent="true"
 					android:layout_margin="@dimen/_8"
-					android:drawableStart="@drawable/ic_button_hide_eye"
+					android:drawableStart="@drawable/ic_button_unlock_v1"
 					android:drawablePadding="@dimen/_5"
 					android:drawableTint="@color/color_secondary"
 					android:fontFamily="@font/application_font_family"
