@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Main fragment container layout with action bar and view pager -->
+<!-- =========================================================================
+     Downloads Manager Fragment Layout
+     Main container for downloads management with action bar, sorting controls,
+     view pager for tab navigation, and storage information display.
+     Includes card-based design with consistent spacing and visual hierarchy.
+     ========================================================================= -->
+
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
 	xmlns:tools="http://schemas.android.com/tools"
@@ -9,7 +15,12 @@
 	android:orientation="vertical"
 	tools:ignore="UseCompatTextViewDrawableXml,UseAppTint">
 
-	<!-- Top action bar with navigation and action buttons -->
+	<!-- ==================================================
+		 TOP ACTION BAR SECTION
+		 Card-based action bar with navigation controls,
+		 title display, and action buttons (search, add, menu).
+		 Provides primary user interactions for downloads management.
+		 ================================================== -->
 	<androidx.cardview.widget.CardView
 		android:id="@+id/top_actionbar_section"
 		android:layout_width="match_parent"
@@ -26,7 +37,7 @@
 			android:layout_width="match_parent"
 			android:layout_height="match_parent">
 
-			<!-- Back button for navigation -->
+			<!-- Back navigation button for returning to previous screen -->
 			<RelativeLayout
 				android:id="@+id/btn_actionbar_back"
 				android:layout_width="@dimen/_50"
@@ -47,7 +58,7 @@
 					tools:ignore="ImageContrastCheck" />
 			</RelativeLayout>
 
-			<!-- Current fragment title display -->
+			<!-- Current fragment title display centered in action bar -->
 			<TextView
 				android:id="@+id/txt_current_frag_name"
 				android:layout_width="match_parent"
@@ -66,7 +77,7 @@
 				android:textFontWeight="600"
 				android:textSize="@dimen/title_text_size" />
 
-			<!-- Search button (initially hidden) -->
+			<!-- Search action button (initially hidden, shown when needed) -->
 			<RelativeLayout
 				android:id="@+id/btn_actionbar_search"
 				android:layout_width="@dimen/_50"
@@ -89,7 +100,7 @@
 					tools:ignore="ImageContrastCheck" />
 			</RelativeLayout>
 
-			<!-- Add new download button -->
+			<!-- Add new download action button -->
 			<RelativeLayout
 				android:id="@+id/btn_actionbar_add_download"
 				android:layout_width="@dimen/_50"
@@ -111,7 +122,7 @@
 					tools:ignore="ImageContrastCheck" />
 			</RelativeLayout>
 
-			<!-- Add new download button -->
+			<!-- Options menu action button for additional settings -->
 			<RelativeLayout
 				android:id="@+id/btn_actionbar_options"
 				android:layout_width="@dimen/_50"
@@ -136,6 +147,11 @@
 		</RelativeLayout>
 	</androidx.cardview.widget.CardView>
 
+	<!-- ==================================================
+		 SORTING AND PRIVATE FILES CONTROL SECTION
+		 Card container with two main actions: sort list and toggle
+		 private files visibility. Includes counter for private files.
+		 ================================================== -->
 	<androidx.cardview.widget.CardView
 		android:id="@+id/container_top_sorts_private"
 		android:layout_width="match_parent"
@@ -158,6 +174,7 @@
 			android:baselineAligned="false"
 			android:orientation="horizontal">
 
+			<!-- Sort list button for organizing downloads by various criteria -->
 			<RelativeLayout
 				android:id="@+id/btn_sort_the_list"
 				android:layout_width="0dp"
@@ -184,6 +201,7 @@
 					android:textSize="@dimen/normal_text_size" />
 			</RelativeLayout>
 
+			<!-- Visual separator between the two action buttons -->
 			<View
 				android:layout_width="@dimen/_2"
 				android:layout_height="match_parent"
@@ -192,6 +210,7 @@
 				android:alpha=".5"
 				android:background="@drawable/rounded_border_color" />
 
+			<!-- Toggle private files visibility with counter display -->
 			<RelativeLayout
 				android:id="@+id/btn_toggle_private_files"
 				android:layout_width="0dp"
@@ -217,15 +236,40 @@
 					android:text="@string/title_toggle_private_files"
 					android:textFontWeight="500"
 					android:textSize="@dimen/normal_text_size" />
+
+				<!-- Counter badge showing number of private files -->
+				<TextView
+					android:id="@+id/txt_private_file_counter"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:layout_alignParentEnd="true"
+					android:layout_marginHorizontal="@dimen/_5"
+					android:layout_marginTop="@dimen/_1"
+					android:background="@drawable/rounded_secondary_color"
+					android:paddingStart="@dimen/_3"
+					android:paddingTop="@dimen/_1"
+					android:gravity="center"
+					android:paddingEnd="@dimen/_3"
+					android:paddingBottom="@dimen/_1"
+					android:text="@string/text_empty_string"
+					android:textColor="@color/color_on_secondary"
+					android:textFontWeight="500"
+					android:textSize="@dimen/smallest_text_size"
+					android:visibility="gone" />
 			</RelativeLayout>
 		</LinearLayout>
 	</androidx.cardview.widget.CardView>
 
+	<!-- ==================================================
+		 MAIN CONTENT AREA WITH BOTTOM STORAGE INFO
+		 ConstraintLayout managing fragment content area and
+		 fixed bottom storage information display.
+		 ================================================== -->
 	<androidx.constraintlayout.widget.ConstraintLayout
 		android:layout_width="match_parent"
 		android:layout_height="match_parent">
 
-		<!-- Content area -->
+		<!-- Fragment content area hosting view pager for tab navigation -->
 		<RelativeLayout
 			android:id="@+id/container_fragment_area"
 			android:layout_width="0dp"
@@ -237,6 +281,7 @@
 			app:layout_constraintStart_toStartOf="parent"
 			app:layout_constraintTop_toTopOf="parent">
 
+			<!-- Non-swappable view pager for hosting download fragments -->
 			<lib.ui.builders.NonSwappableViewPager
 				android:id="@+id/fragment_viewpager"
 				android:layout_width="match_parent"
@@ -245,14 +290,14 @@
 
 		</RelativeLayout>
 
-		<!-- Fixed bottom card -->
+		<!-- Fixed bottom card showing device storage information -->
 		<androidx.cardview.widget.CardView
 			android:id="@+id/container_bottom_storage_info"
 			android:layout_width="0dp"
 			android:layout_height="wrap_content"
-			android:layout_marginStart="@dimen/_10"
+			android:layout_marginStart="@dimen/_20"
 			android:layout_marginTop="@dimen/_5"
-			android:layout_marginEnd="@dimen/_10"
+			android:layout_marginEnd="@dimen/_20"
 			android:layout_marginBottom="@dimen/_3"
 			android:orientation="vertical"
 			app:cardBackgroundColor="@color/color_cardview_bg"
@@ -272,6 +317,7 @@
 				android:orientation="horizontal"
 				tools:ignore="UseCompoundDrawables">
 
+				<!-- SD card icon indicating storage information -->
 				<ImageView
 					android:layout_width="@dimen/_20"
 					android:layout_height="@dimen/_20"
@@ -281,6 +327,7 @@
 					android:src="@drawable/ic_button_sd_card"
 					android:tint="@color/color_secondary" />
 
+				<!-- Storage information text showing available space -->
 				<TextView
 					android:id="@+id/txt_device_storage_info"
 					android:layout_width="match_parent"
