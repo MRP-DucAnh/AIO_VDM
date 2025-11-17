@@ -291,10 +291,16 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 		if (rowLayout.getTag() == null) {
 			// Create new view holder and attach to view tag for reuse
 			holder = new FinishedTasksViewHolder(rowLayout);
-			// Safely get fragment reference and update view holder with data
-			FinishedTasksFragment fragment = weakReferenceOfFinishedFrag.get();
-			if (fragment != null) holder.updateView(getItem(position), fragment);  // Bind data to UI
 			rowLayout.setTag(holder);
+		} else {
+			// Reuse existing view holder after clearing previous resources
+			holder = (FinishedTasksViewHolder) rowLayout.getTag();
+		}
+
+		// Safely get fragment reference and update view holder with data
+		FinishedTasksFragment fragment = weakReferenceOfFinishedFrag.get();
+		if (fragment != null) {
+			holder.updateView(getItem(position), fragment);  // Bind data to UI
 		}
 	}
 
