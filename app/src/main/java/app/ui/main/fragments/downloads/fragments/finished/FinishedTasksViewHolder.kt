@@ -13,7 +13,6 @@ import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat.getDrawable
 import androidx.core.net.toUri
-import androidx.recyclerview.widget.RecyclerView
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioFavicons
 import app.core.AIOApp.Companion.aioSettings
@@ -72,7 +71,7 @@ import java.lang.ref.WeakReference
  *
  * @param layout The root view layout for this ViewHolder containing all UI components
  */
-class FinishedTasksViewHolder(layout: View) : RecyclerView.ViewHolder(layout) {
+class FinishedTasksViewHolder(layout: View) {
 
 	/**
 	 * Logger instance for tracking ViewHolder lifecycle events, UI updates, and error conditions.
@@ -239,27 +238,14 @@ class FinishedTasksViewHolder(layout: View) : RecyclerView.ViewHolder(layout) {
 	 * @param dataModel The download data to display, null to skip update
 	 * @param eventListener Click event handler for user interactions, null to skip listener setup
 	 */
-	fun updateView(
-		dataModel: DownloadDataModel?,
-		eventListener: FinishedTasksClickEvents?
-	) {
+	fun updateView(dataModel: DownloadDataModel?, eventListener: FinishedTasksClickEvents?) {
 		// Validate input parameters before proceeding with update
 		if (dataModel == null) {
-			clearViewImmediately()
-			return
+			clearViewImmediately(); return
 		}
 
 		if (eventListener == null) return
 		logger.d("updateView: Starting for download ${dataModel.downloadId}")
-
-		// Check if this is the same data to prevent unnecessary reloads
-		if (currentDataModel?.downloadId == dataModel.downloadId) {
-			logger.d("updateView: Same data ${dataModel.downloadId}, skipping reload")
-			return
-		}
-
-		logger.d("updateView: Starting for download ${dataModel.downloadId}")
-		currentDataModel = dataModel
 
 		// Set the data model immediately to prevent showing old data during loading
 		setDataImmediately(dataModel)
