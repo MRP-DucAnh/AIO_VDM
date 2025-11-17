@@ -22,6 +22,7 @@ import app.core.engines.downloader.DownloadDataModel.Companion.THUMB_EXTENSION
 import app.core.engines.settings.AIOSettings.Companion.PRIVATE_FOLDER
 import com.aio.R
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy.ALL
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -218,7 +219,7 @@ class FinishedTasksViewHolder(layout: View) {
 		logger.d("updateView: Starting for download ${dataModel.downloadId}")
 
 		// Cancel any ongoing update job to prevent race conditions
-		currentCoroutineJob?.cancel()
+		clearResources(clearWeakReference = false)
 
 		// Launch new coroutine for async UI updates and event configuration
 		currentCoroutineJob = coroutineScope.launch {
@@ -237,7 +238,7 @@ class FinishedTasksViewHolder(layout: View) {
 	 * collection and prevent memory leaks from retained references. Includes safe context
 	 * checking and graceful error handling to prevent crashes during cleanup.
 	 */
-	fun clearResources() {
+	fun clearResources(clearWeakReference: Boolean = true) {
 		logger.d("clearResources: Cleaning up ViewHolder resources")
 		try {
 			// Cancel current coroutine job and all child coroutines
@@ -257,12 +258,14 @@ class FinishedTasksViewHolder(layout: View) {
 			}
 
 			// Clear Glide image loads and references to prevent memory leaks
-			thumbImgView?.let { Glide.with(it).clear(it) }
+			thumbImgView?.let { Glide.with(it)
+				.load(R.drawable.image_no_thumb_available).into(it) }
 			faviconImgView?.let { Glide.with(it).clear(it) }
 
 			// Reset image views to release bitmap memory
 			thumbImgView?.setImageDrawable(null)
 			faviconImgView?.setImageDrawable(null)
+			newIndicatorImgView?.setImageDrawable(null)
 
 			// Remove all event listeners to prevent callback leaks
 			rootConLayout?.setOnClickListener(null)
@@ -270,8 +273,10 @@ class FinishedTasksViewHolder(layout: View) {
 			rootConLayout?.isClickable = false
 
 			// Clear view tag to break reference cycles
-			safeLayoutRef?.tag = null
-			weakReferenceOfLayout.clear()
+			if (clearWeakReference) {
+				safeLayoutRef?.tag = null
+				weakReferenceOfLayout.clear()
+			}
 
 			logger.d("clearResources: Cleanup completed successfully")
 		} catch (error: Exception) {
@@ -600,7 +605,9 @@ class FinishedTasksViewHolder(layout: View) {
 				// Display default thumbnail when privacy settings restrict video thumbnails
 				thumbImgView?.let {
 					Glide.with(it).load(defaultThumbDrawable)
-						.placeholder(defaultThumbDrawable).into(it)
+						.placeholder(defaultThumbDrawable)
+						.diskCacheStrategy(ALL)
+						.into(it)
 				}
 			}
 			return
@@ -678,7 +685,7 @@ class FinishedTasksViewHolder(layout: View) {
 			// Convert file path to URI for Glide compatibility and efficient loading
 			val imgURI = File(filePath).toUri()
 			// Load image with Glide, using placeholder for loading states and fallback
-			Glide.with(it).load(imgURI).placeholder(placeHolder).into(it)
+			Glide.with(it).load(imgURI).placeholder(placeHolder).diskCacheStrategy(ALL).into(it)
 		}
 	}
 
@@ -730,7 +737,7 @@ class FinishedTasksViewHolder(layout: View) {
 				}
 			}
 			// Load and display the selected file type icon using Glide
-			fileTypeImgView?.let { Glide.with(it).load(icon).into(it) }
+			fileTypeImgView?.let { Glide.with(it).load(icon).diskCacheStrategy(ALL).into(it) }
 		}
 	}
 
@@ -764,7 +771,7 @@ class FinishedTasksViewHolder(layout: View) {
 			}
 
 			// Load and display the selected icon using Glide for smooth rendering
-			privateFolderImgView?.let { Glide.with(it).load(icon).into(it) }
+			privateFolderImgView?.let { Glide.with(it).load(icon).diskCacheStrategy(ALL).into(it) }
 		}
 	}
 
@@ -808,6 +815,7 @@ class FinishedTasksViewHolder(layout: View) {
 				Glide.with(it)
 					.load(R.drawable.ic_button_dot)           // Dot icon for new files
 					.placeholder(R.drawable.rounded_transparent)  // Transparent placeholder
+					.diskCacheStrategy(ALL)  // Cache strategy for fast load
 					.into(it)
 
 				// Show indicator only for unopened files, hide for files user has opened
@@ -859,7 +867,8 @@ class FinishedTasksViewHolder(layout: View) {
 		val apkFile = dataModel.getDestinationFile()
 		if (!apkFile.exists() || !apkFile.name.endsWith(".apk", true)) {
 			logger.d("loadApkThumbnail: Not an APK file - ${apkFile.name}")
-			Glide.with(target).load(placeHolder).into(target)
+			Glide.with(target).load(placeHolder)
+				.diskCacheStrategy(ALL).into(target)
 			return@withContext false
 		}
 
@@ -881,7 +890,8 @@ class FinishedTasksViewHolder(layout: View) {
 
 				// Display the extracted icon using Glide with placeholder
 				Glide.with(target).load(appIconDrawable)
-					.placeholder(placeHolder).into(target)
+					.placeholder(placeHolder)
+					.diskCacheStrategy(ALL).into(target)
 
 				logger.d("loadApkThumbnail: APK icon loaded, caching for future use")
 
@@ -912,7 +922,8 @@ class FinishedTasksViewHolder(layout: View) {
 				scaleType = ImageView.ScaleType.FIT_CENTER
 				setPadding(0, 0, 0, 0)
 				Glide.with(target).load(placeHolder)
-					.placeholder(placeHolder).into(target)
+					.placeholder(placeHolder)
+					.diskCacheStrategy(ALL).into(target)
 			}
 			false  // Failed to extract APK icon
 		}
