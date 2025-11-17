@@ -223,6 +223,11 @@ class FinishedTasksViewHolder(layout: View) : RecyclerView.ViewHolder(layout) {
 	}
 
 	/**
+	 * Current data model associated with this ViewHolder to prevent unnecessary reloads
+	 */
+	private var currentDataModel: DownloadDataModel? = null
+
+	/**
 	 * Updates the ViewHolder with new download data and sets up interactive event listeners.
 	 *
 	 * This function serves as the primary entry point for populating the ViewHolder with
@@ -239,12 +244,28 @@ class FinishedTasksViewHolder(layout: View) : RecyclerView.ViewHolder(layout) {
 		eventListener: FinishedTasksClickEvents?
 	) {
 		// Validate input parameters before proceeding with update
-		if (dataModel == null) return
+		if (dataModel == null) {
+			clearViewImmediately()
+			return
+		}
+
 		if (eventListener == null) return
 		logger.d("updateView: Starting for download ${dataModel.downloadId}")
 
+		// Check if this is the same data to prevent unnecessary reloads
+		if (currentDataModel?.downloadId == dataModel.downloadId) {
+			logger.d("updateView: Same data ${dataModel.downloadId}, skipping reload")
+			return
+		}
+
+		logger.d("updateView: Starting for download ${dataModel.downloadId}")
+		currentDataModel = dataModel
+
+		// Set the data model immediately to prevent showing old data during loading
+		setDataImmediately(dataModel)
+
 		// Cancel any ongoing update job to prevent race conditions
-		clearResources(clearWeakReference = false)
+		currentCoroutineJob?.cancel()
 
 		// Launch new coroutine for async UI updates and event configuration
 		currentCoroutineJob = coroutineScope.launch {
@@ -252,6 +273,44 @@ class FinishedTasksViewHolder(layout: View) : RecyclerView.ViewHolder(layout) {
 			refreshDownloadProgress(dataModel)              // Update all visual components
 			setupItemClickEventListeners(eventListener, dataModel)  // Configure user interactions
 		}
+	}
+
+	/**
+	 * Immediately sets basic data to prevent flickering during async loading.
+	 * This provides instant visual feedback while detailed data loads in background.
+	 */
+	private fun setDataImmediately(dataModel: DownloadDataModel) {
+		thumbImgView?.setImageResource(R.drawable.image_no_thumb_available)
+	}
+
+	/**
+	 * Sets file type indicator immediately based on file name extension.
+	 */
+	private fun setFileTypeIndicatorImmediately(fileName: String?) {
+		val icon = when {
+			isImageByName(fileName) -> R.drawable.ic_button_images
+			isAudioByName(fileName) -> R.drawable.ic_button_audio
+			isVideoByName(fileName) -> R.drawable.ic_button_video
+			isDocumentByName(fileName) -> R.drawable.ic_button_document
+			isArchiveByName(fileName) -> R.drawable.ic_button_archives
+			isProgramByName(fileName) -> R.drawable.ic_button_programs
+			else -> R.drawable.ic_button_file
+		}
+		fileTypeImgView?.setImageResource(icon)
+	}
+
+	/**
+	 * Clears the view immediately when data is null or during recycling.
+	 */
+	private fun clearViewImmediately() {
+		titleTxtView?.text = ""
+		metadataTxtView?.text = ""
+		thumbImgView?.setImageDrawable(null)
+		fileTypeImgView?.setImageDrawable(null)
+		durationConLayout?.visibility = GONE
+		playIndicatorView?.visibility = GONE
+		newIndicatorImgView?.visibility = GONE
+		faviconImgView?.setImageDrawable(null)
 	}
 
 	/**
@@ -269,9 +328,6 @@ class FinishedTasksViewHolder(layout: View) : RecyclerView.ViewHolder(layout) {
 			// Cancel current coroutine job and all child coroutines
 			currentCoroutineJob?.cancel()
 			coroutineScope.coroutineContext.cancelChildren()
-
-			// Clear cached metadata to free memory
-			detailsCache.evictAll()
 
 			// Check if activity context is still valid before performing Glide operations
 			if (rootConLayout?.context is BaseActivity) {
@@ -298,6 +354,9 @@ class FinishedTasksViewHolder(layout: View) : RecyclerView.ViewHolder(layout) {
 
 			// Clear view tag to break reference cycles
 			if (clearWeakReference) {
+				// Clear cached metadata to free memory
+				detailsCache.evictAll()
+
 				safeLayoutRef?.tag = null
 				weakReferenceOfLayout.clear()
 			}
@@ -383,12 +442,11 @@ class FinishedTasksViewHolder(layout: View) : RecyclerView.ViewHolder(layout) {
 		updateFilesTitle(dataModel)               // Primary file name display
 		updateFilesMetaInfo(dataModel)            // Secondary metadata information
 		updateFaviconInfo(dataModel)              // Website source favicon
-		updateThumbnailInfo(dataModel)            // Main file thumbnail/image
 		updateFileTypeIndicator(dataModel)        // File category icon
 		updatePrivateFolderIndicator(dataModel)   // Storage location indicator
 		updateOpenFileIndicator(dataModel)        // File opening behavior icon
 		updateNewFileIndicator(dataModel)         // Unread file indicator
-
+		updateThumbnailInfo(dataModel)            // Main file thumbnail/image
 		logger.d("refreshDownloadProgress: Completed UI refresh for ${dataModel.downloadId}")
 	}
 
