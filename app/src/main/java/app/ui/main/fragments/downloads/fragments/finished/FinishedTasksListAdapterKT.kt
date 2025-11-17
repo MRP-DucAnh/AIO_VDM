@@ -77,54 +77,97 @@ class FinishedTasksListAdapterKT(fragment: FinishedTasksFragment) :
 	private var backgroundJob: Future<*>? = null
 
 	/**
-	 * Returns the total number of finished download items available for display.
+	 * Current filter predicate applied to the dataset. When null, all items are shown.
+	 * This allows for dynamic filtering based on various criteria like file type, name, date, etc.
+	 * The function takes a DownloadDataModel and returns true to include the item, false to exclude it.
+	 */
+	private var currentFilter: ((DownloadDataModel) -> Boolean)? = null
+
+	/**
+	 * Cached list of all download data models from the download system.
+	 * Used as the source dataset before applying any filters.
+	 */
+	private val allDownloadDataModels: List<DownloadDataModel>
+		get() = downloadSystem?.finishedDownloadDataModels ?: emptyList()
+
+	/**
+	 * Filtered list of download data models after applying the current filter predicate.
+	 * This is the actual dataset displayed in the RecyclerView.
+	 */
+	private val filteredDownloadDataModels: List<DownloadDataModel>
+		get() = currentFilter?.let { filter ->
+			allDownloadDataModels.filter(filter)
+		} ?: allDownloadDataModels
+
+	/**
+	 * Returns the total number of filtered download items available for display.
 	 *
-	 * Provides the count of completed downloads to the list view for proper rendering
+	 * Provides the count of filtered completed downloads to the list view for proper rendering
 	 * and scrollbar calculation. Returns 0 if the download system is unavailable,
 	 * ensuring safe list operations during system initialization, shutdown, or
 	 * when download services are temporarily inaccessible.
 	 *
-	 * @return The number of finished download items in the system, or 0 if the
+	 * @return The number of filtered finished download items in the system, or 0 if the
 	 * download system is not available
 	 */
-	override fun getItemCount(): Int {
-		return downloadSystem?.finishedDownloadDataModels?.size ?: 0
-	}
+	override fun getItemCount(): Int = filteredDownloadDataModels.size
 
 	/**
-	 * Retrieves the download data model at the specified position in the list.
+	 * Retrieves the download data model at the specified position in the filtered list.
 	 *
-	 * Provides access to individual download items for view binding and data display.
+	 * Provides access to individual filtered download items for view binding and data display.
 	 * Returns null for invalid positions or if the download system is unavailable,
 	 * ensuring safe data access during list scrolling, view updates, and edge cases
 	 * where data might be temporarily inaccessible.
 	 *
-	 * @param index The position of the item to retrieve (0-based index within the list)
+	 * @param index The position of the item to retrieve (0-based index within the filtered list)
 	 * @return The DownloadDataModel at the specified position, or null if the position
 	 * is invalid, download system is unavailable, or data cannot be accessed
 	 */
 	fun getItem(index: Int): DownloadDataModel? {
-		return downloadSystem?.finishedDownloadDataModels?.get(index)
+		return filteredDownloadDataModels.getOrNull(index)
 	}
 
 	/**
 	 * Returns a stable ID for the item at the specified position in the list.
 	 *
 	 * Provides unique identifiers for list items to support efficient view recycling,
-	 * animation, and item tracking. Uses the position index as the ID since finished
-	 * download items maintain consistent ordering and don't require persistent unique
-	 * identifiers across dataset changes.
+	 * animation, and item tracking. Uses a combination of filter state and position
+	 * to ensure stable IDs across filter changes.
 	 *
 	 * @param index The position of the item within the adapter's dataset
-	 * @return The stable ID for the item (same as the position index in this implementation)
+	 * @return The stable ID for the item
 	 */
-	override fun getItemId(index: Int): Long = index.toLong()
+	override fun getItemId(index: Int): Long {
+		val item = getItem(index)
+		// Use filename hash combined with position for a reasonably stable ID
+		return (item?.fileName?.hashCode()?.toLong() ?: 0L) + index
+	}
 
+	/**
+	 * Creates a new ViewHolder for displaying finished download items in the list.
+	 *
+	 * Inflates the list item layout and initializes a ViewHolder to manage the item view.
+	 * This enables efficient view recycling during scrolling operations.
+	 *
+	 * @param parent The parent ViewGroup that will contain the new view
+	 * @param viewType The type of view to create (unused in this homogeneous list)
+	 * @return A new FinishedTasksViewHolder instance for the list item
+	 */
 	override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FinishedTasksViewHolder {
 		val rowLayout = inflater.inflate(R.layout.frag_down_4_finish_1_row_1, parent, false)
 		return FinishedTasksViewHolder(rowLayout)
 	}
 
+	/**
+	 * Binds download data to the ViewHolder at the specified position.
+	 *
+	 * Retrieves the filtered download item and delegates view updating to the ViewHolder.
+	 * Includes safety checks for fragment availability and data existence before binding.
+	 *
+	 * @param holder The ViewHolder to update with download data
+	 * @param position The position in the filtered dataset to display
+	 */
 	override fun onBindViewHolder(holder: FinishedTasksViewHolder, position: Int) {
 		val fragment = weakReferenceOfFinishedFrag.get()
 		if (fragment == null) return
@@ -133,10 +176,60 @@ class FinishedTasksListAdapterKT(fragment: FinishedTasksFragment) :
 		holder.updateView(model, fragment)
 	}
 
+	/**
+	 * Called when a ViewHolder is recycled to free up resources.
+	 *
+	 * Ensures proper cleanup of view resources like bitmaps and image loaders
+	 * before the ViewHolder is reused for a different list item.
+	 *
+	 * @param holder The ViewHolder being recycled for reuse
+	 */
 	override fun onViewRecycled(holder: FinishedTasksViewHolder) {
-		holder.clearResources(true)
+		holder.clearResources(clearWeakReference = false)
 		super.onViewRecycled(holder)
 	}
+
+	/**
+	 * Applies a filter to the dataset and updates the UI accordingly.
+	 *
+	 * This high-level function allows dynamic filtering of the download list based on
+	 * custom criteria. The filter predicate is applied to each item, and only items
+	 * for which the predicate returns true are displayed. Set to null to clear all filters.
+	 *
+	 * @param filterPredicate A lambda function that takes a DownloadDataModel and returns
+	 *                       true to include the item, false to exclude it. Pass null to
+	 *                       clear the current filter and show all items.
+	 */
+	@SuppressLint("NotifyDataSetChanged")
+	fun setFilter(filterPredicate: ((DownloadDataModel) -> Boolean)?) {
+		currentFilter = filterPredicate
+		notifyDataSetChangedOnSort(forceRefresh = true)
+		logger.d("Filter applied, showing $itemCount of ${allDownloadDataModels.size} items")
+	}
+
+	/**
+	 * Clears any active filter and shows all download items.
+	 *
+	 * Convenience method to reset the adapter to show all available downloads
+	 * without any filtering applied.
+	 */
+	fun clearFilter() {
+		setFilter(null)
+	}
+
+	/**
+	 * Returns whether a filter is currently active.
+	 *
+	 * @return true if a filter is applied, false if showing all items
+	 */
+	fun isFilterActive(): Boolean = currentFilter != null
+
+	/**
+	 * Gets the count of all items before filtering.
+	 *
+	 * @return The total number of download items without any filters applied
+	 */
+	fun getUnfilteredItemCount(): Int = allDownloadDataModels.size
 
 	/**
 	 * Notifies the adapter that the underlying data has changed with change detection optimization.
@@ -154,12 +247,12 @@ class FinishedTasksListAdapterKT(fragment: FinishedTasksFragment) :
 		if (fragment == null) return  // Skip if fragment is destroyed
 
 		// Get current download count from fragment for change detection
-		val newCount = itemCount
+		val newCount = getUnfilteredItemCount()
 
 		// Only proceed if item count has actually changed
 		if (newCount != existingTaskCount) {
 			super.notifyDataSetChanged()        // Trigger base class UI refresh
-			existingTaskCount = itemCount       // Update internal count tracking
+			existingTaskCount = newCount        // Update internal count tracking
 			scheduleMediaStoreUpdate()          // Update system media database for new files
 		}
 	}
@@ -184,20 +277,17 @@ class FinishedTasksListAdapterKT(fragment: FinishedTasksFragment) :
 			// Submit new background task to executor for media store updates
 			backgroundJob = executor.submit {
 				try {
-					val count = itemCount
-					// Iterate through all items in the adapter
-					for (index in 0 until count) {
+					val models = allDownloadDataModels
+					// Iterate through all items in the source dataset (not filtered)
+					models.forEachIndexed { index, model ->
 						// Check for thread interruption to allow graceful cancellation
 						if (Thread.currentThread().isInterrupted) return@submit
-
-						// Retrieve download model for current position
-						val model = getItem(index) ?: continue  // Skip null models
 
 						// Get destination file and add to media store
 						val file = model.getDestinationFile()
 						addToMediaStore(file)  // Update system media database
 					}
-					logger.d("Media store updated for $count files.")
+					logger.d("Media store updated for ${models.size} files.")
 				} catch (error: Exception) {
 					// Log errors for individual file processing but continue with other files
 					logger.e("Error updating media store", error)
@@ -244,6 +334,8 @@ class FinishedTasksListAdapterKT(fragment: FinishedTasksFragment) :
 			weakReferenceOfFinishedFrag.clear()
 			// Clear download system reference to prevent memory retention
 			downloadSystem = null
+			// Clear current filter
+			currentFilter = null
 
 			// Safely clear resources for all view holders in the adapter
 			recyclerView?.let { rv ->

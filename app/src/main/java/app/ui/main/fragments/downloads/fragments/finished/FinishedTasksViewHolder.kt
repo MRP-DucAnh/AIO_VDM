@@ -13,6 +13,7 @@ import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat.getDrawable
 import androidx.core.net.toUri
+import androidx.recyclerview.widget.RecyclerView
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioFavicons
 import app.core.AIOApp.Companion.aioSettings
@@ -72,7 +73,7 @@ import java.lang.ref.WeakReference
  *
  * @param layout The root view layout for this ViewHolder containing all UI components
  */
-class FinishedTasksViewHolder(layout: View) {
+class FinishedTasksViewHolder(layout: View) : RecyclerView.ViewHolder(layout) {
 
 	/**
 	 * Logger instance for tracking ViewHolder lifecycle events, UI updates, and error conditions.
@@ -282,12 +283,7 @@ class FinishedTasksViewHolder(layout: View) {
 			}
 
 			// Clear Glide image loads and references to prevent memory leaks
-			thumbImgView?.let {
-				Glide.with(it)
-					.load(R.drawable.image_no_thumb_available)
-					.into(it)
-			}
-
+			thumbImgView?.let { Glide.with(it).load(R.drawable.image_no_thumb_available).into(it) }
 			faviconImgView?.let { Glide.with(it).clear(it) }
 
 			// Reset image views to release bitmap memory
