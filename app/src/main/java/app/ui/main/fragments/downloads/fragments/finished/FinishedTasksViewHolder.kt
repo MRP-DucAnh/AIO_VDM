@@ -221,12 +221,6 @@ class FinishedTasksViewHolder(layout: View) {
 	}
 
 	/**
-	 * Current data model associated with this ViewHolder to track loaded content
-	 * and prevent unnecessary UI reloads during scrolling and recycling.
-	 */
-	private var currentDataModel: DownloadDataModel? = null
-
-	/**
 	 * Updates the ViewHolder with new download data and sets up interactive event listeners.
 	 *
 	 * This function serves as the primary entry point for populating the ViewHolder with
@@ -860,8 +854,7 @@ class FinishedTasksViewHolder(layout: View) {
 			// Determine icon based on single-click file opening preference
 			val imgResId = if (!aioSettings.openDownloadedFileOnSingleClick)
 				R.drawable.ic_button_open_v2  // Open icon when single-click shows options
-			else
-				R.drawable.ic_button_player   // Play icon when single-click opens directly
+			else R.drawable.ic_button_player   // Play icon when single-click opens directly
 
 			// Apply the selected icon resource directly to the ImageView
 			openFileIndicatorImgView?.setImageResource(imgResId)
