@@ -120,82 +120,106 @@ class FinishedTasksViewHolder(layout: View) {
 	 * Serves as the clickable area for user interactions and provides the foundation
 	 * for all visual elements within the download list item.
 	 */
-	private val rootConLayout: RelativeLayout? by lazy { safeLayoutRef?.findViewById(R.id.button_finish_download_row) }
+	private val rootConLayout: RelativeLayout? by lazy {
+		safeLayoutRef?.findViewById(R.id.button_finish_download_row)
+	}
 
 	/**
 	 * Primary thumbnail image view displaying the file preview or generated thumbnail.
 	 * Shows visual representation of the downloaded content including images, video thumbnails,
 	 * or application icons for APK files.
 	 */
-	private val thumbImgView: ImageView? by lazy { safeLayoutRef?.findViewById(R.id.img_file_thumbnail) }
+	private val thumbImgView: ImageView? by lazy {
+		safeLayoutRef?.findViewById(R.id.img_file_thumbnail)
+	}
 
 	/**
 	 * Website favicon indicator showing the source site's icon for the download.
 	 * Provides visual context about the download origin and helps users identify
 	 * familiar websites in their download history.
 	 */
-	private val faviconImgView: ImageView? by lazy { safeLayoutRef?.findViewById(R.id.img_site_favicon) }
+	private val faviconImgView: ImageView? by lazy {
+		safeLayoutRef?.findViewById(R.id.img_site_favicon)
+	}
 
 	/**
 	 * Primary text view displaying the downloaded file name.
 	 * Shows the complete file name with proper truncation and formatting for
 	 * clear identification of the downloaded content.
 	 */
-	private val titleTxtView: TextView? by lazy { safeLayoutRef?.findViewById(R.id.txt_file_name) }
+	private val titleTxtView: TextView? by lazy {
+		safeLayoutRef?.findViewById(R.id.txt_file_name)
+	}
 
 	/**
 	 * Secondary text view showing comprehensive file metadata information.
 	 * Displays formatted details including file size, category, modification date,
 	 * and media duration in a condensed, readable format.
 	 */
-	private val metadataTxtView: TextView? by lazy { safeLayoutRef?.findViewById(R.id.txt_file_info) }
+	private val metadataTxtView: TextView? by lazy {
+		safeLayoutRef?.findViewById(R.id.txt_file_info)
+	}
 
 	/**
 	 * Text view displaying media playback duration for audio and video files.
 	 * Shows formatted time duration (HH:MM:SS) when available for media content.
 	 */
-	private val durationTxtView: TextView? by lazy { safeLayoutRef?.findViewById(R.id.txt_media_duration) }
+	private val durationTxtView: TextView? by lazy {
+		safeLayoutRef?.findViewById(R.id.txt_media_duration)
+	}
 
 	/**
 	 * Container layout for the media duration indicator and play icon.
 	 * Provides visual grouping and background for media-specific information
 	 * and controls visibility based on file type.
 	 */
-	private val durationConLayout: View? by lazy { safeLayoutRef?.findViewById(R.id.container_media_duration) }
+	private val durationConLayout: View? by lazy {
+		safeLayoutRef?.findViewById(R.id.container_media_duration)
+	}
 
 	/**
 	 * Play icon overlay indicating media file type and providing visual affordance.
 	 * Appears over thumbnails for audio and video files to suggest playable content.
 	 */
-	private val playIndicatorView: View? by lazy { safeLayoutRef?.findViewById(R.id.img_media_play_indicator) }
+	private val playIndicatorView: View? by lazy {
+		safeLayoutRef?.findViewById(R.id.img_media_play_indicator)
+	}
 
 	/**
 	 * File type indicator icon showing the category of the downloaded file.
 	 * Uses distinct icons for images, audio, video, documents, archives, programs,
 	 * and generic files to provide quick visual categorization.
 	 */
-	private val fileTypeImgView: ImageView? by lazy { safeLayoutRef?.findViewById(R.id.img_file_type_indicator) }
+	private val fileTypeImgView: ImageView? by lazy {
+		safeLayoutRef?.findViewById(R.id.img_file_type_indicator)
+	}
 
 	/**
 	 * File opening action indicator showing the expected interaction behavior.
 	 * Changes appearance based on user settings to indicate whether single-click
 	 * opens files directly or shows options menu.
 	 */
-	private val openFileIndicatorImgView: ImageView? by lazy { safeLayoutRef?.findViewById(R.id.btn_open_download_file) }
+	private val openFileIndicatorImgView: ImageView? by lazy {
+		safeLayoutRef?.findViewById(R.id.btn_open_download_file)
+	}
 
 	/**
 	 * Storage location privacy indicator showing where the file is stored.
 	 * Displays lock icon for private/secured storage or folder icon for
 	 * standard accessible storage locations.
 	 */
-	private val privateFolderImgView: ImageView? by lazy { safeLayoutRef?.findViewById(R.id.img_private_folder_indicator) }
+	private val privateFolderImgView: ImageView? by lazy {
+		safeLayoutRef?.findViewById(R.id.img_private_folder_indicator)
+	}
 
 	/**
 	 * New file indicator dot showing unopened download status.
 	 * Appears as a small dot for files that haven't been opened by the user yet,
 	 * providing visual feedback about exploration status in the download list.
 	 */
-	private val newIndicatorImgView: ImageView? by lazy { safeLayoutRef?.findViewById(R.id.img_new_indicator) }
+	private val newIndicatorImgView: ImageView? by lazy {
+		safeLayoutRef?.findViewById(R.id.img_new_indicator)
+	}
 
 	/**
 	 * Updates the ViewHolder with new download data and sets up interactive event listeners.
@@ -258,8 +282,10 @@ class FinishedTasksViewHolder(layout: View) {
 			}
 
 			// Clear Glide image loads and references to prevent memory leaks
-			thumbImgView?.let { Glide.with(it)
-				.load(R.drawable.image_no_thumb_available).into(it) }
+			thumbImgView?.let {
+				Glide.with(it)
+					.load(R.drawable.image_no_thumb_available).into(it)
+			}
 			faviconImgView?.let { Glide.with(it).clear(it) }
 
 			// Reset image views to release bitmap memory
