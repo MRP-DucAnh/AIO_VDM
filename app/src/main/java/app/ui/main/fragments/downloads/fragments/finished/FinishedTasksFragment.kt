@@ -3,10 +3,9 @@ package app.ui.main.fragments.downloads.fragments.finished
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
+import android.widget.ListView
 import android.widget.TextView
 import androidx.core.view.isVisible
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import app.core.AIOApp
 import app.core.AIOApp.Companion.aioRawFiles
 import app.core.AIOApp.Companion.aioSettings
@@ -58,7 +57,7 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 	private var buttonOpenActiveTasks: View? = null
 	private var openActiveTasksAnim: LottieAnimationView? = null
 	private var buttonHowToDownload: View? = null
-	private var downloadsListView: RecyclerView? = null
+	private var downloadsListView: ListView? = null
 
 	// State tracking variables for optimization and performance monitoring
 	private var lastCheckedFinishedTasks = 0
@@ -138,12 +137,11 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 
 		// Clean up adapter and view holders to prevent memory leaks
 		finishedTasksListAdapter?.let { adapter ->
-			logger.d("Cleaning adapter resources… count=${adapter.itemCount}")
-			adapter.clearResources(downloadsListView)
+			logger.d("Cleaning adapter resources… count=${adapter.count}")
+			adapter.clearResources()
 		}
 
 		// Clear all references to prevent memory leaks
-		downloadsListView?.recycledViewPool?.clear()
 		downloadsListView?.adapter = null
 		finishedTasksListAdapter = null
 
@@ -181,6 +179,7 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 		logger.d("onAIOTimerTick() → UI update")
 		safeFinishTasksFragment?.let {
 			updateDownloadFragmentTitle(parentFragment as? DownloadsFragment)
+			updateDownloadFragmentPrivateButtonText(parentFragment as? DownloadsFragment)
 			toggleEmptyListVisibility(emptyDownloadContainer, downloadsListView)
 			toggleOpenActiveTasksButtonVisibility(buttonOpenActiveTasks)
 		}
@@ -308,7 +307,6 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 
 			// Set up list view and adapter for finished downloads display
 			downloadsListView = layout.findViewById(R.id.container_download_tasks_finished)
-			downloadsListView?.layoutManager = LinearLayoutManager(fragment.safeBaseActivityRef)
 			finishedTasksListAdapter = FinishedTasksListAdapter(fragment)
 			downloadsListView?.adapter = finishedTasksListAdapter
 			
@@ -357,7 +355,7 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 	 * @param emptyView The container view displaying empty state message, graphics, and guidance
 	 * @param listView The RecycleView containing the scrollable collection of finished download items
 	 */
-	private fun toggleEmptyListVisibility(emptyView: View?, listView: RecyclerView?) {
+	private fun toggleEmptyListVisibility(emptyView: View?, listView: View?) {
 		// Skip if download system is still initializing
 		if (downloadSystem.isInitializing) return
 		if (emptyView == null || listView == null) return
@@ -460,6 +458,11 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 		title?.text = text
 
 		lastCheckedFinishedTasks = total
+	}
+
+	fun updateDownloadFragmentPrivateButtonText(downloadsFragment: DownloadsFragment?){
+		if (!isFragmentRunning) return
+		downloadsFragment?.togglePrivateFilesButtonUI()
 	}
 
 	/**
