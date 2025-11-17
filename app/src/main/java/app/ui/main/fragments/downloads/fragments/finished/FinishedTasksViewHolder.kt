@@ -284,8 +284,10 @@ class FinishedTasksViewHolder(layout: View) {
 			// Clear Glide image loads and references to prevent memory leaks
 			thumbImgView?.let {
 				Glide.with(it)
-					.load(R.drawable.image_no_thumb_available).into(it)
+					.load(R.drawable.image_no_thumb_available)
+					.into(it)
 			}
+
 			faviconImgView?.let { Glide.with(it).clear(it) }
 
 			// Reset image views to release bitmap memory
@@ -620,6 +622,7 @@ class FinishedTasksViewHolder(layout: View) {
 		val destinationFile = dataModel.getDestinationFile()
 		val defaultThumb = dataModel.getThumbnailDrawableID()
 		val defaultThumbDrawable = getDrawable(INSTANCE.resources, defaultThumb, null)
+		withContext(Dispatchers.Main) { thumbImgView?.setImageDrawable(defaultThumbDrawable) }
 
 		logger.d("updateThumbnailInfo: Starting for ${dataModel.fileName}")
 
