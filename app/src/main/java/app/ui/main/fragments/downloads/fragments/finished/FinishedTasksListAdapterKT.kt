@@ -209,25 +209,21 @@ class FinishedTasksListAdapterKT(fragment: FinishedTasksFragment) :
 
 	/**
 	 * Clears any active filter and shows all download items.
-	 *
-	 * Convenience method to reset the adapter to show all available downloads
-	 * without any filtering applied.
+	 * Resets the adapter to display complete unfiltered dataset.
 	 */
 	fun clearFilter() {
 		setFilter(null)
 	}
 
 	/**
-	 * Returns whether a filter is currently active.
-	 *
-	 * @return true if a filter is applied, false if showing all items
+	 * Checks if a filter is currently active on the dataset.
+	 * Returns true when filtering is applied, false for all items.
 	 */
 	fun isFilterActive(): Boolean = currentFilter != null
 
 	/**
-	 * Gets the count of all items before filtering.
-	 *
-	 * @return The total number of download items without any filters applied
+	 * Gets total count of all download items before filtering.
+	 * Returns complete item count without any filter restrictions.
 	 */
 	fun getUnfilteredItemCount(): Int = allDownloadDataModels.size
 
@@ -340,11 +336,11 @@ class FinishedTasksListAdapterKT(fragment: FinishedTasksFragment) :
 			// Safely clear resources for all view holders in the adapter
 			recyclerView?.let { rv ->
 				for (index in 0 until rv.childCount) {
-					val vh = rv.getChildViewHolder(rv.getChildAt(index))
+					val viewHolder = rv.getChildViewHolder(rv.getChildAt(index))
 
 					// Clear resources for individual view holder to release bitmaps and references
-					if (vh is FinishedTasksViewHolder) {
-						vh.clearResources(true)
+					if (viewHolder is FinishedTasksViewHolder) {
+						viewHolder.clearResources(true)
 					}
 				}
 			}
