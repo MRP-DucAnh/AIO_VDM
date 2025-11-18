@@ -162,7 +162,6 @@ class FinishedTasksViewHolder(layout: View) {
 
 			if (clearWeakReference) {
 				detailsCache.evictAll()
-
 				safeLayoutRef?.tag = null
 				weakReferenceOfLayout.clear()
 			}

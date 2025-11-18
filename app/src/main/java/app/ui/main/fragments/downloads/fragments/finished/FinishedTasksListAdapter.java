@@ -87,7 +87,6 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 
 			updateViewHolder(convertView, position);
 			return convertView;
-
 		} catch (Exception error) {
 			logger.e("getView error", error);
 			throw error;
@@ -101,7 +100,6 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 			if (frag == null) return;
 
 			rebuildCache();
-
 			int newCount = getCount();
 			if (newCount != existingTaskCount) {
 				existingTaskCount = newCount;
@@ -142,7 +140,6 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 				if (model != null && customFilter.accept(model)) newList.add(model);
 			}
 			filteredList = newList;
-
 		} catch (Exception error) {
 			logger.e("applyFilter error", error);
 		}
@@ -166,13 +163,11 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 				try {
 					int count = getCount();
 					logger.d("MediaStore update started (count=" + count + ")");
-
 					for (int index = 0; index < count; index++) {
 						if (Thread.currentThread().isInterrupted()) return;
 
 						DownloadDataModel model = getItem(index);
 						if (model == null) continue;
-
 						File file = model.getDestinationFile();
 						if (file.exists()) {
 							try {
@@ -182,14 +177,11 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 							}
 						}
 					}
-
 					logger.d("MediaStore update complete");
-
 				} catch (Exception error) {
 					logger.e("MediaStore background error", error);
 				}
 			});
-
 		} catch (Exception error) {
 			logger.e("scheduleMediaStoreUpdate error", error);
 		}
@@ -200,9 +192,7 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 			if (forceRefresh) {
 				rebuildCache();
 				super.notifyDataSetChanged();
-			} else {
-				notifyDataSetChanged();
-			}
+			} else notifyDataSetChanged();
 		} catch (Exception error) {
 			logger.e("notifyDataSetChangedOnSort error", error);
 		}
@@ -211,16 +201,12 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 	private void updateViewHolder(View rowLayout, int position) {
 		try {
 			FinishedTasksViewHolder holder;
-
 			if (rowLayout.getTag() == null) {
 				holder = new FinishedTasksViewHolder(rowLayout);
 				rowLayout.setTag(holder);
-			} else {
-				holder = (FinishedTasksViewHolder) rowLayout.getTag();
-			}
+			} else holder = (FinishedTasksViewHolder) rowLayout.getTag();
 
 			updateView(position, holder);
-
 		} catch (Exception error) {
 			logger.e("updateViewHolder error", error);
 		}
@@ -257,7 +243,6 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 
 			executor.shutdownNow();
 			logger.d("Resources cleared");
-
 		} catch (Exception error) {
 			logger.e("clearResources error", error);
 		}
