@@ -45,12 +45,10 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 	}
 
 	public FinishedTasksListAdapter(@NonNull FinishedTasksFragment fragment) {
-		logger.d("FinishedTasksListAdapter constructor called");
 		try {
 			this.weakRefFinishedFrag = new WeakReference<>(fragment);
 			this.layoutInflater = from(fragment.getSafeBaseActivityRef());
 			this.downloadSystem = AIOApp.INSTANCE.getDownloadManager();
-			logger.d("Adapter initialized with fragment reference and download system");
 			this.rebuildCache();
 		} catch (Exception error) {
 			logger.e("Error in FinishedTasksListAdapter constructor", error);
@@ -69,30 +67,16 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 	@Override
 	@Nullable
 	public DownloadDataModel getItem(int index) {
-		logger.d("getItem() called for index: " + index);
-		if (downloadSystem == null) {
-			logger.d("downloadSystem is null in getItem()");
-			return null;
-		}
+		if (downloadSystem == null) return null;
 
 		boolean con_1 = filteredList == null;
 		boolean con_2 = index < 0 || index >= filteredList.size();
-		if (con_1 || con_2) {
-			logger.d("Invalid index or filteredList. index: " + index +
-					", filteredList null: " + con_1 + ", index out of bounds: " + con_2);
-			return null;
-		}
-
-		DownloadDataModel item = filteredList.get(index);
-		logger.d("getItem() returning item at index " + index + ": " +
-				(item != null ? item.getDestinationFile().getName() : "null"));
-
-		return item;
+		if (con_1 || con_2) return null;
+		return filteredList.get(index);
 	}
 
 	@Override
 	public long getItemId(int index) {
-		logger.d("getItemId() called for index: " + index);
 		return index;
 	}
 
@@ -103,9 +87,6 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 			if (convertView == null) {
 				int layoutResId = layout.frag_down_4_finish_1_row_1;
 				convertView = layoutInflater.inflate(layoutResId, null);
-				logger.d("Created new view for position: " + position);
-			} else {
-				logger.d("Reusing existing view for position: " + position);
 			}
 
 			updateViewHolder(convertView, position);
@@ -118,26 +99,17 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 
 	@Override
 	public void notifyDataSetChanged() {
-		logger.d("notifyDataSetChanged() called");
 		try {
 			FinishedTasksFragment frag = weakRefFinishedFrag.get();
-			if (frag == null) {
-				logger.d("Fragment reference is null in notifyDataSetChanged()");
-				return;
-			}
+			if (frag == null) return;
 
 			rebuildCache();
 
 			int newCount = getCount();
-			logger.d("New task count: " + newCount + ", existing task count: " + existingTaskCount);
-
 			if (newCount != existingTaskCount) {
 				existingTaskCount = newCount;
-				logger.d("Task count changed, calling super.notifyDataSetChanged()");
 				super.notifyDataSetChanged();
 				scheduleMediaStoreUpdate();
-			} else {
-				logger.d("Task count unchanged, skipping super.notifyDataSetChanged()");
 			}
 		} catch (Exception error) {
 			logger.e("Error in notifyDataSetChanged()", error);
@@ -147,21 +119,14 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 	public boolean isFilterActive() {
 		boolean con_1 = customFilter != null;
 		boolean con_2 = filteredList.size() != originalList.size();
-
-		boolean isActive = con_1 && con_2;
-		logger.d("isFilterActive() returning: " + isActive +
-				" (filter: " + con_1 + ", size diff: " + con_2 + ")");
-
-		return isActive;
+		return con_1 && con_2;
 	}
 
 	public void setFilter(@Nullable TaskFilter filter) {
-		logger.d("setFilter() called, filter: " + (filter != null ? "provided" : "null"));
 		try {
 			this.customFilter = filter;
 			applyFilter();
 			rebuildCache();
-			logger.d("Filter applied, calling super.notifyDataSetChanged()");
 			super.notifyDataSetChanged();
 		} catch (Exception error) {
 			logger.e("Error in setFilter()", error);
@@ -169,8 +134,6 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 	}
 
 	private void applyFilter() {
-		logger.d("applyFilter() called, customFilter: " +
-				(customFilter != null ? "present" : "null"));
 		try {
 			if (customFilter == null) {
 				filteredList = new ArrayList<>(originalList);
@@ -198,18 +161,9 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 	private void rebuildCache() {
 		logger.d("rebuildCache() called");
 		try {
-			if (downloadSystem == null) {
-				logger.d("downloadSystem is null in rebuildCache()");
-				return;
-			}
-
-			List<DownloadDataModel> newOriginalList = downloadSystem.getFinishedDownloadDataModels();
-			logger.d("Retrieved " + newOriginalList.size() + " finished download models");
-
-			originalList = newOriginalList;
+			if (downloadSystem == null) return;
+			originalList = downloadSystem.getFinishedDownloadDataModels();
 			applyFilter();
-			logger.d("Cache rebuilt. Original list: " +
-					originalList.size() + ", Filtered list: " + filteredList.size());
 		} catch (Exception error) {
 			logger.e("Error in rebuildCache()", error);
 		}
@@ -218,10 +172,7 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 	private void scheduleMediaStoreUpdate() {
 		logger.d("scheduleMediaStoreUpdate() called");
 		try {
-			if (backgroundJob != null && !backgroundJob.isDone()) {
-				logger.d("Cancelling previous background job");
-				backgroundJob.cancel(true);
-			}
+			if (backgroundJob != null && !backgroundJob.isDone()) backgroundJob.cancel(true);
 
 			backgroundJob = executor.submit(() -> {
 				logger.d("Background media store update started");
@@ -254,12 +205,8 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 								errorCount++;
 								logger.e("Error adding file to media store: " + file.getName(), fileError);
 							}
-						} else {
-							logger.d("File does not exist or is null: " + file.getAbsolutePath());
 						}
 					}
-					logger.d("Media store update completed. Total: " + count +
-							", Processed: " + processedCount + ", Errors: " + errorCount);
 				} catch (Exception error) {
 					logger.e("Error in background media store update", error);
 				}
@@ -271,14 +218,11 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 	}
 
 	public void notifyDataSetChangedOnSort(boolean forceRefresh) {
-		logger.d("notifyDataSetChangedOnSort() called, forceRefresh: " + forceRefresh);
 		try {
 			if (forceRefresh) {
-				logger.d("Force refresh requested, rebuilding cache");
 				rebuildCache();
 				super.notifyDataSetChanged();
 			} else {
-				logger.d("No force refresh, calling regular notifyDataSetChanged");
 				notifyDataSetChanged();
 			}
 		} catch (Exception error) {
@@ -287,17 +231,14 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 	}
 
 	private void updateViewHolder(View rowLayout, int position) {
-		logger.d("updateViewHolder() called for position: " + position);
 		try {
 			FinishedTasksViewHolder holder;
 
 			if (rowLayout.getTag() == null) {
-				logger.d("Creating new ViewHolder for position: " + position);
 				holder = new FinishedTasksViewHolder(rowLayout);
 				rowLayout.setTag(holder);
 				updateView(position, holder);
 			} else {
-				logger.d("Reusing existing ViewHolder for position: " + position);
 				holder = (FinishedTasksViewHolder) rowLayout.getTag();
 				updateView(position, holder);
 			}
@@ -311,8 +252,6 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 		FinishedTasksFragment fragment = weakRefFinishedFrag.get();
 		if (fragment != null) {
 			DownloadDataModel item = getItem(position);
-			logger.d("Updating ViewHolder with item: " +
-					(item != null ? item.getDestinationFile().getName() : "null"));
 			holder.updateView(item, fragment);
 		} else {
 			logger.d("Fragment is null in updateViewHolder() for position: " + position);
@@ -320,16 +259,12 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 	}
 
 	public void clearResources() {
-		logger.d("clearResources() called");
 		try {
 			weakRefFinishedFrag.clear();
 			layoutInflater = null;
 			downloadSystem = null;
-			logger.d("Cleared weak reference and nullified dependencies");
 
 			int count = getCount();
-			logger.d("Clearing resources for " + count + " views");
-
 			int clearedCount = 0;
 			for (int index = 0; index < count; index++) {
 				try {
@@ -345,17 +280,12 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 					logger.e("Error clearing resources for view at index: " + index, viewError);
 				}
 			}
-			logger.d("Cleared resources for " + clearedCount + " view holders");
 
-			if (backgroundJob != null && !backgroundJob.isDone()) {
-				logger.d("Cancelling background job");
-				backgroundJob.cancel(true);
-			}
-
+			if (backgroundJob != null && !backgroundJob.isDone()) backgroundJob.cancel(true);
 			executor.shutdownNow();
+
 			logger.d("Resources cleared successfully, executor shut down. " +
 					"Total views processed: " + clearedCount);
-
 		} catch (Exception error) {
 			logger.e("Error clearing resources", error);
 		}
