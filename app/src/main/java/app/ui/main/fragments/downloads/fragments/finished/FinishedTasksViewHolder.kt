@@ -63,53 +63,18 @@ class FinishedTasksViewHolder(layout: View) {
 	private var currentCoroutineJob: Job? = null
 	private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
-	private val rootConLayout: RelativeLayout? by lazy {
-		safeLayoutRef?.findViewById(R.id.button_finish_download_row)
-	}
-
-	private val thumbImgView: ImageView? by lazy {
-		safeLayoutRef?.findViewById(R.id.img_file_thumbnail)
-	}
-
-	private val faviconImgView: ImageView? by lazy {
-		safeLayoutRef?.findViewById(R.id.img_site_favicon)
-	}
-
-	private val titleTxtView: TextView? by lazy {
-		safeLayoutRef?.findViewById(R.id.txt_file_name)
-	}
-
-	private val metadataTxtView: TextView? by lazy {
-		safeLayoutRef?.findViewById(R.id.txt_file_info)
-	}
-
-	private val durationTxtView: TextView? by lazy {
-		safeLayoutRef?.findViewById(R.id.txt_media_duration)
-	}
-
-	private val durationConLayout: View? by lazy {
-		safeLayoutRef?.findViewById(R.id.container_media_duration)
-	}
-
-	private val playIndicatorView: View? by lazy {
-		safeLayoutRef?.findViewById(R.id.img_media_play_indicator)
-	}
-
-	private val fileTypeImgView: ImageView? by lazy {
-		safeLayoutRef?.findViewById(R.id.img_file_type_indicator)
-	}
-
-	private val openFileIndicatorImgView: ImageView? by lazy {
-		safeLayoutRef?.findViewById(R.id.btn_open_download_file)
-	}
-
-	private val privateFolderImgView: ImageView? by lazy {
-		safeLayoutRef?.findViewById(R.id.img_private_folder_indicator)
-	}
-
-	private val newIndicatorImgView: ImageView? by lazy {
-		safeLayoutRef?.findViewById(R.id.img_new_indicator)
-	}
+	private val rootConLayout: RelativeLayout? by lazy { safeLayoutRef?.findViewById(R.id.button_finish_download_row) }
+	private val thumbImgView: ImageView? by lazy { safeLayoutRef?.findViewById(R.id.img_file_thumbnail) }
+	private val faviconImgView: ImageView? by lazy { safeLayoutRef?.findViewById(R.id.img_site_favicon) }
+	private val titleTxtView: TextView? by lazy { safeLayoutRef?.findViewById(R.id.txt_file_name) }
+	private val metadataTxtView: TextView? by lazy { safeLayoutRef?.findViewById(R.id.txt_file_info) }
+	private val durationTxtView: TextView? by lazy { safeLayoutRef?.findViewById(R.id.txt_media_duration) }
+	private val durationConLayout: View? by lazy { safeLayoutRef?.findViewById(R.id.container_media_duration) }
+	private val playIndicatorView: View? by lazy { safeLayoutRef?.findViewById(R.id.img_media_play_indicator) }
+	private val fileTypeImgView: ImageView? by lazy { safeLayoutRef?.findViewById(R.id.img_file_type_indicator) }
+	private val openFileIndicatorImgView: ImageView? by lazy { safeLayoutRef?.findViewById(R.id.btn_open_download_file) }
+	private val privateFolderImgView: ImageView? by lazy { safeLayoutRef?.findViewById(R.id.img_private_folder_indicator) }
+	private val newIndicatorImgView: ImageView? by lazy { safeLayoutRef?.findViewById(R.id.img_new_indicator) }
 
 	fun updateView(dataModel: DownloadDataModel?, eventListener: FinishedTasksClickEvents?) {
 		if (dataModel == null) {
@@ -222,8 +187,8 @@ class FinishedTasksViewHolder(layout: View) {
 				logger.d("setupItemClickEventListeners: Coroutine not active")
 				return@withContext
 			}
-			logger.d("setupItemClickEventListeners: Setting up listeners for ${dataModel.downloadId}")
 
+			logger.d("setupItemClickEventListeners: Setting up listeners for ${dataModel.downloadId}")
 			rootConLayout?.apply {
 				isClickable = true
 
@@ -321,9 +286,7 @@ class FinishedTasksViewHolder(layout: View) {
 
 	private fun isVideoThumbnailNotAllowed(dataModel: DownloadDataModel): Boolean {
 		val isThumbHidden = dataModel.globalSettings.downloadHideVideoThumbnail
-		if (isThumbHidden) {
-			logger.d("isVideoThumbnailNotAllowed: Video thumbnail hidden for privacy")
-		}
+		if (isThumbHidden) logger.d("isVideoThumbnailNotAllowed: Video thumbnail hidden for privacy")
 		return isThumbHidden
 	}
 
@@ -384,7 +347,8 @@ class FinishedTasksViewHolder(layout: View) {
 			withContext(Dispatchers.Main) {
 				if (!isActive) return@withContext
 				thumbImgView?.let {
-					Glide.with(it).load(defaultThumbDrawable)
+					Glide.with(it)
+						.load(defaultThumbDrawable)
 						.placeholder(defaultThumbDrawable)
 						.diskCacheStrategy(ALL)
 						.into(it)
@@ -439,9 +403,12 @@ class FinishedTasksViewHolder(layout: View) {
 
 	private fun loadBitmapWithGlide(target: ImageView?, filePath: String, placeHolder: Int) {
 		target?.let {
-			logger.d("loadBitmapWithGlide: Loading bitmap from $filePath")
 			val imgURI = File(filePath).toUri()
-			Glide.with(it).load(imgURI).placeholder(placeHolder).diskCacheStrategy(ALL).into(it)
+			Glide.with(it)
+				.load(imgURI)
+				.placeholder(placeHolder)
+				.diskCacheStrategy(ALL)
+				.into(it)
 		}
 	}
 
@@ -450,36 +417,21 @@ class FinishedTasksViewHolder(layout: View) {
 			if (!isActive) return@withContext
 
 			val icon = when {
-				isImageByName(dataModel.fileName) -> {
-					logger.d("updateFileTypeIndicator: Image file type")
-					R.drawable.ic_button_images
-				}
-				isAudioByName(dataModel.fileName) -> {
-					logger.d("updateFileTypeIndicator: Audio file type")
-					R.drawable.ic_button_audio
-				}
-				isVideoByName(dataModel.fileName) -> {
-					logger.d("updateFileTypeIndicator: Video file type")
-					R.drawable.ic_button_video
-				}
-				isDocumentByName(dataModel.fileName) -> {
-					logger.d("updateFileTypeIndicator: Document file type")
-					R.drawable.ic_button_document
-				}
-				isArchiveByName(dataModel.fileName) -> {
-					logger.d("updateFileTypeIndicator: Archive file type")
-					R.drawable.ic_button_archives
-				}
-				isProgramByName(dataModel.fileName) -> {
-					logger.d("updateFileTypeIndicator: Program file type")
-					R.drawable.ic_button_programs
-				}
-				else -> {
-					logger.d("updateFileTypeIndicator: Generic file type")
-					R.drawable.ic_button_file
-				}
+				isImageByName(dataModel.fileName) -> R.drawable.ic_button_images
+				isAudioByName(dataModel.fileName) -> R.drawable.ic_button_audio
+				isVideoByName(dataModel.fileName) -> R.drawable.ic_button_video
+				isDocumentByName(dataModel.fileName) -> R.drawable.ic_button_document
+				isArchiveByName(dataModel.fileName) -> R.drawable.ic_button_archives
+				isProgramByName(dataModel.fileName) -> R.drawable.ic_button_programs
+				else -> R.drawable.ic_button_file
 			}
-			fileTypeImgView?.let { Glide.with(it).load(icon).diskCacheStrategy(ALL).into(it) }
+
+			fileTypeImgView?.let {
+				Glide.with(it)
+					.load(icon)
+					.diskCacheStrategy(ALL)
+					.into(it)
+			}
 		}
 	}
 
@@ -491,14 +443,7 @@ class FinishedTasksViewHolder(layout: View) {
 			val downloadLocation = globalSettings.defaultDownloadLocation
 			val isPrivate = downloadLocation == PRIVATE_FOLDER
 
-			val icon = if (isPrivate) {
-				logger.d("updatePrivateFolderIndicator: Private folder location")
-				R.drawable.ic_button_lock
-			} else {
-				logger.d("updatePrivateFolderIndicator: Standard folder location")
-				R.drawable.ic_button_unlock_v1
-			}
-
+			val icon = if (isPrivate) R.drawable.ic_button_lock else R.drawable.ic_button_unlock_v1
 			privateFolderImgView?.let { Glide.with(it).load(icon).diskCacheStrategy(ALL).into(it) }
 		}
 	}
@@ -506,8 +451,7 @@ class FinishedTasksViewHolder(layout: View) {
 	private suspend fun updateOpenFileIndicator(dataModel: DownloadDataModel) {
 		withContext(Dispatchers.Main) {
 			val imgResId = if (!aioSettings.openDownloadedFileOnSingleClick)
-				R.drawable.ic_button_open_v2
-			else R.drawable.ic_button_player
+				R.drawable.ic_button_open_v2 else R.drawable.ic_button_player
 
 			openFileIndicatorImgView?.setImageResource(imgResId)
 		}
