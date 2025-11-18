@@ -29,6 +29,8 @@
 		android:layout_marginTop="@dimen/_0"
 		android:layout_marginEnd="@dimen/_0"
 		android:layout_marginBottom="@dimen/_0"
+		android:divider="@color/transparent"
+		android:dividerHeight="@dimen/_0"
 		android:visibility="gone" />
 
 	<!--

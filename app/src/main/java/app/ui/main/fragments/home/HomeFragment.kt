@@ -32,6 +32,7 @@ import app.core.bases.BaseFragment
 import app.core.engines.downloader.DownloadDataModel
 import app.core.engines.downloader.DownloadDataModel.Companion.DOWNLOAD_MODEL_ID_KEY
 import app.core.engines.downloader.DownloadDataModel.Companion.THUMB_EXTENSION
+import app.core.engines.settings.AIOSettings
 import app.core.engines.settings.AIOSettings.Companion.PRIVATE_FOLDER
 import app.core.engines.video_parser.dialogs.VideoLinkPasteEditor
 import app.ui.main.MotherActivity
@@ -764,7 +765,9 @@ class HomeFragment : BaseFragment(), AIOTimer.AIOTimerListener {
 	 * @return List of recent DownloadDataModel objects
 	 */
 	private fun getRecentDownloadModels(): List<DownloadDataModel> {
-		return downloadSystem.finishedDownloadDataModels.take(9)
+		return downloadSystem.finishedDownloadDataModels.filter {
+			it.globalSettings.defaultDownloadLocation == AIOSettings.SYSTEM_GALLERY
+		}.take(9)
 	}
 
 	/**

@@ -12,7 +12,6 @@ import app.core.engines.video_parser.dialogs.VideoLinkPasteEditor
 import app.ui.main.MotherActivity
 import app.ui.main.fragments.downloads.fragments.active.ActiveTasksFragment
 import app.ui.main.fragments.downloads.fragments.finished.FinishedTasksFragment
-import app.ui.main.fragments.downloads.fragments.finished.FinishedTasksListAdapter
 import com.aio.R
 import lib.device.SecureFileUtil.authenticate
 import lib.process.LogHelperUtils
@@ -186,27 +185,28 @@ open class DownloadsFragment : BaseFragment() {
 	fun togglePrivateFilesButtonUI() {
 		try {
 			updatePrivateFilesCountUI()
+
 			val txt = safeFragmentLayoutRef
 				?.findViewById<TextView>(R.id.txt_private_toggle) ?: return
 
-			val adapter = finishedTasksFragment?.finishedTasksListAdapter
-			val showingPrivate = adapter?.let { isAdapterShowingPrivate(it) } ?: false
-
 			if (finishedTasksFragment == null) {
 				txt.text = getText(R.string.title_toggle_private_files)
-			} else {
-				if (showingPrivate) {
-					txt.text = getText(R.string.title_hide_privates)
-					txt.setLeftSideDrawable(R.drawable.ic_button_lock)
-				} else {
-					txt.text = getText(R.string.title_show_privates)
-					txt.setLeftSideDrawable(R.drawable.ic_button_unlock_v1)
-				}
+				return
 			}
+
+			if (showingPrivateFiles) {
+				txt.text = getText(R.string.title_hide_privates)
+				txt.setLeftSideDrawable(R.drawable.ic_button_lock)
+			} else {
+				txt.text = getText(R.string.title_show_privates)
+				txt.setLeftSideDrawable(R.drawable.ic_button_unlock_v1)
+			}
+
 		} catch (error: Exception) {
 			logger.e("Error while toggling private files title", error)
 		}
 	}
+
 
 	fun updatePrivateFilesCountUI() {
 		val txtPrivateFileCounterId = R.id.txt_private_file_counter
@@ -219,48 +219,25 @@ open class DownloadsFragment : BaseFragment() {
 		showView(tv, true, 300)
 	}
 
+	private var showingPrivateFiles = false
 	fun togglePrivateFiles() {
 		val adapter = finishedTasksFragment?.finishedTasksListAdapter ?: return
 
-		// Determine current shown set
-		val showingPrivate = isAdapterShowingPrivate(adapter)
-
-		// If currently showing private -> switch to gallery, else switch to private
-		if (showingPrivate) {
-			adapter.setFilter { dataModel ->
-				dataModel.globalSettings.defaultDownloadLocation == SYSTEM_GALLERY
-			}
+		if (showingPrivateFiles) {
+			adapter.setFilter { it.globalSettings.defaultDownloadLocation == SYSTEM_GALLERY }
+			showingPrivateFiles = false
 		} else {
 			authenticate(safeBaseActivityRef) { ok ->
 				if (ok) {
-					adapter.setFilter { dataModel ->
-						dataModel.globalSettings.defaultDownloadLocation == PRIVATE_FOLDER
-					}
+					adapter.setFilter { it.globalSettings.defaultDownloadLocation == PRIVATE_FOLDER }
+					showingPrivateFiles = true
+					togglePrivateFilesButtonUI()
 				}
 			}
+			return
 		}
 
-		// Refresh UI text/count after changing filter
 		togglePrivateFilesButtonUI()
-	}
-
-	fun isAdapterShowingPrivate(adapter: FinishedTasksListAdapter): Boolean {
-		// If a filter is active, inspect the first displayed item (if any)
-		return try {
-			val count = adapter.count
-			if (count == 0) {
-				// No visible items: determine intention by checking if any private files exist
-				downloadSystem.finishedDownloadDataModels.any {
-					it.globalSettings.defaultDownloadLocation == PRIVATE_FOLDER
-				}
-			} else {
-				val first = adapter.getItem(0)
-				first?.globalSettings?.defaultDownloadLocation == PRIVATE_FOLDER
-			}
-		} catch (e: Exception) {
-			logger.e("isAdapterShowingPrivate error", e)
-			false
-		}
 	}
 
 }

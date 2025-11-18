@@ -27,6 +27,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.isActive
@@ -250,7 +252,21 @@ class FinishedTasksViewHolder(layout: View) {
 		// Launch new coroutine for async UI updates and event configuration
 		currentCoroutineJob = coroutineScope.launch {
 			logger.d("updateView: Coroutine started for ${dataModel.downloadId}")
-			refreshDownloadProgress(dataModel)              // Update all visual components
+			logger.d("refreshDownloadProgress: Starting UI refresh for ${dataModel.downloadId}")
+
+			val titleJob = async(Dispatchers.Default) { updateFilesTitle(dataModel) }
+			val metaJob = async(Dispatchers.Default) { updateFilesMetaInfo(dataModel) }
+			val faviconJob = async(Dispatchers.IO) { updateFaviconInfo(dataModel) }
+			val typeJob = async(Dispatchers.Default) { updateFileTypeIndicator(dataModel) }
+			val privateJob = async(Dispatchers.Default) { updatePrivateFolderIndicator(dataModel) }
+			val openFileJob = async(Dispatchers.Default) { updateOpenFileIndicator(dataModel) }
+			val newFileJob = async(Dispatchers.Default) { updateNewFileIndicator(dataModel) }
+			val thumbJob = async(Dispatchers.IO) { updateThumbnailInfo(dataModel) }
+
+			// Wait for all tasks to finish
+			awaitAll(titleJob, metaJob, faviconJob, typeJob, privateJob, openFileJob, newFileJob, thumbJob)
+
+			logger.d("refreshDownloadProgress: Completed UI refresh for ${dataModel.downloadId}")
 			setupItemClickEventListeners(eventListener, dataModel)  // Configure user interactions
 		}
 	}
@@ -407,32 +423,6 @@ class FinishedTasksViewHolder(layout: View) {
 				}
 			}
 		}
-	}
-
-	/**
-	 * Refreshes all UI components for a download item with comprehensive data binding.
-	 *
-	 * This suspend function orchestrates the complete UI update process for a single
-	 * download item, calling all individual update methods in sequence. Ensures consistent
-	 * visual presentation by refreshing all display elements including title, metadata,
-	 * thumbnails, icons, and indicators. Uses structured logging to track update progress
-	 * and performance for debugging purposes.
-	 *
-	 * @param dataModel The download data model containing all information for UI presentation
-	 */
-	private suspend fun refreshDownloadProgress(dataModel: DownloadDataModel) {
-		logger.d("refreshDownloadProgress: Starting UI refresh for ${dataModel.downloadId}")
-
-		// Update all UI components in logical sequence
-		updateFilesTitle(dataModel)               // Primary file name display
-		updateFilesMetaInfo(dataModel)            // Secondary metadata information
-		updateFaviconInfo(dataModel)              // Website source favicon
-		updateFileTypeIndicator(dataModel)        // File category icon
-		updatePrivateFolderIndicator(dataModel)   // Storage location indicator
-		updateOpenFileIndicator(dataModel)        // File opening behavior icon
-		updateNewFileIndicator(dataModel)         // Unread file indicator
-		updateThumbnailInfo(dataModel)            // Main file thumbnail/image
-		logger.d("refreshDownloadProgress: Completed UI refresh for ${dataModel.downloadId}")
 	}
 
 	/**

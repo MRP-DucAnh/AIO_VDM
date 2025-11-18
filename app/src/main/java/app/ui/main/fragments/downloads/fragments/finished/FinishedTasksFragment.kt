@@ -92,6 +92,7 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 
 		logger.d("onAIOTimerTick() → UI update")
 		safeFinishTasksFragment?.let {
+			if (!isFragmentRunning) return
 			updateDownloadFragmentTitle(parentFragment as? DownloadsFragment)
 			updateDownloadFragmentPrivateButtonText(parentFragment as? DownloadsFragment)
 			toggleEmptyListVisibility(emptyDownloadContainer, downloadsListView)
@@ -179,6 +180,7 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 
 	private fun toggleEmptyListVisibility(emptyView: View?, listView: View?) {
 		if (downloadSystem.isInitializing) return
+		if (!isFragmentRunning) return
 		if (emptyView == null || listView == null) return
 
 		val empty = getFinishedDownloadModels().isEmpty()
