@@ -865,6 +865,26 @@ object ViewUtility {
 		}
 	}
 
+	@JvmStatic
+	fun hideView(targetView: View?, visibility: Int = GONE, shouldAnimate: Boolean = false, animTimeout: Long = 500) {
+		//Early return if null target view is passed
+		if (targetView == null) return
+
+		// Early return if view is already hidden to prevent redundant operations
+		if (!targetView.isVisible) return
+
+		if (shouldAnimate) {
+			// Animate to transparent state with specified duration
+			targetView.animate().alpha(0f)
+				.setDuration(animTimeout)
+			// Set to GONE after animation starts (consider using withEndAction for better timing)
+			targetView.visibility = visibility
+		} else {
+			// Immediate hiding without animation for instant disappearance
+			targetView.visibility = visibility
+		}
+	}
+
 	/**
 	 * Shows a [targetView] with optional fade-in animation and duplicate visibility prevention.
 	 *
