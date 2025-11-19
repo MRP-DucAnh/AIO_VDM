@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><!-- Recent download item layout with thumbnail and media indicators -->
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
 	xmlns:tools="http://schemas.android.com/tools"
@@ -10,7 +10,6 @@
 	android:orientation="vertical"
 	tools:ignore="UseAppTint,SpeakableTextPresentCheck">
 
-	<!-- Thumbnail container with rounded corners and shadow -->
 	<androidx.cardview.widget.CardView
 		android:id="@+id/container_img_thumbnail"
 		android:layout_width="@dimen/_100"
@@ -21,7 +20,6 @@
 		app:cardBackgroundColor="@color/color_background"
 		app:cardCornerRadius="@dimen/_5">
 
-		<!-- File thumbnail image with fallback -->
 		<ImageView
 			android:id="@+id/img_file_thumbnail"
 			android:layout_width="match_parent"
@@ -33,7 +31,6 @@
 			android:src="@drawable/image_no_thumb_available"
 			tools:ignore="ImageContrastCheck" />
 
-		<!-- Play indicator overlay for media files (hidden by default) -->
 		<ImageView
 			android:id="@+id/img_media_play_indicator"
 			android:layout_width="@dimen/_20"
@@ -48,7 +45,6 @@
 			android:visibility="gone"
 			tools:ignore="ImageContrastCheck" />
 
-		<!-- Site favicon indicator (hidden by default) -->
 		<ImageView
 			android:id="@+id/img_site_favicon"
 			android:layout_width="@dimen/_20"
@@ -63,7 +59,6 @@
 			android:visibility="gone"
 			tools:ignore="ImageContrastCheck" />
 
-		<!-- File type indicator -->
 		<ImageView
 			android:id="@+id/img_file_type_indicator"
 			android:layout_width="@dimen/_20"
@@ -81,7 +76,6 @@
 			android:visibility="visible"
 			tools:ignore="ImageContrastCheck" />
 
-		<!-- Private folder activation indicator -->
 		<ImageView
 			android:id="@+id/img_private_folder_indicator"
 			android:layout_width="@dimen/_20"
@@ -100,7 +94,6 @@
 			android:visibility="visible"
 			tools:ignore="ImageContrastCheck" />
 
-		<!-- Media duration indicator container (hidden by default) -->
 		<LinearLayout
 			android:id="@+id/container_media_duration"
 			android:layout_width="wrap_content"
@@ -114,7 +107,6 @@
 			android:orientation="vertical"
 			android:visibility="gone">
 
-			<!-- Media duration text -->
 			<TextView
 				android:id="@+id/txt_media_duration"
 				android:layout_width="wrap_content"
