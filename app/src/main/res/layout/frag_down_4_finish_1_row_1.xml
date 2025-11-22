@@ -28,8 +28,8 @@
 
 			<androidx.cardview.widget.CardView
 				android:id="@+id/thumbnail_container"
-				android:layout_width="@dimen/_95"
-				android:layout_height="@dimen/_58"
+				android:layout_width="@dimen/_88"
+				android:layout_height="@dimen/_57"
 				android:layout_marginStart="@dimen/_5"
 				android:layout_marginTop="@dimen/_5"
 				android:layout_marginEnd="@dimen/_5"
@@ -39,7 +39,7 @@
 
 				<ImageView
 					android:id="@+id/img_media_play_indicator"
-					android:layout_width="@dimen/_20"
+					android:layout_width="@dimen/_17"
 					android:layout_height="wrap_content"
 					android:layout_gravity="center"
 					android:adjustViewBounds="true"
@@ -63,7 +63,7 @@
 
 				<ImageView
 					android:id="@+id/img_site_favicon"
-					android:layout_width="@dimen/_20"
+					android:layout_width="@dimen/_15"
 					android:layout_height="wrap_content"
 					android:layout_gravity="start|top"
 					android:layout_marginStart="@dimen/_5"
@@ -76,14 +76,14 @@
 
 				<ImageView
 					android:id="@+id/img_file_type_indicator"
-					android:layout_width="@dimen/_20"
+					android:layout_width="@dimen/_17"
 					android:layout_height="wrap_content"
 					android:layout_gravity="start|bottom"
 					android:layout_marginStart="@dimen/_5"
 					android:layout_marginTop="@dimen/_5"
 					android:layout_marginBottom="@dimen/_5"
 					android:adjustViewBounds="true"
-					android:background="@drawable/rounded_transparent_black"
+					android:background="@drawable/rounded_primary_color"
 					android:elevation="@dimen/_2"
 					android:importantForAccessibility="no"
 					android:tint="@color/color_on_primary"
@@ -92,7 +92,7 @@
 
 				<ImageView
 					android:id="@+id/img_private_folder_indicator"
-					android:layout_width="@dimen/_20"
+					android:layout_width="@dimen/_17"
 					android:layout_height="wrap_content"
 					android:layout_gravity="end|bottom"
 					android:layout_marginStart="@dimen/_5"
@@ -100,7 +100,7 @@
 					android:layout_marginEnd="@dimen/_5"
 					android:layout_marginBottom="@dimen/_5"
 					android:adjustViewBounds="true"
-					android:background="@drawable/rounded_transparent_black"
+					android:background="@drawable/rounded_primary_color"
 					android:elevation="@dimen/_2"
 					android:importantForAccessibility="no"
 					android:tint="@color/color_on_primary"
@@ -125,13 +125,13 @@
 						android:layout_width="wrap_content"
 						android:layout_height="wrap_content"
 						android:layout_marginStart="@dimen/_5"
-						android:layout_marginTop="@dimen/_1"
+						android:layout_marginTop="-3dp"
 						android:layout_marginEnd="@dimen/_5"
-						android:layout_marginBottom="@dimen/_1"
 						android:fontFamily="@font/application_font_family"
 						android:text="@string/title_time_representation"
 						android:textColor="@color/color_on_primary"
-						android:textSize="@dimen/smaller_text_size"
+						android:textFontWeight="500"
+						android:textSize="@dimen/smallest_text_size"
 						android:textStyle="normal"
 						tools:ignore="TextContrastCheck" />
 				</LinearLayout>
@@ -152,7 +152,7 @@
 
 			<LinearLayout
 				android:layout_width="match_parent"
-				android:layout_height="wrap_content"
+				android:layout_height="@dimen/_57"
 				android:layout_centerVertical="true"
 				android:layout_marginEnd="@dimen/_5"
 				android:layout_toEndOf="@id/thumbnail_container"
@@ -165,17 +165,19 @@
 					<TextView
 						android:id="@+id/txt_file_name"
 						android:layout_width="match_parent"
-						android:layout_height="wrap_content"
+						android:layout_height="@dimen/_35"
+						android:layout_marginTop="-3dp"
 						android:layout_toStartOf="@id/btn_open_download_file"
 						android:ellipsize="end"
 						android:fontFamily="@font/application_font_family"
-						android:gravity="center_vertical"
+						android:gravity="top|left"
 						android:maxLines="2"
 						android:singleLine="false"
-						android:text="@string/text_empty_string_two_lines"
+						android:text="@string/text_empty_string"
 						android:textColor="@color/color_text_primary"
-						android:textFontWeight="400"
-						android:textSize="@dimen/message_text_size" />
+						android:textFontWeight="700"
+						android:textSize="@dimen/message_text_size"
+						tools:ignore="TextSizeCheck,VisualLintBounds" />
 
 					<ImageView
 						android:id="@+id/btn_open_download_file"
@@ -212,9 +214,9 @@
 						android:fontFamily="@font/application_font_family"
 						android:gravity="center_vertical"
 						android:singleLine="true"
-						android:text="@string/title__"
+						android:text="@string/text_empty_string"
 						android:textColor="@color/color_text_hint"
-						android:textFontWeight="300"
+						android:textFontWeight="500"
 						android:textSize="@dimen/smaller_text_size"
 						android:textStyle="italic"
 						tools:ignore="TextContrastCheck" />
