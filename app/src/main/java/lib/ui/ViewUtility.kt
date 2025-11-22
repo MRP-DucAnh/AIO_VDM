@@ -83,8 +83,8 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.HttpURLConnection.HTTP_OK
 import java.net.URL
+import java.text.BreakIterator
 import java.util.Locale
-import java.util.regex.Pattern
 import kotlin.math.roundToInt
 
 /**
@@ -506,42 +506,64 @@ object ViewUtility {
 
 	@JvmStatic
 	fun TextView.normalizeTallSymbols(
-		reductionFactor: Float = 0.8f,
-		regexPattern: String = "[^\\p{L}\\p{N}\\s]"
+		reductionFactor: Float = 0.8f
 	) {
-		val fullText = text?.toString() ?: return
+		val fullText = this.text.toString()
 		if (fullText.isEmpty()) return
 
+		// Use SpannableStringBuilder to prepare for styling
 		val spannable = SpannableStringBuilder(fullText)
 
-		val builder = StringBuilder()
-		builder.append("(?:").append(regexPattern).append(")")
-		builder.append("|(?:[\\p{So}\\p{Sk}])")
-		builder.append("|(?:[\\uD83C-\\uDBFF][\\uDC00-\\uDFFF])")
+		// Use BreakIterator to correctly identify the boundaries of visible characters (grapheme clusters)
+		// The default locale is used as the breaking logic is mostly independent of language.
+		val boundaryIterator = BreakIterator.getCharacterInstance(Locale.getDefault())
+		boundaryIterator.setText(fullText)
 
-		val combinedPattern = Pattern.compile(builder.toString())
-		val matcher = combinedPattern.matcher(fullText)
+		var currentStart = boundaryIterator.first()
+		var currentEnd = boundaryIterator.next()
 
-		while (matcher.find()) {
-			val start = matcher.start()
-			val end = matcher.end()
+		// 1. Iterate through the text one grapheme cluster (visible character) at a time
+		while (currentEnd != BreakIterator.DONE) {
+			val cluster = fullText.substring(currentStart, currentEnd)
 
-			if (start in 0 until spannable.length && end in 1..spannable.length) {
+			// 2. Check if the cluster contains any non-Latin characters.
+			// If the cluster has any character that is NOT Latin, we span the whole cluster.
+			// We exclude spaces explicitly so they are not spanned if they appear within the cluster.
+			// We use .any() to check if ANY code point in the cluster is non-Latin.
+			val shouldReduce = cluster.any { char ->
+				// FIX: Use char.code to get the Int Unicode code point, which is what UnicodeScript.of() expects.
+				!Character.isSpaceChar(char) && !Character.UnicodeScript.of(char.code).isLatin()
+			}
+
+			if (shouldReduce) {
+				// 3. Apply the span to the entire grapheme cluster
 				try {
 					spannable.setSpan(
 						RelativeSizeSpan(reductionFactor),
-						start,
-						end,
+						currentStart,
+						currentEnd,
 						Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
 					)
-				} catch (error: Throwable) {
-					logger.e("Error applying span to text", error)
+				} catch (e: Exception) {
+					println("Error applying span to cluster: $e")
 				}
 			}
+
+			currentStart = currentEnd
+			currentEnd = boundaryIterator.next()
 		}
 
-		text = spannable
+		// 4. Set the newly generated text back to the TextView
+		this.text = spannable
 	}
+
+	/**
+	 * Helper extension function to check if a Unicode Script is Latin.
+	 */
+	private fun Character.UnicodeScript?.isLatin(): Boolean {
+		return this == Character.UnicodeScript.LATIN
+	}
+
 
 	/**
 	 * Tints the given [Drawable] with the application's primary brand color.
