@@ -35,6 +35,9 @@ import android.renderscript.Allocation
 import android.renderscript.Element
 import android.renderscript.RenderScript
 import android.renderscript.ScriptIntrinsicBlur
+import android.text.Spannable
+import android.text.SpannableStringBuilder
+import android.text.style.RelativeSizeSpan
 import android.util.DisplayMetrics
 import android.view.View
 import android.view.View.GONE
@@ -81,6 +84,7 @@ import java.net.HttpURLConnection
 import java.net.HttpURLConnection.HTTP_OK
 import java.net.URL
 import java.util.Locale
+import java.util.regex.Pattern
 import kotlin.math.roundToInt
 
 /**
@@ -498,6 +502,45 @@ object ViewUtility {
 			// Dismiss keyboard using the focused view's window token
 			inputMethodManager.hideSoftInputFromWindow(focusedView.windowToken, 0)
 		}
+	}
+
+	@JvmStatic
+	fun TextView.normalizeTallSymbols(
+		reductionFactor: Float = 0.8f,
+		regexPattern: String = "[^\\p{L}\\p{N}\\s]"
+	) {
+		val fullText = text?.toString() ?: return
+		if (fullText.isEmpty()) return
+
+		val spannable = SpannableStringBuilder(fullText)
+
+		val builder = StringBuilder()
+		builder.append("(?:").append(regexPattern).append(")")
+		builder.append("|(?:[\\p{So}\\p{Sk}])")
+		builder.append("|(?:[\\uD83C-\\uDBFF][\\uDC00-\\uDFFF])")
+
+		val combinedPattern = Pattern.compile(builder.toString())
+		val matcher = combinedPattern.matcher(fullText)
+
+		while (matcher.find()) {
+			val start = matcher.start()
+			val end = matcher.end()
+
+			if (start in 0 until spannable.length && end in 1..spannable.length) {
+				try {
+					spannable.setSpan(
+						RelativeSizeSpan(reductionFactor),
+						start,
+						end,
+						Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+					)
+				} catch (error: Throwable) {
+					logger.e("Error applying span to text", error)
+				}
+			}
+		}
+
+		text = spannable
 	}
 
 	/**
