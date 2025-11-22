@@ -73,6 +73,11 @@ import app.core.bases.BaseActivity
 import app.core.engines.settings.AIOSettings.Companion.AIO_SETTING_DARK_MODE_FILE_NAME
 import com.aio.R
 import com.bumptech.glide.Glide
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Dispatchers.Default
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import lib.files.FileSystemUtility
 import lib.process.LogHelperUtils
 import lib.process.ThreadsUtility
@@ -507,51 +512,64 @@ object ViewUtility {
 
 	@JvmStatic
 	fun TextView.normalizeTallSymbols(
-		reductionFactor: Float = 0.8f
+		reductionFactor: Float = 0.8f,
+		scope: CoroutineScope = CoroutineScope(Default),
+		onDone: (Spannable) -> Unit = {}
 	) {
-		val fullText = this.text.toString()
-		if (fullText.isEmpty()) return
-
-		val spannable = SpannableStringBuilder(fullText)
-		val boundaryIterator = getCharacterInstance(Locale.getDefault())
-		boundaryIterator.setText(fullText)
-
-		var currentStart = boundaryIterator.first()
-		var currentEnd = boundaryIterator.next()
-
-		while (currentEnd != BreakIterator.DONE) {
-			val cluster = fullText.substring(currentStart, currentEnd)
-
-			val shouldReduce = cluster.any { char ->
-				!Character.isSpaceChar(char) &&
-					!Character.UnicodeScript.of(char.code).isLatin()
-			}
-
-			if (shouldReduce) {
-				try {
-					spannable.setSpan(
-						RelativeSizeSpan(reductionFactor),
-						currentStart,
-						currentEnd,
-						Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-					)
-				} catch (error: Exception) {
-					println("Error applying span to cluster: $error")
-				}
-			}
-
-			currentStart = currentEnd
-			currentEnd = boundaryIterator.next()
+		val fullText = this@normalizeTallSymbols.text.toString()
+		if (fullText.isEmpty()) {
+			logger.d("normalizeTallSymbols: empty text, skipping")
+			return
 		}
 
-		this.text = spannable
+		scope.launch(Default) {
+			logger.d("normalizeTallSymbols: processing text=\"$fullText\"")
+
+			val spannable = SpannableStringBuilder(fullText)
+			val boundaryIterator = getCharacterInstance(Locale.getDefault())
+			boundaryIterator.setText(fullText)
+
+			var currentStart = boundaryIterator.first()
+			var currentEnd = boundaryIterator.next()
+
+			while (currentEnd != BreakIterator.DONE) {
+				val cluster = fullText.substring(currentStart, currentEnd)
+
+				val shouldReduce = cluster.any { char ->
+					!Character.isSpaceChar(char) &&
+						!Character.UnicodeScript.of(char.code).isLatin()
+				}
+
+				if (shouldReduce) {
+					logger.d("normalizeTallSymbols: reducing " +
+						"cluster=\"$cluster\" at [$currentStart, $currentEnd]")
+					try {
+						spannable.setSpan(
+							RelativeSizeSpan(reductionFactor),
+							currentStart,
+							currentEnd,
+							Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+						)
+					} catch (error: Exception) {
+						logger.d("normalizeTallSymbols: span error $error")
+					}
+				}
+
+				currentStart = currentEnd
+				currentEnd = boundaryIterator.next()
+			}
+
+			withContext(Dispatchers.Main) {
+				logger.d("normalizeTallSymbols: finished")
+				this@normalizeTallSymbols.text = spannable
+				onDone(spannable)
+			}
+		}
 	}
 
 	private fun Character.UnicodeScript?.isLatin(): Boolean {
 		return this == Character.UnicodeScript.LATIN
 	}
-
-
 
 	/**
 	 * Tints the given [Drawable] with the application's primary brand color.
