@@ -22,6 +22,8 @@ import app.core.engines.downloader.DownloadDataModel
 import app.core.engines.downloader.DownloadDataModel.Companion.DOWNLOAD_MODEL_ID_KEY
 import app.core.engines.downloader.DownloadDataModel.Companion.THUMB_EXTENSION
 import app.core.engines.settings.AIOSettings.Companion.PRIVATE_FOLDER
+import app.core.engines.video_parser.dialogs.VideoLinkPasteEditor
+import app.core.engines.video_parser.parsers.SupportedURLs.isYouTubeUrl
 import app.ui.main.fragments.downloads.dialogs.DownloadFileRenamer
 import app.ui.main.fragments.downloads.dialogs.DownloadInfoTracker
 import app.ui.others.media_player.MediaPlayerActivity
@@ -43,6 +45,7 @@ import lib.files.FileSystemUtility.isVideo
 import lib.files.FileSystemUtility.isVideoByName
 import lib.files.VideoFilesUtility.moveMoovAtomToStart
 import lib.networks.URLUtility.isValidURL
+import lib.networks.URLUtilityKT.removeWwwFromUrl
 import lib.process.AsyncJobUtils.executeOnMainThread
 import lib.process.LogHelperUtils
 import lib.process.ThreadsUtility
@@ -52,6 +55,7 @@ import lib.ui.ActivityAnimator.animActivityFade
 import lib.ui.MsgDialogUtils
 import lib.ui.MsgDialogUtils.getMessageDialog
 import lib.ui.ViewUtility.getThumbnailFromFile
+import lib.ui.ViewUtility.normalizeTallSymbols
 import lib.ui.ViewUtility.rotateBitmap
 import lib.ui.ViewUtility.saveBitmapToFile
 import lib.ui.ViewUtility.setLeftSideDrawable
@@ -136,6 +140,7 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 			R.id.btn_remove_thumbnail -> toggleThumbnail()
 			R.id.btn_fix_unseekable_mp4_file -> fixUnseekableMp4s()
 			R.id.btn_mp4_to_mp3_convert -> convertMp4ToAudio()
+			R.id.btn_download_other_resolution -> downloadOtherYTResolutions()
 			R.id.btn_download_system_information -> downloadInfo()
 		}
 	}
@@ -275,7 +280,7 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 		if (messageDialog == null) return
 
 		messageDialog.setOnClickForPositiveButton {
-			this.close()
+			messageDialog.close()
 			this@FinishedDownloadOptions.close()
 			activityRef.runCodeOnAttachedThread(isUIThread = false) {
 				val downloadSys = downloadSystem
@@ -577,7 +582,27 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 	}
 
 	fun convertMp4ToAudio() {
+		this@FinishedDownloadOptions.close()
 		showMp4ToAudioConverterDialog(motherActivity, downloadModel)
+	}
+
+	fun downloadOtherYTResolutions() {
+		val dataModel = downloadModel
+		val fragmentRef = finishedTaskFragment
+		val activityRef = motherActivity
+
+		if (fragmentRef == null) return
+		if (activityRef == null) return
+		if (dataModel == null) return
+
+		this@FinishedDownloadOptions.close()
+		val fileUrl = dataModel.fileURL.ifEmpty { dataModel.siteReferrer }
+		if (fileUrl.isEmpty()) return
+		VideoLinkPasteEditor(
+			motherActivity = activityRef,
+			passOnUrl = fileUrl,
+			autoStart = true
+		).show()
 	}
 
 	private fun getButtonResIds(): IntArray {
@@ -595,12 +620,12 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 			R.id.btn_remove_thumbnail,
 			R.id.btn_fix_unseekable_mp4_file,
 			R.id.btn_mp4_to_mp3_convert,
+			R.id.btn_download_other_resolution,
 			R.id.btn_download_system_information
 		).toIntArray()
 	}
 
-	private fun updateDialogViewsWith(downloadModel: DownloadDataModel?) {
-		val dataModel = downloadModel
+	private fun updateDialogViewsWith(dataModel: DownloadDataModel) {
 		val fragmentRef = finishedTaskFragment
 		val activityRef = motherActivity
 		val dialogBuilder = dialogBuilder
@@ -608,7 +633,6 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 		if (fragmentRef == null) return
 		if (activityRef == null) return
 		if (dialogBuilder == null) return
-		if (dataModel == null) return
 
 		val dialogView = dialogBuilder.view
 		dialogView.apply {
@@ -622,6 +646,7 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 			val btnConvertToMp3 = findViewById<View>(R.id.btn_mp4_to_mp3_convert)
 			val btnFixUnseekableMp4s = findViewById<View>(R.id.container_mp4_file_fix)
 			val containerDuration = findViewById<View>(R.id.container_media_duration)
+			val containerDownloadYtRes = findViewById<View>(R.id.container_another_res_download)
 			val txtPlaybackDuration = findViewById<TextView>(R.id.txt_media_duration)
 			val imgPlayIndicator = findViewById<View>(R.id.img_media_play_indicator)
 			val imgFileIndicator = findViewById<ImageView>(R.id.img_file_type_indicator)
@@ -629,7 +654,10 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 
 			txtTitle.isSelected = true
 			txtTitle.text = dataModel.fileName
-			txtSubtitle.text = dataModel.fileURL
+			txtTitle.normalizeTallSymbols()
+
+			val fileURL = dataModel.fileURL
+			txtSubtitle.text = removeWwwFromUrl(fileURL).ifEmpty { fileURL }
 
 			val dataModelSettings = dataModel.globalSettings
 			val hideVideoThumbnail = dataModelSettings.downloadHideVideoThumbnail
@@ -696,6 +724,10 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 					else -> R.drawable.ic_button_file
 				}
 			)
+
+			val link = dataModel.siteReferrer.ifEmpty { dataModel.fileURL }
+			val visibility = if (link.isNotEmpty() && isYouTubeUrl(link)) VISIBLE else GONE
+			containerDownloadYtRes.visibility = visibility
 		}
 	}
 
@@ -796,7 +828,8 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 				val imgURI = File(filePath).toUri()
 				imageView.setImageURI(imgURI)
 			} catch (error: Exception) {
-				logger.e("Error loading thumbnail with Glide: ${error.message}", error)
+				logger.e("Error loading thumbnail with " +
+					"Glide: ${error.message}", error)
 				imageView.setImageResource(defaultThumb)
 			}
 		}

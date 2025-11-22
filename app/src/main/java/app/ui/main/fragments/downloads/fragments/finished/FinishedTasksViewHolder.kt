@@ -21,6 +21,7 @@ import app.core.engines.downloader.DownloadDataModel.Companion.THUMB_EXTENSION
 import app.core.engines.settings.AIOSettings.Companion.PRIVATE_FOLDER
 import com.aio.R
 import com.bumptech.glide.Glide
+import com.bumptech.glide.signature.ObjectKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.Default
 import kotlinx.coroutines.Dispatchers.IO
@@ -334,6 +335,7 @@ class FinishedTasksViewHolder(layout: View) {
 				val faviconImgFile = File(faviconFilePath)
 				if (!faviconImgFile.exists() || !faviconImgFile.isFile) return
 
+				val signature = ObjectKey(File(faviconFilePath).lastModified())
 				val faviconImgURI = faviconImgFile.toUri()
 				withContext(Main) {
 					if (!isActive) return@withContext
@@ -343,6 +345,7 @@ class FinishedTasksViewHolder(layout: View) {
 						Glide.with(it)
 							.load(faviconImgURI)
 							.placeholder(defaultFaviconResId)
+							.signature(signature)
 							.into(it)
 					}
 				}
@@ -367,7 +370,6 @@ class FinishedTasksViewHolder(layout: View) {
 					Glide.with(it)
 						.load(defaultThumbDrawable)
 						.placeholder(defaultThumbDrawable)
-
 						.into(it)
 				}
 			}
@@ -382,7 +384,7 @@ class FinishedTasksViewHolder(layout: View) {
 				if (!isActive) return@withContext
 				loadBitmapWithGlide(
 					target = thumbImgView,
-					filePath = dataModel.thumbPath,
+					filePath = cachedThumbPath,
 					placeHolder = defaultThumb
 				)
 			}
@@ -419,11 +421,12 @@ class FinishedTasksViewHolder(layout: View) {
 	private fun loadBitmapWithGlide(target: ImageView?, filePath: String, placeHolder: Int) {
 		target?.let {
 			val imgURI = File(filePath).toUri()
-			Glide.with(it)
+			val lastModified = File(filePath).lastModified()
+			Glide.with(target)
 				.load(imgURI)
+				.signature(ObjectKey(lastModified))
 				.placeholder(placeHolder)
-
-				.into(it)
+				.into(target)
 		}
 	}
 
@@ -559,7 +562,6 @@ class FinishedTasksViewHolder(layout: View) {
 				Glide.with(targetImageView)
 					.load(placeHolderDrawableResId)
 					.placeholder(placeHolderDrawableResId)
-
 					.into(targetImageView)
 			}
 
