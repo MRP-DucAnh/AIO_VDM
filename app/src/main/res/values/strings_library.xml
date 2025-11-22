@@ -616,5 +616,6 @@
 	<string name="title_show_privates">Show Privates</string>
 	<string name="title_hide_privates">Hide Privates</string>
 	<string name="title_129">129</string>
+	<string name="title_close_private_files">Close Private Files</string>
 
 </resources>

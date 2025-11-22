@@ -194,7 +194,7 @@ open class DownloadsFragment : BaseFragment() {
 				return
 			}
 
-			if (showingPrivateFiles) {
+			if (isShowingPrivateFiles) {
 				txt.text = getText(R.string.title_hide_privates)
 				txt.setLeftSideDrawable(R.drawable.ic_button_lock)
 			} else {
@@ -219,18 +219,18 @@ open class DownloadsFragment : BaseFragment() {
 		showView(tv, true, 300)
 	}
 
-	private var showingPrivateFiles = false
+	var isShowingPrivateFiles = false
 	fun togglePrivateFiles() {
 		val adapter = finishedTasksFragment?.finishedTasksListAdapter ?: return
 
-		if (showingPrivateFiles) {
+		if (isShowingPrivateFiles) {
 			adapter.setFilter { it.globalSettings.defaultDownloadLocation == SYSTEM_GALLERY }
-			showingPrivateFiles = false
+			isShowingPrivateFiles = false
 		} else {
 			authenticate(safeBaseActivityRef) { ok ->
 				if (ok) {
 					adapter.setFilter { it.globalSettings.defaultDownloadLocation == PRIVATE_FOLDER }
-					showingPrivateFiles = true
+					isShowingPrivateFiles = true
 					togglePrivateFilesButtonUI()
 				}
 			}
