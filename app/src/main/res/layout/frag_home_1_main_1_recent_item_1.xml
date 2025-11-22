@@ -11,7 +11,7 @@
 	tools:ignore="UseAppTint,SpeakableTextPresentCheck">
 
 	<androidx.cardview.widget.CardView
-		android:id="@+id/container_img_thumbnail"
+		android:id="@+id/thumbnail_container"
 		android:layout_width="@dimen/_100"
 		android:layout_height="@dimen/_75"
 		android:layout_gravity="center"

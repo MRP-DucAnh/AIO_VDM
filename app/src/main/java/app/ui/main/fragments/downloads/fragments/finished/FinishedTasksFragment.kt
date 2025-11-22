@@ -108,6 +108,7 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 			downloadModel.updateInStorage()
 
 			val opts = FinishedDownloadOptions(safeFinishTasksFragment)
+			opts.initialize()
 			if (aioSettings.openDownloadedFileOnSingleClick) {
 				opts.setDownloadModel(downloadModel)
 				opts.playTheMedia()

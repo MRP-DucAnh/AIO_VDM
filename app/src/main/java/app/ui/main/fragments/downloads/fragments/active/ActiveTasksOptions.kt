@@ -1254,7 +1254,7 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 					logger.d("Share download URL button clicked")
 					shareDownloadFileLink()
 				},
-				R.id.btn_discover_more to {
+				R.id.btn_open_website to {
 					logger.d("Discover more button clicked")
 					openDownloadReferrerLink()
 				},

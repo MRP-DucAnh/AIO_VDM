@@ -1,11 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    EMPTY DOWNLOADS STATE LAYOUT
-    This layout displays when no downloads are present, providing users with
-    educational resources and navigation options. Features a clean empty state
-    design with illustration, informational text, and actionable buttons.
-    =========================================================================== -->
-
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
 	xmlns:tools="http://schemas.android.com/tools"
@@ -15,12 +8,6 @@
 	android:orientation="vertical"
 	tools:ignore="UseCompatTextViewDrawableXml">
 
-	<!--
-		DOWNLOADS LISTVIEW
-		Main container for displaying completed download items when available.
-		Hidden by default and shown only when downloads exist. Uses marginless
-		design for full-screen utilization with proper clipping configuration.
-		===================================================================== -->
 	<ListView
 		android:id="@+id/container_download_tasks_finished"
 		android:layout_width="match_parent"
@@ -33,12 +20,6 @@
 		android:dividerHeight="@dimen/_0"
 		android:visibility="gone" />
 
-	<!--
-		EMPTY STATE CARD
-		Centered card displayed when no downloads exist. Provides visual feedback
-		that the downloads list is empty and offers guidance on how to get started.
-		Uses rounded corners and consistent background coloring.
-		========================================================================= -->
 	<androidx.cardview.widget.CardView
 		android:id="@+id/container_empty_downloads"
 		android:layout_width="match_parent"
@@ -53,18 +34,11 @@
 		app:cardBackgroundColor="@color/color_cardview_bg"
 		app:cardCornerRadius="@dimen/_10">
 
-		<!-- Empty state content container with vertical stacking -->
 		<LinearLayout
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
 			android:orientation="vertical">
 
-			<!--
-				EMPTY BOX ILLUSTRATION
-				Visual representation of empty state using a box graphic.
-				Centered horizontally and vertically with hardware acceleration
-				for smooth rendering and performance optimization.
-				============================================================== -->
 			<ImageView
 				android:id="@+id/img_empty_downloads"
 				android:layout_width="wrap_content"
@@ -76,12 +50,6 @@
 				android:importantForAccessibility="no"
 				android:src="@drawable/image_empty_box" />
 
-			<!--
-				EMPTY STATE MESSAGE
-				Informational text explaining that no downloads exist.
-				Uses centered alignment with appropriate margins and typography
-				for clear readability and visual hierarchy.
-				============================================================== -->
 			<TextView
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
@@ -96,12 +64,6 @@
 				android:textColor="@color/color_text_primary"
 				android:textSize="@dimen/message_text_size" />
 
-			<!--
-				HOW TO DOWNLOAD BUTTON
-				Primary call-to-action that opens educational content about
-				the download process. Uses secondary color scheme with
-				question mark icon for intuitive recognition.
-				=========================================================== -->
 			<RelativeLayout
 				android:id="@+id/btn_how_to_download"
 				android:layout_width="match_parent"
@@ -115,7 +77,6 @@
 				android:elevation="@dimen/_2"
 				tools:ignore="TouchTargetSizeCheck">
 
-				<!-- Button text with integrated question icon -->
 				<TextView
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content"
@@ -135,13 +96,6 @@
 		</LinearLayout>
 	</androidx.cardview.widget.CardView>
 
-	<!--
-		ACTIVE DOWNLOADS FLOATING ACTION BUTTON
-		Floating button that navigates to active downloads screen when
-		background downloads are in progress. Initially hidden and shown
-		programmatically when active downloads exist. Uses Lottie animation
-		for engaging visual feedback.
-		=================================================================== -->
 	<androidx.cardview.widget.CardView
 		android:id="@+id/btn_open_active_downloads"
 		android:layout_width="wrap_content"
@@ -157,20 +111,12 @@
 		app:cardCornerRadius="@dimen/_10"
 		app:cardElevation="@dimen/_2">
 
-		<!-- Button container with touch feedback selector -->
 		<LinearLayout
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
 			android:background="@drawable/ic_button_negative_selector"
 			android:orientation="vertical">
 
-			<!--
-				LOTTIE ANIMATION INDICATOR
-				Animated icon showing download activity or video content.
-				Uses hardware acceleration and merge paths for optimal
-				performance on all Android versions. Auto-plays and loops
-				continuously when visible.
-				========================================================= -->
 			<com.airbnb.lottie.LottieAnimationView
 				android:id="@+id/img_open_active_downloads"
 				android:layout_width="@dimen/_50"

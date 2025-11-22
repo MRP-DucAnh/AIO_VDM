@@ -67,8 +67,13 @@ import com.aio.R
 import com.anggrayudi.storage.SimpleStorageHelper
 import com.permissionx.guolindev.PermissionX
 import com.permissionx.guolindev.PermissionX.isGranted
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import lib.files.FileSystemUtility.getFileExtension
 import lib.files.FileSystemUtility.getFileSha256
 import lib.process.CommonTimeUtils.OnTaskFinishListener
@@ -138,6 +143,9 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 	 * @see WeakReference For the Java weak reference mechanism used
 	 */
 	private var weakReferenceOfActivity: WeakReference<BaseActivity>? = null
+
+	private val activityJob = SupervisorJob()
+	private val activityScope = CoroutineScope(Dispatchers.Main + activityJob)
 
 	/**
 	 * Flag to track whether a user permission check is currently in progress.
@@ -446,257 +454,96 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 		} ?: logger.d("safeBaseActivityRef is null — skipping onResume tasks due to invalid context")
 	}
 
-	/**
-	 * Called when the activity is about to move to the background and lose user focus.
-	 *
-	 * This method performs essential cleanup and state preservation to ensure the
-	 * activity can properly resume later. It updates internal flags and allows
-	 * subclasses to implement their own pause logic for specialized behavior.
-	 *
-	 * Important actions:
-	 * - Updates activity running state to prevent UI operations in background
-	 * - Invokes subclass pause logic for custom cleanup
-	 * - Prepares the activity for potential destruction or background state
-	 */
 	override fun onPause() {
 		super.onPause()
 		isActivityRunning = false
-		logger.d("onPause() called — activity moved to background, UI operations disabled")
-
-		// Allow subclass to handle pause-specific behavior and cleanup
-		// This includes saving transient state, pausing animations, or stopping sensors
-		logger.d("Calling subclass onPauseActivity() for custom background preparation")
 		onPauseActivity()
 	}
 
-	/**
-	 * Called when the activity is being permanently destroyed and removed from memory.
-	 *
-	 * This method performs comprehensive cleanup of resources to prevent memory leaks
-	 * and ensure proper app behavior. It releases system resources, cancels ongoing
-	 * operations, and clears references to allow garbage collection.
-	 *
-	 * Cleanup responsibilities:
-	 * - Release system resources like vibration hardware
-	 * - Cancel background operations and network calls
-	 * - Clear activity references to prevent memory leaks
-	 * - Reset static fields that hold context references
-	 * - Stop any ongoing services or background tasks
-	 */
 	override fun onDestroy() {
-		super.onDestroy()
-		logger.d("onDestroy() called — performing comprehensive resource cleanup")
-
 		isActivityRunning = false
-
-		// Releasing objects that are no longer needed to free memory
-		// These objects contain context references that could cause memory leaks
 		scopedStorageHelper = null
 		permissionCheckListener = null
-		logger.d("Released scopedStorageHelper and permissionCheckListener references")
 
-		// Cancel ongoing vibrations to release hardware resources
-		// Prevents vibrations from continuing after activity destruction
+		cancelUpdateCheck()
+		activityJob.cancel()
+
 		if (vibrator?.hasVibrator() == true) {
-			logger.d("Cancelling active vibration to release hardware resources")
 			vibrator?.cancel()
 		}
 
-		// Cancel ongoing background version update check to prevent memory leaks
-		// Stops coroutines and network operations associated with update checking
-		logger.d("Cancelling background version update check operations")
-		cancelUpdateCheck()
-
-		// Clear the MotherActivity reference from download UI manager
-		// Prevents attempts to update UI from a destroyed activity
-		(getActivity() as? MotherActivity)?.let { motherActivity ->
-			downloadSystem.downloadsUIManager.safeMotherActivity = null
-			logger.d("Cleared MotherActivity reference from download UI manager")
+		if (getActivity() as? MotherActivity != null) {
+			val downloadUIManager = downloadSystem.downloadsUIManager
+			downloadUIManager.safeMotherActivity = null
 		}
+		super.onDestroy()
 	}
 
-	/**
-	 * Called when the activity is paused, providing a hook for subclass-specific pause logic.
-	 *
-	 * Subclasses can override this method to implement custom behavior when the activity
-	 * moves to the background. This is ideal for pausing animations, stopping sensors,
-	 * saving transient UI state, or performing other cleanup specific to the subclass.
-	 *
-	 * The default implementation is intentionally empty, allowing subclasses to
-	 * override only when they need specialized pause behavior without being forced
-	 * to call super.onPauseActivity().
-	 */
-	override fun onPauseActivity() {
-		logger.d("onPauseActivity() called — default implementation does nothing")
-		// Default implementation intentionally left blank for subclass customization
-		// Subclasses can override to add their own pause logic without calling super
-	}
+	override fun onPauseActivity() = Unit
 
-	/**
-	 * Called when the activity is resumed, providing a hook for subclass-specific resume logic.
-	 *
-	 * Subclasses can override this method to implement custom behavior when the activity
-	 * returns to the foreground. This is ideal for restarting animations, initializing
-	 * sensors, restoring UI state, or performing other setup specific to the subclass.
-	 *
-	 * The default implementation is intentionally empty, allowing subclasses to
-	 * override only when they need specialized resume behavior without being forced
-	 * to call super.onResumeActivity().
-	 */
-	override fun onResumeActivity() {
-		logger.d("onResumeActivity() called — default implementation does nothing")
-		// Default implementation intentionally left blank for subclass customization
-		// Subclasses can override to add their own resume logic without calling super
-	}
+	override fun onResumeActivity() = Unit
 
-	/**
-	 * Configures the appearance of system bars (status bar and navigation bar) with comprehensive customization.
-	 *
-	 * This method provides complete control over the visual appearance of both the status bar
-	 * (top bar showing time, battery, etc.) and navigation bar (bottom bar with back/home/recent buttons).
-	 * It automatically handles the different implementation approaches required for various Android
-	 * versions, ensuring consistent behavior across the entire device ecosystem.
-	 *
-	 * Key capabilities:
-	 * - Custom colors for both status and navigation bars
-	 * - Light/dark icon theming for optimal contrast and readability
-	 * - Automatic API-level detection for using modern or legacy approaches
-	 * - Seamless integration with Material Design guidelines
-	 *
-	 * @param statusBarColorResId Resource ID for the status bar background color.
-	 *        Use transparent colors for edge-to-edge designs or opaque colors for traditional layouts.
-	 * @param navigationBarColorResId Resource ID for the navigation bar background color.
-	 *        Should coordinate with status bar color for visual harmony.
-	 * @param isLightStatusBar Whether to use light-colored icons (dark icons) on the status bar.
-	 *        Set to true for light backgrounds (improves dark icon visibility),
-	 *        false for dark backgrounds (uses light icons).
-	 * @param isLightNavigationBar Whether to use light-colored icons (dark icons) on the navigation bar.
-	 *        Follows the same logic as status bar for consistent theming.
-	 */
 	override fun setSystemBarsColors(
 		statusBarColorResId: Int,
 		navigationBarColorResId: Int,
 		isLightStatusBar: Boolean,
 		isLightNavigationBar: Boolean,
 	) {
-		logger.d(
-			"setSystemBarsColors() called with " +
-					"statusBarColorResId=$statusBarColorResId, " +
-					"navigationBarColorResId=$navigationBarColorResId, " +
-					"isLightStatusBar=$isLightStatusBar, " +
-					"isLightNavigationBar=$isLightNavigationBar"
-		)
-
 		val activityWindow = window
-
-		// Apply colors to system bars - this sets the background colors for both bars
 		activityWindow.statusBarColor = getColor(this, statusBarColorResId)
 		activityWindow.navigationBarColor = getColor(this, navigationBarColorResId)
-		logger.d("Applied status and navigation bar colors from resources")
 
 		val decorView = activityWindow.decorView
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-			logger.d("Using modern WindowInsetsController API for Android R (API 30) and above")
-
 			val insetsController = activityWindow.insetsController
-
-			// Configure status bar icon appearance using modern API
-			// This controls whether status bar icons are light or dark based on background
 			insetsController?.setSystemBarsAppearance(
 				if (isLightStatusBar) APPEARANCE_LIGHT_STATUS_BARS else 0,
 				APPEARANCE_LIGHT_STATUS_BARS
 			)
-
-			// Configure navigation bar icon appearance using modern API
-			// This controls whether navigation bar buttons are light or dark
 			insetsController?.setSystemBarsAppearance(
 				if (isLightNavigationBar) APPEARANCE_LIGHT_NAVIGATION_BARS else 0,
 				APPEARANCE_LIGHT_NAVIGATION_BARS
 			)
-
-			logger.d("Applied light/dark appearance for system bars using modern API (R+)")
 		} else {
-			logger.d("Using legacy systemUiVisibility flags for pre-R devices (API < 30)")
-
-			// Legacy approach for status bar icon theming
-			// Uses bitwise operations to set or clear the light status bar flag
 			if (isLightStatusBar) {
 				decorView.systemUiVisibility =
 					decorView.systemUiVisibility or
-							SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+						SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
 			} else {
 				decorView.systemUiVisibility =
 					decorView.systemUiVisibility and
-							SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
+						SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
 			}
 
-			// Legacy approach for navigation bar icon theming
-			// Uses bitwise operations to set or clear the light navigation bar flag
 			if (isLightNavigationBar) {
 				decorView.systemUiVisibility =
 					decorView.systemUiVisibility or
-							SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+						SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
 			} else {
 				decorView.systemUiVisibility =
 					decorView.systemUiVisibility and
-							SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
+						SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
 			}
-
-			logger.d("Applied light/dark appearance for system bars using legacy flags (pre-R)")
 		}
 	}
 
-	/**
-	 * Intercepts all touch events to provide enhanced user experience by automatically dismissing
-	 * the software keyboard when users tap outside of text input fields.
-	 *
-	 * This method improves usability by preventing the keyboard from staying open when users
-	 * are done with text input, which is a common UX expectation in mobile applications.
-	 * It detects taps outside of focused EditText views and automatically hides the keyboard
-	 * while clearing focus from the input field.
-	 *
-	 * The implementation:
-	 * - Detects ACTION_DOWN events to identify user taps
-	 * - Checks if the current focus is an EditText (or subclass)
-	 * - Calculates whether the tap occurred outside the EditText bounds
-	 * - Dismisses keyboard and clears focus when appropriate
-	 * - Maintains normal event dispatch for all other interactions
-	 *
-	 * @param motionEvent The motion event describing the user's touch interaction, containing
-	 *        coordinates, action type, and other touch metadata from the Android input system.
-	 * @return `true` if the event was handled by this interceptor (keyboard dismissal),
-	 *         otherwise passes the event to the superclass for normal processing.
-	 *         This ensures all touch events are properly handled while adding the keyboard
-	 *         dismissal functionality.
-	 */
 	override fun dispatchTouchEvent(motionEvent: MotionEvent): Boolean {
 		if (motionEvent.action == MotionEvent.ACTION_DOWN) {
 			val focusedView = currentFocus
 
 			if (focusedView is EditText) {
-				logger.d("dispatchTouchEvent(): User touched outside EditText — checking keyboard dismissal")
-
-				// Get the global visible rectangle of the focused EditText
 				val outRect = Rect()
 				focusedView.getGlobalVisibleRect(outRect)
 
-				// Check if the touch occurred outside the EditText bounds
 				if (!outRect.contains(motionEvent.rawX.toInt(), motionEvent.rawY.toInt())) {
-					logger.d("Tapped outside EditText — hiding keyboard and clearing focus")
-
-					// Clear focus from the EditText to indicate input completion
 					focusedView.clearFocus()
-
-					// Hide the soft keyboard to free up screen space
 					val service = getSystemService(INPUT_METHOD_SERVICE)
 					val imm = service as InputMethodManager
 					imm.hideSoftInputFromWindow(focusedView.windowToken, 0)
 				}
 			}
 		}
-
-		// Always call super to maintain normal event dispatch chain
 		return super.dispatchTouchEvent(motionEvent)
 	}
 
@@ -731,7 +578,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 					logger.d("Showing explanation dialog for denied permissions: $deniedList")
 					callback.showRequestReasonDialog(
 						permissions = deniedList,
-						message = getString(R.string.title_allow_the_storage_permissions),
+						message = getString(R.string.title_storage_permissions),
 						positiveText = getString(R.string.title_allow_now_in_settings)
 					)
 				}
@@ -751,7 +598,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 				.request { allGranted, grantedList, deniedList ->
 					logger.d(
 						"Permission request completed — " +
-								"allGranted=$allGranted, granted=$grantedList, denied=$deniedList"
+							"allGranted=$allGranted, granted=$grantedList, denied=$deniedList"
 					)
 
 					// Reset the active permission checking state
@@ -973,7 +820,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 
 		startActivity(intent)
 		logger.d("App Info settings screen opened successfully -" +
-				" user can now manage app permissions and settings")
+			" user can now manage app permissions and settings")
 	}
 
 	/**
@@ -1046,6 +893,17 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 	override fun getActivity(): BaseActivity? {
 		logger.d("getActivity() called — returning current activity reference")
 		return weakReferenceOfActivity?.get()
+	}
+
+	override fun getAttachedCoroutineScope(): CoroutineScope {
+		return activityScope
+	}
+
+	override fun runCodeOnAttachedThread(isUIThread: Boolean, codeBlock: () -> Unit) {
+		if (isUIThread) getAttachedCoroutineScope().launch { codeBlock.invoke() }
+		else getAttachedCoroutineScope().launch {
+			withContext(Dispatchers.IO) { codeBlock.invoke() }
+		}
 	}
 
 	/**
@@ -1219,7 +1077,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 						// Skip permission check for OpeningActivity to avoid overwhelming new users
 						if (activity is OpeningActivity) {
 							logger.d("Activity is OpeningActivity — " +
-									"skipping permission request to improve first-run experience")
+								"skipping permission request to improve first-run experience")
 							return
 						}
 
@@ -1247,10 +1105,10 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 				})
 			} else {
 				logger.d("Permission check already active — " +
-						"skipping duplicate request to avoid conflicts")
+					"skipping duplicate request to avoid conflicts")
 			}
 		} ?: logger.d("Activity reference is null — " +
-				"cannot request permissions without valid context")
+			"cannot request permissions without valid context")
 	}
 
 	/**
@@ -1438,11 +1296,11 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 			logger.d("Android version < R — using legacy system UI flags")
 
 			window.decorView.systemUiVisibility = (SYSTEM_UI_FLAG_LAYOUT_STABLE
-					or SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-					or SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-					or SYSTEM_UI_FLAG_HIDE_NAVIGATION
-					or SYSTEM_UI_FLAG_FULLSCREEN
-					or SYSTEM_UI_FLAG_IMMERSIVE_STICKY) // Sticky immersive mode for better UX
+				or SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+				or SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+				or SYSTEM_UI_FLAG_HIDE_NAVIGATION
+				or SYSTEM_UI_FLAG_FULLSCREEN
+				or SYSTEM_UI_FLAG_IMMERSIVE_STICKY) // Sticky immersive mode for better UX
 		}
 
 		// Apply edge-to-edge behavior using compatibility controller for consistent behavior
@@ -1488,8 +1346,8 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 		} else {
 			// Legacy approach for Android versions before API 30
 			val flags = (SYSTEM_UI_FLAG_LAYOUT_STABLE
-					or SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-					or SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
+				or SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+				or SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
 			window.decorView.systemUiVisibility = flags
 			logger.d("Legacy system UI flags applied for pre-R devices")
 		}
@@ -1780,7 +1638,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 			return null
 		}
 		logger.d("Fetched update info: version=" +
-				"${updateInfo.latestVersion}, hash=${updateInfo.versionHash}")
+			"${updateInfo.latestVersion}, hash=${updateInfo.versionHash}")
 
 		// Step 3: Download the APK file silently (without user interaction)
 		val latestAPKFile = updater.downloadUpdateApkSilently(
@@ -1807,8 +1665,8 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 		// Step 6: Compare computed hash with expected hash from server to prevent tampering
 		if (fileHash != updateInfo.versionHash) {
 			logger.d("SHA256 mismatch! Expected=" +
-					"${updateInfo.versionHash}, Got=$fileHash — " +
-					"deleting potentially tampered APK")
+				"${updateInfo.versionHash}, Got=$fileHash — " +
+				"deleting potentially tampered APK")
 			latestAPKFile.delete()
 			return null
 		}
@@ -1832,9 +1690,9 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 	 */
 	private fun isValidApkFile(file: File): Boolean {
 		return file.exists() &&
-				file.isFile &&
-				file.length() > 0 &&
-				getFileExtension(file.name)?.contains("apk", true) == true
+			file.isFile &&
+			file.length() > 0 &&
+			getFileExtension(file.name)?.contains("apk", true) == true
 	}
 
 	/**

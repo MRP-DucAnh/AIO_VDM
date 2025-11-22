@@ -502,7 +502,7 @@
 
 				<!-- Open link button -->
 				<LinearLayout
-					android:id="@+id/btn_discover_more"
+					android:id="@+id/btn_open_website"
 					android:layout_width="0dp"
 					android:layout_height="match_parent"
 					android:layout_marginStart="@dimen/_0"
