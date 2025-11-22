@@ -144,6 +144,7 @@
 							android:fontFamily="@font/application_font_family"
 							android:text="@string/title_time_representation"
 							android:textColor="@color/color_on_primary"
+							android:textFontWeight="500"
 							android:textSize="@dimen/smaller_text_size"
 							android:textStyle="normal"
 							tools:ignore="TextContrastCheck" />
@@ -176,8 +177,8 @@
 						android:singleLine="true"
 						android:text="@string/title__"
 						android:textColor="@color/color_on_primary"
-						android:textSize="@dimen/sub_heading_text_size"
-						android:textStyle="bold" />
+						android:textFontWeight="700"
+						android:textSize="@dimen/sub_heading_text_size" />
 
 					<LinearLayout
 						android:layout_width="match_parent"
@@ -203,7 +204,9 @@
 							android:singleLine="true"
 							android:text="@string/title__"
 							android:textColor="@color/color_on_primary"
+							android:textFontWeight="500"
 							android:textSize="@dimen/small_text_size"
+							android:textStyle="italic"
 							tools:ignore="TextContrastCheck" />
 					</LinearLayout>
 
@@ -257,6 +260,7 @@
 						android:singleLine="true"
 						android:text="@string/title_play_the_video"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
@@ -286,6 +290,7 @@
 						android:singleLine="true"
 						android:text="@string/title_open_externally"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 			</LinearLayout>
@@ -322,6 +327,7 @@
 						android:singleLine="true"
 						android:text="@string/title_copy_website_link"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
@@ -351,6 +357,7 @@
 						android:singleLine="true"
 						android:text="@string/title_share_the_file"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 			</LinearLayout>
@@ -396,6 +403,7 @@
 						android:singleLine="true"
 						android:text="@string/title_clear_from_list"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
@@ -425,6 +433,7 @@
 						android:singleLine="true"
 						android:text="@string/title_delete_the_file"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 			</LinearLayout>
@@ -461,6 +470,7 @@
 						android:singleLine="true"
 						android:text="@string/title_rename_the_file"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
@@ -490,6 +500,7 @@
 						android:singleLine="true"
 						android:text="@string/title_open_website"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 			</LinearLayout>
@@ -536,6 +547,7 @@
 						android:singleLine="true"
 						android:text="@string/title_move_to_private"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 
@@ -566,6 +578,7 @@
 						android:singleLine="true"
 						android:text="@string/title_hide_thumbnail"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 			</LinearLayout>
@@ -614,6 +627,7 @@
 						android:singleLine="true"
 						android:text="@string/title_fix_unseekable_mp4_file_risky"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 			</LinearLayout>
@@ -653,6 +667,7 @@
 						android:singleLine="true"
 						android:text="@string/title_convert_video_file_to_mp3_audio"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 			</LinearLayout>
@@ -692,6 +707,7 @@
 						android:singleLine="true"
 						android:text="@string/title_download_other_resolution"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 			</LinearLayout>
@@ -729,6 +745,7 @@
 						android:singleLine="true"
 						android:text="@string/title_download_system_information"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 			</LinearLayout>
