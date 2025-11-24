@@ -4,6 +4,8 @@ import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMuxer
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import lib.process.LogHelperUtils
 import java.io.File
 import java.lang.ref.WeakReference
@@ -46,7 +48,7 @@ import java.nio.ByteBuffer
  * @see MediaMuxer
  * @see MediaFormat
  */
-class VideoToAudioConverter {
+class VideoToAudioConverter(coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO)) {
 
 	/** Logger instance for tracking conversion process and debugging */
 	private val logger = LogHelperUtils.from(javaClass)

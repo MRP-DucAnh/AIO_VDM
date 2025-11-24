@@ -30,6 +30,8 @@ import app.ui.others.media_player.MediaPlayerActivity
 import app.ui.others.media_player.MediaPlayerActivity.Companion.INTENT_EXTRA_MEDIA_FILE_PATH
 import app.ui.others.media_player.dialogs.Mp4ToAudioConverterDialog.showMp4ToAudioConverterDialog
 import com.aio.R
+import com.bumptech.glide.Glide
+import com.bumptech.glide.signature.ObjectKey
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import lib.device.ShareUtility.openApkFile
@@ -826,7 +828,12 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 		executeOnMainThread {
 			try {
 				val imgURI = File(filePath).toUri()
-				imageView.setImageURI(imgURI)
+				val lastModified = File(filePath).lastModified()
+				Glide.with(imageView)
+					.load(imgURI)
+					.signature(ObjectKey(lastModified))
+					.placeholder(R.drawable.image_no_thumb_available)
+					.into(imageView)
 			} catch (error: Exception) {
 				logger.e("Error loading thumbnail with " +
 					"Glide: ${error.message}", error)

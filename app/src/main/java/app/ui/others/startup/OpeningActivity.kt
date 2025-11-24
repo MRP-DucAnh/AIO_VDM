@@ -22,7 +22,7 @@ class OpeningActivity : BaseActivity() {
 
 	private val logger = LogHelperUtils.from(javaClass)
 	private val safeOpenActivityRef: OpeningActivity?
-		get() = getActivity() as OpeningActivity
+		get() = getActivity() as? OpeningActivity
 
 	override fun onRenderingLayout(): Int = R.layout.activity_opening_1
 
@@ -48,7 +48,8 @@ class OpeningActivity : BaseActivity() {
 
 	private fun stopLoadingLottieAnimation() {
 		safeOpenActivityRef?.let {
-			with(it.findViewById<LottieAnimationView>(R.id.img_loading_lottie_anim)) {
+			val viewId = R.id.img_loading_lottie_anim
+			with(it.findViewById<LottieAnimationView>(viewId)) {
 				hideView(targetView = this,
 					visibility = INVISIBLE,
 					shouldAnimate = true,

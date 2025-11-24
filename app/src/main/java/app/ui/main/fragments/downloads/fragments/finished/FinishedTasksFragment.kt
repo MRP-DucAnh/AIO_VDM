@@ -34,14 +34,13 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 	private var animOpenActiveDownloads: LottieAnimationView? = null
 	private var listViewDownloads: ListView? = null
 	private var lastCheckedFinishedTasks = 0
+	var finishedTasksListAdapter: FinishedTasksListAdapter? = null
 
 	val safeMotherActivityRef: MotherActivity?
-		get() = safeBaseActivityRef as MotherActivity
+		get() = safeBaseActivityRef as? MotherActivity
 
 	val safeFinishTasksFragment: FinishedTasksFragment?
-		get() = safeBaseFragmentRef as FinishedTasksFragment
-
-	var finishedTasksListAdapter: FinishedTasksListAdapter? = null
+		get() = safeBaseFragmentRef as? FinishedTasksFragment
 
 	override fun getLayoutResId() = R.layout.frag_down_4_finish_1
 

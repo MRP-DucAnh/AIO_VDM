@@ -617,5 +617,7 @@
 	<string name="title_hide_privates">Hide Privates</string>
 	<string name="title_129">129</string>
 	<string name="title_close_private_files">Close Private Files</string>
+	<string name="title_activated">Activated</string>
+	<string name="title_private_files">Private Files</string>
 
 </resources>
