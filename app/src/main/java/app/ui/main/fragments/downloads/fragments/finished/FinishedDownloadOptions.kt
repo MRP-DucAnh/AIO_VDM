@@ -18,12 +18,14 @@ import androidx.media3.common.util.UnstableApi
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioFavicons
 import app.core.AIOApp.Companion.downloadSystem
+import app.core.bases.BaseActivity
 import app.core.engines.downloader.DownloadDataModel
 import app.core.engines.downloader.DownloadDataModel.Companion.DOWNLOAD_MODEL_ID_KEY
 import app.core.engines.downloader.DownloadDataModel.Companion.THUMB_EXTENSION
 import app.core.engines.settings.AIOSettings.Companion.PRIVATE_FOLDER
 import app.core.engines.video_parser.dialogs.VideoLinkPasteEditor
 import app.core.engines.video_parser.parsers.SupportedURLs.isYouTubeUrl
+import app.ui.main.MotherActivity
 import app.ui.main.fragments.downloads.dialogs.DownloadFileRenamer
 import app.ui.main.fragments.downloads.dialogs.DownloadInfoTracker
 import app.ui.others.media_player.MediaPlayerActivity
@@ -67,18 +69,31 @@ import lib.ui.builders.DialogBuilder
 import lib.ui.builders.ToastView.Companion.showToast
 import lib.ui.builders.WaitingDialog
 import java.io.File
+import java.lang.ref.WeakReference
 
 class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClickListener {
 
 	private val logger = LogHelperUtils.from(javaClass)
-	private val finishedTaskFragment = finishedFragment?.safeFinishTasksFragment
-	private val motherActivity = finishedTaskFragment?.safeMotherActivityRef
+	private val fragmentWeakRef: WeakReference<FinishedTasksFragment>?
+	private val activityWeakRef: WeakReference<BaseActivity>?
+
 	private var dialogBuilder: DialogBuilder? = null
 	private var downloadModel: DownloadDataModel? = null
 
+	init {
+		val safeFragment = finishedFragment?.safeFinishTasksFragment
+		val safeActivity = safeFragment?.safeMotherActivityRef
+		this.fragmentWeakRef = safeFragment?.let { WeakReference(it) }
+		this.activityWeakRef = safeActivity?.let { WeakReference(it) }
+	}
+
+	private fun getSafeActivity(): BaseActivity? = activityWeakRef?.get()
+	private fun getSafeFragment(): FinishedTasksFragment? = fragmentWeakRef?.get()
+
 	fun initialize() {
-		val fragmentRef = finishedTaskFragment
-		val activityRef = motherActivity
+		val activityRef = getSafeActivity()
+		val fragmentRef = getSafeFragment()
+
 		if (activityRef == null) return
 		if (fragmentRef == null) return
 
@@ -100,8 +115,8 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 	}
 
 	fun show(dataModel: DownloadDataModel) {
-		val fragmentRef = finishedTaskFragment
-		val activityRef = motherActivity
+		val activityRef = getSafeActivity()
+		val fragmentRef = getSafeFragment()
 		val dialogBuilder = dialogBuilder
 
 		if (activityRef == null) return
@@ -115,8 +130,8 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 	}
 
 	fun close() {
-		val fragmentRef = finishedTaskFragment
-		val activityRef = motherActivity
+		val activityRef = getSafeActivity()
+		val fragmentRef = getSafeFragment()
 		val dialogBuilder = dialogBuilder
 
 		if (activityRef == null) return
@@ -150,8 +165,8 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 	@OptIn(UnstableApi::class)
 	fun playTheMedia() {
 		val dataModel = downloadModel
-		val fragmentRef = finishedTaskFragment
-		val activityRef = motherActivity
+		val fragmentRef = getSafeFragment()
+		val activityRef = getSafeActivity()
 
 		if (fragmentRef == null) return
 		if (activityRef == null) return
@@ -177,8 +192,8 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 
 	fun openFile() {
 		val dataModel = downloadModel
-		val fragmentRef = finishedTaskFragment
-		val activityRef = motherActivity
+		val fragmentRef = getSafeFragment()
+		val activityRef = getSafeActivity()
 
 		if (fragmentRef == null) return
 		if (activityRef == null) return
@@ -201,8 +216,8 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 
 	fun shareFile() {
 		val dataModel = downloadModel
-		val fragmentRef = finishedTaskFragment
-		val activityRef = motherActivity
+		val fragmentRef = getSafeFragment()
+		val activityRef = getSafeActivity()
 
 		if (fragmentRef == null) return
 		if (activityRef == null) return
@@ -216,8 +231,8 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 
 	fun clearFromList() {
 		val dataModel = downloadModel
-		val fragmentRef = finishedTaskFragment
-		val activityRef = motherActivity
+		val fragmentRef = getSafeFragment()
+		val activityRef = getSafeActivity()
 
 		if (fragmentRef == null) return
 		if (activityRef == null) return
@@ -249,7 +264,10 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 
 			dataModel.deleteModelFromDisk()
 			dataModels.remove(dataModel)
-			showToast(activityRef, msgId = toastMsgResId)
+			val safeActivity = getSafeActivity()
+			if (safeActivity != null) {
+				showToast(safeActivity, msgId = toastMsgResId)
+			}
 		}
 
 		messageDialog.show()
@@ -257,8 +275,8 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 
 	fun deleteFile() {
 		val dataModel = downloadModel
-		val fragmentRef = finishedTaskFragment
-		val activityRef = motherActivity
+		val fragmentRef = getSafeFragment()
+		val activityRef = getSafeActivity()
 
 		if (fragmentRef == null) return
 		if (activityRef == null) return
@@ -292,7 +310,10 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 				dataModel.deleteModelFromDisk()
 				dataModel.getDestinationFile().delete()
 				modelsList.remove(dataModel)
-				showToast(activityRef, msgId = toastMsgResId)
+				val safeActivity = getSafeActivity()
+				if (safeActivity != null) {
+					showToast(safeActivity, msgId = toastMsgResId)
+				}
 			}
 		}
 
@@ -301,12 +322,13 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 
 	fun renameFile() {
 		val dataModel = downloadModel
-		val fragmentRef = finishedTaskFragment
-		val activityRef = motherActivity
+		val fragmentRef = getSafeFragment()
+		val activityRef = getSafeActivity()
 
 		if (fragmentRef == null) return
 		if (activityRef == null) return
 		if (dataModel == null) return
+		if (activityRef !is MotherActivity) return
 
 		val fileRenamer = DownloadFileRenamer(activityRef, dataModel) {
 			activityRef.getAttachedCoroutineScope().launch {
@@ -323,12 +345,13 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 
 	fun openWebsite() {
 		val dataModel = downloadModel
-		val fragmentRef = finishedTaskFragment
-		val activityRef = motherActivity
+		val fragmentRef = getSafeFragment()
+		val activityRef = getSafeActivity()
 
 		if (fragmentRef == null) return
 		if (activityRef == null) return
 		if (dataModel == null) return
+		if (activityRef !is MotherActivity) return
 
 		val websiteLink = dataModel.siteReferrer.ifEmpty { dataModel.fileURL }
 		if (websiteLink.isEmpty()) {
@@ -358,8 +381,8 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 
 	fun toggleMoveToPrivateOrGallery() {
 		val dataModel = downloadModel
-		val fragmentRef = finishedTaskFragment
-		val activityRef = motherActivity
+		val fragmentRef = getSafeFragment()
+		val activityRef = getSafeActivity()
 
 		if (fragmentRef == null) return
 		if (activityRef == null) return
@@ -372,12 +395,13 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 
 	fun moveToPrivate() {
 		val dataModel = downloadModel
-		val fragmentRef = finishedTaskFragment
-		val activityRef = motherActivity
+		val fragmentRef = getSafeFragment()
+		val activityRef = getSafeActivity()
 
 		if (fragmentRef == null) return
 		if (activityRef == null) return
 		if (dataModel == null) return
+		if (activityRef !is MotherActivity) return
 
 		this@FinishedDownloadOptions.close()
 		val msgResID = R.string.title_moving_to_private_folder_wait
@@ -392,21 +416,26 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 		waiting.show()
 
 		fun onErrorInstructions() {
+			val safeActivity = getSafeActivity() ?: return
 			val msgResId = R.string.title_something_went_wrong
 			waiting.close()
-			showToast(activityRef, msgId = msgResId)
+			showToast(safeActivity, msgId = msgResId)
 		}
 
 		fun onSuccessInstructions() {
-			val adapter = fragmentRef.finishedTasksListAdapter
-			val homeFragment = activityRef.homeFragment
+			val safeFragment = getSafeFragment() ?: return
+			val safeActivity = getSafeActivity() ?: return
+			if (safeActivity !is MotherActivity) return
+
+			val adapter = safeFragment.finishedTasksListAdapter
+			val homeFragment = safeActivity.homeFragment
 			val txtResId = R.string.title_move_to_private_successfully
 
 			adapter?.notifyDataSetChangedOnSort(true)
 			homeFragment?.refreshRecentDownloadListUI()
 
 			waiting.close()
-			showToast(activityRef, msgId = txtResId)
+			showToast(safeActivity, msgId = txtResId)
 		}
 
 		dataModel.moveToPrivateFolder(
@@ -417,8 +446,8 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 
 	fun moveToGallery() {
 		val dataModel = downloadModel
-		val fragmentRef = finishedTaskFragment
-		val activityRef = motherActivity
+		val fragmentRef = getSafeFragment()
+		val activityRef = getSafeActivity() as? MotherActivity
 
 		if (fragmentRef == null) return
 		if (activityRef == null) return
@@ -439,21 +468,25 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 		waitingDialog.show()
 
 		fun onErrorInstructions() {
+			val safeActivity = getSafeActivity() ?: return
 			waitingDialog.close()
 			val toastMsgId = R.string.title_something_went_wrong
-			showToast(activityRef, msgId = toastMsgId)
+			showToast(safeActivity, msgId = toastMsgId)
 		}
 
 		fun onSuccessInstructions() {
-			val adapter = fragmentRef.finishedTasksListAdapter
-			val homeFragment = activityRef.homeFragment
+			val safeFragment = getSafeFragment() ?: return
+			val safeActivity = getSafeActivity() as? MotherActivity ?: return
+
+			val adapter = safeFragment.finishedTasksListAdapter
+			val homeFragment = safeActivity.homeFragment
 
 			adapter?.notifyDataSetChangedOnSort(true)
 			homeFragment?.refreshRecentDownloadListUI()
 
 			waitingDialog.close()
 			val toastMsgId = R.string.title_move_to_gallery_successfully
-			showToast(activityRef, msgId = toastMsgId)
+			showToast(safeActivity, msgId = toastMsgId)
 		}
 
 		dataModel.moveToSysGalleryFolder(
@@ -464,12 +497,13 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 
 	fun toggleThumbnail() {
 		val dataModel = downloadModel
-		val fragmentRef = finishedTaskFragment
-		val activityRef = motherActivity
+		val fragmentRef = getSafeFragment()
+		val activityRef = getSafeActivity()
 
 		if (fragmentRef == null) return
 		if (activityRef == null) return
 		if (dataModel == null) return
+		if (activityRef !is MotherActivity) return
 
 		this@FinishedDownloadOptions.close()
 
@@ -498,8 +532,8 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 
 	fun fixUnseekableMp4s() {
 		val dataModel = downloadModel
-		val fragmentRef = finishedTaskFragment
-		val activityRef = motherActivity
+		val fragmentRef = getSafeFragment()
+		val activityRef = getSafeActivity()
 
 		if (fragmentRef == null) return
 		if (activityRef == null) return
@@ -532,9 +566,12 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 				val msgId = R.string.title_fixing_mp4_done_successfully
 				executeOnMainThread { waitingDialog.show() }
 				moveMoovAtomToStart(destinationFile, destinationFile)
-				executeOnMainThread {
-					showToast(activityRef, msgId)
-					waitingDialog.close()
+				val safeActivity = getSafeActivity()
+				if (safeActivity != null) {
+					executeOnMainThread {
+						showToast(safeActivity, msgId)
+						waitingDialog.close()
+					}
 				}
 			}
 		}
@@ -570,12 +607,13 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 
 	fun downloadInfo() {
 		val dataModel = downloadModel
-		val fragmentRef = finishedTaskFragment
-		val activityRef = motherActivity
+		val fragmentRef = getSafeFragment()
+		val activityRef = getSafeActivity()
 
 		if (fragmentRef == null) return
 		if (activityRef == null) return
 		if (dataModel == null) return
+		if (activityRef !is MotherActivity) return
 
 		this@FinishedDownloadOptions.close()
 
@@ -585,17 +623,21 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 
 	fun convertMp4ToAudio() {
 		this@FinishedDownloadOptions.close()
-		showMp4ToAudioConverterDialog(motherActivity, downloadModel)
+		val activityRef = getSafeActivity()
+		if (activityRef == null) return
+		if (activityRef !is MotherActivity) return
+		showMp4ToAudioConverterDialog(activityRef, downloadModel)
 	}
 
 	fun downloadOtherYTResolutions() {
 		val dataModel = downloadModel
-		val fragmentRef = finishedTaskFragment
-		val activityRef = motherActivity
+		val fragmentRef = getSafeFragment()
+		val activityRef = getSafeActivity()
 
 		if (fragmentRef == null) return
 		if (activityRef == null) return
 		if (dataModel == null) return
+		if (activityRef !is MotherActivity) return
 
 		this@FinishedDownloadOptions.close()
 		val fileUrl = dataModel.fileURL.ifEmpty { dataModel.siteReferrer }
@@ -628,8 +670,8 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 	}
 
 	private fun updateDialogViewsWith(dataModel: DownloadDataModel) {
-		val fragmentRef = finishedTaskFragment
-		val activityRef = motherActivity
+		val fragmentRef = getSafeFragment()
+		val activityRef = getSafeActivity()
 		val dialogBuilder = dialogBuilder
 
 		if (fragmentRef == null) return
@@ -734,11 +776,14 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 	}
 
 	private fun updateFaviconInfo(dataModel: DownloadDataModel, imgFavicon: ImageView) {
+		val viewWeakRef = WeakReference(imgFavicon)
+		val activityWeakRef = this.activityWeakRef
+
 		val defaultResId = R.drawable.ic_image_default_favicon
 		val defaultDrawable = getDrawable(INSTANCE.resources, defaultResId, null)
 
 		if (isVideoThumbnailNotAllowed(dataModel)) {
-			executeOnMainThread { imgFavicon.setImageDrawable(defaultDrawable) }
+			executeOnMainThread { viewWeakRef.get()?.setImageDrawable(defaultDrawable) }
 			return
 		}
 
@@ -750,21 +795,24 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 					return@executeInBackground
 				}
 
-				val faviconImgURI = faviconImgFile.toUri()
 				ThreadsUtility.executeOnMain(codeBlock = {
 					try {
-						showView(imgFavicon, true)
-						imgFavicon.setImageURI(faviconImgURI)
+						showView(viewWeakRef.get(), true)
+						loadBitmapWithGlide(
+							imageView = viewWeakRef.get(),
+							activity = activityWeakRef?.get(),
+							filePath = faviconFilePath,
+							defaultThumb = defaultResId)
 					} catch (error: Exception) {
 						logger.e("Error setting favicon: ${error.message}", error)
-						showView(imgFavicon, true)
-						imgFavicon.setImageResource(defaultResId)
+						showView(viewWeakRef.get(), true)
+						viewWeakRef.get()?.setImageResource(defaultResId)
 					}
 				})
 			}
 		}, errorHandler = {
 			logger.e("Error loading favicon: ${it.message}", it)
-			imgFavicon.setImageDrawable(defaultDrawable)
+			viewWeakRef.get()?.setImageDrawable(defaultDrawable)
 		})
 	}
 
@@ -779,17 +827,24 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 	}
 
 	private fun updateThumbnail(thumbImageView: ImageView, downloadModel: DownloadDataModel) {
+		val viewWeakRef = WeakReference(thumbImageView)
+		val activityWeakRef = this.activityWeakRef
+
 		val destinationFile = downloadModel.getDestinationFile()
 		val defaultThumb = downloadModel.getThumbnailDrawableID()
 		val defaultThumbDrawable = getDrawable(INSTANCE.resources, defaultThumb, null)
 
-		if (loadApkThumbnail(downloadModel, thumbImageView, defaultThumbDrawable)) return
+		if (loadApkThumbnail(
+				downloadModel = downloadModel,
+				imageView = viewWeakRef.get(),
+				defaultThumb = defaultThumbDrawable)) return
 
 		ThreadsUtility.executeInBackground(timeOutInMilli = 500, codeBlock = {
 			val cachedThumbPath = downloadModel.thumbPath
 			if (cachedThumbPath.isNotEmpty()) {
 				loadBitmapWithGlide(
 					imageView = thumbImageView,
+					activity = activityWeakRef?.get(),
 					filePath = cachedThumbPath,
 					defaultThumb = defaultThumb
 				)
@@ -808,7 +863,8 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 					downloadModel.thumbPath = filePath
 					downloadModel.updateInStorage()
 					loadBitmapWithGlide(
-						imageView = thumbImageView,
+						imageView = viewWeakRef.get(),
+						activity = activityWeakRef?.get(),
 						filePath = filePath,
 						defaultThumb = defaultThumb
 					)
@@ -823,13 +879,15 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 		return result
 	}
 
-	private fun loadBitmapWithGlide(imageView: ImageView,
-		filePath: String, defaultThumb: Int) {
+	private fun loadBitmapWithGlide(imageView: ImageView?,
+		activity: BaseActivity?, filePath: String, defaultThumb: Int) {
+		if (imageView == null || activity == null) return
 		executeOnMainThread {
 			try {
+				if (imageView.context != activity) return@executeOnMainThread
 				val imgURI = File(filePath).toUri()
 				val lastModified = File(filePath).lastModified()
-				Glide.with(imageView)
+				Glide.with(activity)
 					.load(imgURI)
 					.signature(ObjectKey(lastModified))
 					.placeholder(R.drawable.image_no_thumb_available)
@@ -844,18 +902,20 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 
 	private fun loadApkThumbnail(
 		downloadModel: DownloadDataModel?,
-		imageView: ImageView,
+		imageView: ImageView?,
 		defaultThumb: Drawable?
 	): Boolean {
 		val dataModel = downloadModel
-		val fragmentRef = finishedTaskFragment
-		val activityRef = motherActivity
+		val fragmentRef = getSafeFragment()
+		val activityRef = getSafeActivity()
+
 		val dialogBuilder = dialogBuilder
 
 		if (fragmentRef == null) return false
 		if (activityRef == null) return false
 		if (dialogBuilder == null) return false
 		if (dataModel == null) return false
+		if (imageView == null) return false
 
 		val apkFile = dataModel.getDestinationFile()
 
@@ -898,8 +958,8 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 
 	private fun copySiteLink() {
 		val dataModel = downloadModel
-		val fragmentRef = finishedTaskFragment
-		val activityRef = motherActivity
+		val fragmentRef = getSafeFragment()
+		val activityRef = getSafeActivity()
 		val dialogBuilder = dialogBuilder
 
 		if (fragmentRef == null) return
