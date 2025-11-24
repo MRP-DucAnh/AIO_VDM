@@ -4,8 +4,6 @@ import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMuxer
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import lib.process.LogHelperUtils
 import java.io.File
 import java.lang.ref.WeakReference
@@ -14,18 +12,28 @@ import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 @OptIn(ExperimentalAtomicApi::class)
-class VideoToAudioConverter(coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO)) {
+// Removed unused CoroutineScope parameter for better GC isolation
+class VideoToAudioConverter {
 
 	private val logger = LogHelperUtils.from(javaClass)
 	private var isProcessCancelledByUser = AtomicBoolean(false)
 
+	// Tracks if muxer.start() was called, necessary for safe muxer.stop() logic
+	private var isMuxerStarted = false
+
 	fun extractAudio(inputFile: String, outputFile: String, listener: ConversionListener) {
 		val weakListener = WeakReference(listener)
 		weakListener.get()?.let { safeListener ->
+
+			// Initialize as nullable for safe access and assignment in try block
+			var extractor: MediaExtractor? = null
+			var muxer: MediaMuxer? = null
+
 			try {
 				logger.d("Starting audio extraction from video: $inputFile")
 
-				val extractor = MediaExtractor()
+				// --- Initialization inside try block ---
+				extractor = MediaExtractor()
 				extractor.setDataSource(inputFile)
 
 				var audioTrackIndex = -1
@@ -49,18 +57,19 @@ class VideoToAudioConverter(coroutineScope: CoroutineScope = CoroutineScope(Disp
 					val errorMsg = "No audio track found in video file: $inputFile"
 					logger.d(errorMsg)
 					safeListener.onFailure(errorMsg)
-					extractor.release()
+					// extractor and muxer cleanup handled by finally block (extractor is not null)
 					return
 				}
 
 				logger.d("Initializing MediaMuxer with output file: $outputFile")
-				val muxer = MediaMuxer(outputFile, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+				muxer = MediaMuxer(outputFile, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
 				val newTrackIndex = muxer.addTrack(format)
 				muxer.start()
+				isMuxerStarted = true // Set flag after successful start
 
+				// --- Extraction Loop ---
 				val buffer = ByteBuffer.allocate(4096)
 				val bufferInfo = MediaCodec.BufferInfo()
-
 				val fileSize = File(inputFile).length().toFloat()
 				var extractedSize = 0L
 
@@ -81,7 +90,6 @@ class VideoToAudioConverter(coroutineScope: CoroutineScope = CoroutineScope(Disp
 					bufferInfo.flags = MediaCodec.BUFFER_FLAG_KEY_FRAME
 
 					muxer.writeSampleData(newTrackIndex, buffer, bufferInfo)
-
 					extractor.advance()
 
 					extractedSize += sampleSize
@@ -89,26 +97,50 @@ class VideoToAudioConverter(coroutineScope: CoroutineScope = CoroutineScope(Disp
 					safeListener.onProgress(progress)
 				}
 
+				// --- Handle Cancellation ---
 				if (isProcessCancelledByUser.load()) {
 					logger.d("Audio extraction cancelled by user")
 					safeListener.onFailure("Audio extraction cancelled")
-					muxer.stop()
-					muxer.release()
-					extractor.release()
+					// Cleanup handled by finally block
 					return
 				}
 
+				// --- Success Cleanup (Optional but good practice) ---
 				muxer.stop()
-				muxer.release()
-				extractor.release()
+				isMuxerStarted = false // Update flag
+				// Remaining cleanup handled by finally block
 
 				logger.d("Audio extraction completed successfully. Output: $outputFile")
 				safeListener.onSuccess(outputFile)
 
 			} catch (error: Exception) {
+				// --- Handle Failure ---
 				val errorMsg = "Audio extraction failed: ${error.message}"
 				logger.e("$errorMsg. Error: $error")
 				safeListener.onFailure(errorMsg)
+
+			} finally {
+				// --- GC-PROOF Resource Cleanup ---
+				// This block ensures resources are released regardless of how 'try' exits.
+
+				// 1. Attempt to stop the muxer only if it was started successfully.
+				if (isMuxerStarted) {
+					try {
+						muxer?.stop()
+					} catch (error: Exception) {
+						logger.e("Error stopping muxer " +
+							"(ignored to proceed with release): ${error.message}")
+					}
+				}
+
+				// 2. Release muxer resource (must run even if stop failed)
+				muxer?.release()
+
+				// 3. Release extractor resource (must run regardless of muxer status)
+				extractor?.release()
+
+				logger.d("MediaMuxer and MediaExtractor resources released in finally block.")
+				isMuxerStarted = false // Reset state for next use
 			}
 		}
 	}
