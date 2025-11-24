@@ -10,11 +10,8 @@ import app.core.bases.BaseActivity
 import app.core.engines.downloader.DownloadDataModel
 import app.ui.others.media_player.MediaPlayerActivity
 import com.aio.R
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import lib.device.DateTimeUtils.millisToDateTimeString
 import lib.files.FileSystemUtility
 import lib.files.VideoToAudioConverter
@@ -35,29 +32,24 @@ object Mp4ToAudioConverterDialog {
 
 	@OptIn(UnstableApi::class)
 	fun showMp4ToAudioConverterDialog(
-		baseActivityRef: BaseActivity?,
+		baseActivity: BaseActivity?,
 		downloadModel: DownloadDataModel?
 	) {
-		if (baseActivityRef == null) return
+		if (baseActivity == null) return
 		if (downloadModel == null) return
-		val activityRef = baseActivityRef
-		val dataModel = downloadModel
 
 		logger.d("Initializing MP4 to Audio conversion dialog")
-		val coroutineScope = CoroutineScope(Dispatchers.IO)
-		val videoToAudioConverter = VideoToAudioConverter(coroutineScope)
+		val coroutineScope = baseActivity.getAttachedCoroutineScope()
+		val videoToAudioConverter = VideoToAudioConverter()
 		val loadingMessage = getText(R.string.title_converting_audio_progress_0)
-		var loadingMessageTv: TextView? = null
 		val waitingDialog = WaitingDialog(
-			baseActivityInf = activityRef,
+			baseActivityInf = baseActivity,
 			loadingMessage = loadingMessage,
 			isCancelable = false,
 			shouldHideOkayButton = false
 		)
 
 		waitingDialog.dialogBuilder?.view?.apply {
-			loadingMessageTv = findViewById(R.id.txt_progress_info)
-
 			findViewById<TextView>(R.id.btn_dialog_positive)?.apply {
 				this.setText(R.string.title_cancel_converting)
 				this.setLeftSideDrawable(R.drawable.ic_button_cancel)
@@ -67,84 +59,86 @@ object Mp4ToAudioConverterDialog {
 				?.setOnClickListener {
 					logger.d("User clicked cancel during conversion")
 					videoToAudioConverter.cancel()
-					coroutineScope.cancel()
 					waitingDialog.close()
 				}
 		}
 
-		if (activityRef is MediaPlayerActivity) activityRef.pausePlayback()
 		waitingDialog.show()
 
+		if (baseActivity is MediaPlayerActivity) {
+			baseActivity.pausePlayback()
+		}
+
 		try {
-			val inputMediaFilePath = dataModel.getDestinationFile().absolutePath
-			val convertedAudioFileName = dataModel.fileName + "_converted.mp3"
-			val outputPath = dataModel.fileDirectory
+			val inputMediaFilePath = downloadModel.getDestinationFile().absolutePath
+			val convertedAudioFileName = downloadModel.fileName + "_converted.mp3"
+			val outputPath = downloadModel.fileDirectory
 			val outputMediaFile = File(outputPath, convertedAudioFileName)
 
 			logger.d("Starting audio extraction from: " +
 				"$inputMediaFilePath -> $outputMediaFile")
 
-			@Synchronized
 			fun onSuccessUIUpdate(outputFile: String) {
-				coroutineScope.launch {
-					withContext(Dispatchers.Main) {
-						try {
-							logger.d("Conversion completed successfully: $outputFile")
-							waitingDialog.close()
-
-							if (activityRef is MediaPlayerActivity) activityRef.resumePlayback()
-
-							FileSystemUtility.addToMediaStore(outputMediaFile)
-							showToast(activityRef, R.string.title_converted_successfully)
-
-							addNewDownloadModelToSystem(dataModel, outputMediaFile)
-						} catch (error: Exception) {
-							logger.e("Error adding converted file to the system: " +
-								"${error.message}")
-						}
-					}
-				}
-			}
-
-			@Synchronized
-			fun onProgressUIUpdate(progress: Int) {
-				coroutineScope.launch {
-					withContext(Dispatchers.Main) {
-						val resId = R.string.title_converting_audio_progress
-						val progressString = INSTANCE.getString(resId, "$progress%")
-						logger.d("Progress: $progress%")
-						loadingMessageTv?.text = progressString
-					}
-				}
-			}
-
-			@Synchronized
-			fun onFailureUIUpdate(errorMessage: String) {
-				coroutineScope.launch {
-					withContext(Dispatchers.Main) {
+				coroutineScope.launch(Dispatchers.Main) {
+					try {
+						logger.d("Conversion completed successfully: $outputFile")
 						waitingDialog.close()
-						if (activityRef is MediaPlayerActivity) activityRef.resumePlayback()
-						showToast(activityRef, R.string.title_converting_failed)
+
+						FileSystemUtility.addToMediaStore(outputMediaFile)
+						showToast(baseActivity, R.string.title_converted_successfully)
+
+						addNewDownloadModelToSystem(downloadModel, outputMediaFile)
+
+						if (baseActivity is MediaPlayerActivity) {
+							baseActivity.resumePlayback()
+						}
+					} catch (error: Exception) {
+						logger.e("Error adding converted file to the system: " +
+							"${error.message}")
 					}
 				}
 			}
 
-			videoToAudioConverter.extractAudio(
-				inputFile = inputMediaFilePath,
-				outputFile = outputMediaFile.absolutePath,
-				listener = object : ConversionListener {
-					override fun onProgress(progress: Int) = onProgressUIUpdate(progress)
-					override fun onSuccess(outputFile: String) = onSuccessUIUpdate(outputFile)
-					override fun onFailure(errorMessage: String) = onFailureUIUpdate(errorMessage)
+			fun onProgressUIUpdate(progress: Int) {
+				coroutineScope.launch(Dispatchers.Main) {
+					val resId = R.string.title_converting_audio_progress
+					val progressString = INSTANCE.getString(resId, "$progress%")
+					logger.d("Progress: $progress%")
+					waitingDialog.dialogBuilder
+						?.view
+						?.findViewById<TextView>(R.id.txt_progress_info)
+						?.text = progressString
 				}
-			)
+			}
+
+			fun onFailureUIUpdate(errorMessage: String) {
+				coroutineScope.launch(Dispatchers.Main) {
+					waitingDialog.close()
+					showToast(baseActivity, R.string.title_converting_failed)
+					if (baseActivity is MediaPlayerActivity) {
+						baseActivity.resumePlayback()
+					}
+				}
+			}
+
+			coroutineScope.launch(Dispatchers.IO) {
+				videoToAudioConverter.extractAudio(
+					inputFile = inputMediaFilePath,
+					outputFile = outputMediaFile.absolutePath,
+					listener = object : ConversionListener {
+						override fun onProgress(progress: Int) = onProgressUIUpdate(progress)
+						override fun onSuccess(outputFile: String) = onSuccessUIUpdate(outputFile)
+						override fun onFailure(errorMessage: String) = onFailureUIUpdate(errorMessage)
+					}
+				)
+			}
 		} catch (error: Exception) {
 			logger.e("Unexpected error during conversion: ${error.message}")
-			coroutineScope.launch {
-				withContext(Dispatchers.Main) {
-					waitingDialog.close()
-					if (activityRef is MediaPlayerActivity) activityRef.resumePlayback()
-					showToast(activityRef, R.string.title_something_went_wrong)
+			coroutineScope.launch(Dispatchers.Main) {
+				waitingDialog.close()
+				showToast(baseActivity, R.string.title_something_went_wrong)
+				if (baseActivity is MediaPlayerActivity) {
+					baseActivity.resumePlayback()
 				}
 			}
 		}
