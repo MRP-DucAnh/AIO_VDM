@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import app.core.AIOApp;
 import app.core.engines.downloader.DownloadDataModel;
@@ -53,14 +54,13 @@ public class FinishedTasksListAdapter extends BaseAdapter {
             rebuildCache();
         } catch (Exception error) {
             logger.e("Adapter init failed", error);
-            throw error;
+            throw new RuntimeException(error);
         }
     }
 
     @Override
     public int getCount() {
-        return (downloadSystem == null) ? 0 :
-            (filteredList == null ? 0 : filteredList.size());
+        return (filteredList != null) ? filteredList.size() : 0;
     }
 
     @Override
@@ -82,13 +82,19 @@ public class FinishedTasksListAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         try {
+            FinishedTasksViewHolder holder;
             if (convertView == null) {
                 int layoutResId = layout.frag_down_4_finish_1_row_1;
-                convertView = layoutInflater.inflate(layoutResId, null);
-                logger.d("Created new row view");
+                convertView = layoutInflater.inflate(layoutResId, parent, false);
+                holder = new FinishedTasksViewHolder(convertView);
+                convertView.setTag(holder);
+                logger.d("Created new row view and ViewHolder");
+            } else {
+                holder = (FinishedTasksViewHolder) convertView.getTag();
+                holder.cancelAll();
             }
 
-            updateViewHolder(convertView, position);
+            updateView(position, holder);
             return convertView;
         } catch (Exception error) {
             logger.e("getView error", error);
@@ -99,8 +105,7 @@ public class FinishedTasksListAdapter extends BaseAdapter {
     @Override
     public void notifyDataSetChanged() {
         try {
-            FinishedTasksFragment frag = weakRefFinishedFrag.get();
-            if (frag == null) return;
+            if (weakRefFinishedFrag.get() == null) return;
 
             rebuildCache();
             int newCount = getCount();
@@ -201,12 +206,7 @@ public class FinishedTasksListAdapter extends BaseAdapter {
 
     private void updateViewHolder(View rowLayout, int position) {
         try {
-            FinishedTasksViewHolder holder;
-            if (rowLayout.getTag() == null) {
-                holder = new FinishedTasksViewHolder(rowLayout);
-                rowLayout.setTag(holder);
-            } else holder = (FinishedTasksViewHolder) rowLayout.getTag();
-
+            FinishedTasksViewHolder holder = (FinishedTasksViewHolder) rowLayout.getTag();
             updateView(position, holder);
         } catch (Exception error) {
             logger.e("updateViewHolder error", error);
@@ -226,25 +226,15 @@ public class FinishedTasksListAdapter extends BaseAdapter {
             weakRefFinishedFrag.clear();
             layoutInflater = null;
             downloadSystem = null;
-
-            int count = getCount();
-            for (int index = 0; index < count; index++) {
-                try {
-                    View view = getView(index, null, null);
-                    if (view != null) {
-                        Object tag = view.getTag();
-                        if (tag instanceof FinishedTasksViewHolder) {
-                            ((FinishedTasksViewHolder) tag).clearResources(true);
-                        }
-                    }
-                } catch (Exception viewError) {
-                    logger.e("Error clearing resources for view at index: "
-                        + index, viewError);
-                }
-            }
-
             executor.shutdownNow();
-            logger.d("Resources cleared");
+            try {
+                if (!executor.awaitTermination(60, TimeUnit.MILLISECONDS)) {
+                    logger.d("Executor service did not terminate in time.");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            logger.d("Resources cleared, background job stopped.");
         } catch (Exception error) {
             logger.e("clearResources error", error);
         }

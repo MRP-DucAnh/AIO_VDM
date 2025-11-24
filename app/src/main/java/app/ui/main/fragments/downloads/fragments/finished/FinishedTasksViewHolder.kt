@@ -15,7 +15,6 @@ import androidx.core.net.toUri
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioFavicons
 import app.core.AIOApp.Companion.aioSettings
-import app.core.bases.BaseActivity
 import app.core.engines.downloader.DownloadDataModel
 import app.core.engines.downloader.DownloadDataModel.Companion.THUMB_EXTENSION
 import app.core.engines.settings.AIOSettings.Companion.PRIVATE_FOLDER
@@ -26,7 +25,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.Default
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -63,7 +61,6 @@ class FinishedTasksViewHolder(layout: View) {
 	private val safeLayoutRef: View? get() = weakReferenceOfLayout.get()
 	private val mediaMetadataCache = object : LruCache<String, Spanned>(500) {}
 	private val mediaTitleCache = object : LruCache<String, Spanned>(500) {}
-	private var currentCoroutineJob: Job? = null
 	private val coroutineScope = CoroutineScope(SupervisorJob() + Main.immediate)
 
 	private var rootConLayout: RelativeLayout? = null
@@ -104,8 +101,8 @@ class FinishedTasksViewHolder(layout: View) {
 		if (listener == null) return
 		setDataImmediately(dataModel)
 
-		currentCoroutineJob?.cancel()
-		currentCoroutineJob = coroutineScope.launch {
+		coroutineScope.coroutineContext.cancelChildren()
+		coroutineScope.launch {
 			setupItemClickListeners(listener, dataModel)
 
 			val titleJob = async(Default) { updateFilesTitle(dataModel) }
@@ -152,24 +149,9 @@ class FinishedTasksViewHolder(layout: View) {
 
 	fun clearResources(clearWeakReference: Boolean = true) {
 		try {
-			currentCoroutineJob?.cancel()
 			coroutineScope.coroutineContext.cancelChildren()
-
-			if (rootConLayout?.context is BaseActivity) {
-				val activity = rootConLayout?.context as BaseActivity
-				if (activity.isDestroyed || !activity.isActivityRunning()) return
-			}
-
-			thumbImgView?.let {
-				Glide.with(it)
-					.load(noThumbResId)
-					.into(it)
-			}
-
-			faviconImgView?.let {
-				Glide.with(it)
-					.clear(it)
-			}
+			thumbImgView?.let { Glide.with(it).clear(it) }
+			faviconImgView?.let { Glide.with(it).clear(it) }
 
 			thumbImgView?.setImageDrawable(null)
 			faviconImgView?.setImageDrawable(null)
@@ -184,6 +166,7 @@ class FinishedTasksViewHolder(layout: View) {
 				mediaTitleCache.evictAll()
 				safeLayoutRef?.tag = null
 				weakReferenceOfLayout.clear()
+				coroutineScope.cancel()
 			}
 		} catch (error: Exception) {
 			logger.e("clearResources: Error during cleanup " +
@@ -192,7 +175,7 @@ class FinishedTasksViewHolder(layout: View) {
 	}
 
 	fun cancelAll() {
-		coroutineScope.cancel()
+		clearResources(false)
 	}
 
 	private suspend fun setupItemClickListeners(
@@ -391,23 +374,30 @@ class FinishedTasksViewHolder(layout: View) {
 			return
 		}
 
-		val bitmapFromFile = getThumbnailFromFile(
-			targetFile = destinationFile,
-			thumbnailUrl = dataModel.videoInfo?.videoThumbnailUrl,
-			requiredThumbWidth = 420
-		)
+		val thumbnailResult = withContext(IO) {
+			getThumbnailFromFile(
+				targetFile = destinationFile,
+				thumbnailUrl = dataModel.videoInfo?.videoThumbnailUrl,
+				requiredThumbWidth = 420
+			)
+		}
 
-		if (bitmapFromFile != null) {
-			val isPortrait = bitmapFromFile.height > bitmapFromFile.width
+		if (thumbnailResult != null) {
+			val isPortrait = thumbnailResult.height > thumbnailResult.width
 			val rotatedBitmap = if (isPortrait) {
-				rotateBitmap(bitmapFromFile, 270f)
+				rotateBitmap(thumbnailResult, 270f)
 			} else {
-				bitmapFromFile
+				thumbnailResult
 			}
 
 			val thumbnailName = "${dataModel.downloadId}$THUMB_EXTENSION"
-			saveBitmapToFile(rotatedBitmap, thumbnailName)?.let { filePath ->
-				dataModel.thumbPath = filePath
+
+			val filePath = withContext(IO) {
+				saveBitmapToFile(rotatedBitmap, thumbnailName)
+			}
+
+			filePath?.let {
+				dataModel.thumbPath = it
 				dataModel.updateInStorage()
 
 				withContext(Main) {
@@ -523,7 +513,9 @@ class FinishedTasksViewHolder(layout: View) {
 			return@withContext false
 		}
 
-		val pm: PackageManager = targetImageView.context.packageManager
+		val context = targetImageView.context ?: return@withContext false
+		val pm: PackageManager = context.packageManager
+
 		try {
 			val flags = PackageManager.GET_ACTIVITIES
 			val apkFileAbsolutePath = apkFile.absolutePath

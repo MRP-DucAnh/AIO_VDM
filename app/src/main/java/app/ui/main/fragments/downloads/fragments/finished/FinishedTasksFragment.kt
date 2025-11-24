@@ -85,8 +85,9 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 		if (safeFinishTasksFragment == null) return
 		if (!isFragmentRunning) return
 
-		updateDownloadFragmentTitle(parentFragment as? DownloadsFragment)
-		updateDownloadFragmentPrivateButtonText(parentFragment as? DownloadsFragment)
+		val downloadsFragment = parentFragment as? DownloadsFragment
+		updateDownloadFragmentTitle(downloadsFragment)
+		updateDownloadFragmentPrivateButtonText(downloadsFragment)
 		toggleEmptyListVisibility(containerEmptyDownloads, listViewDownloads)
 		toggleClosePrivateButtonVisibility(btnClosePrivateFiles)
 		toggleOpenActiveTasksButtonVisibility(btnOpenActiveDownloads)
@@ -122,7 +123,7 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 		downloadModel.hasUserOpenedTheFile = true
 		downloadModel.updateInStorage()
 
-		val opts = FinishedDownloadOptions(safeFinishTasksFragment)
+		val opts = FinishedDownloadOptions(fragment)
 		opts.initialize()
 		opts.show(downloadModel)
 
@@ -130,9 +131,9 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 	}
 
 	private fun initializeViewsAndListAdapter(layout: View) {
-		val activityRef = safeMotherActivityRef
+		val motherActivity = safeMotherActivityRef
 		val fragment = safeFinishTasksFragment
-		if (activityRef == null) return
+		if (motherActivity == null) return
 		if (fragment == null) return
 
 		containerEmptyDownloads = layout.findViewById(R.id.container_empty_downloads)
@@ -142,7 +143,7 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 		animOpenActiveDownloads = layout.findViewById(R.id.img_open_active_downloads)
 		listViewDownloads = layout.findViewById(R.id.container_download_tasks_finished)
 
-		btnHowToDownload?.setOnClickListener { GuidePlatformPicker(activityRef).show() }
+		btnHowToDownload?.setOnClickListener { GuidePlatformPicker(motherActivity).show() }
 		btnOpenActiveDownloads?.setOnClickListener { openActiveTasksFragment() }
 		btnClosePrivateFiles?.setOnClickListener { triggerTogglingPrivateFiles() }
 
@@ -175,13 +176,13 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 
 	private fun triggerTogglingPrivateFiles() {
 		val fragment = safeFinishTasksFragment
-		val activity = safeMotherActivityRef
+		val motherActivity = safeMotherActivityRef
 
 		if (!isFragmentRunning) return
 		if (fragment == null) return
-		if (activity == null) return
+		if (motherActivity == null) return
 
-		val downloadsFragment = fragment.parentFragment as DownloadsFragment
+		val downloadsFragment = parentFragment as? DownloadsFragment ?: return
 		val isPrivateFolderActive = (downloadsFragment).isShowingPrivateFiles
 		if (!isPrivateFolderActive) return
 		downloadsFragment.togglePrivateFiles()
@@ -189,14 +190,14 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 
 	private fun toggleClosePrivateButtonVisibility(btnView: View?) {
 		val fragment = safeFinishTasksFragment
-		val activity = safeMotherActivityRef
+		val motherActivity = safeMotherActivityRef
 
 		if (!isFragmentRunning) return
 		if (fragment == null) return
-		if (activity == null) return
+		if (motherActivity == null) return
 		if (btnView == null) return
 
-		val downloadsFragment = fragment.parentFragment as DownloadsFragment
+		val downloadsFragment = parentFragment as? DownloadsFragment ?: return
 		val isPrivateFolderActive = (downloadsFragment).isShowingPrivateFiles
 		val visibility = if (isPrivateFolderActive) View.VISIBLE else View.GONE
 		btnView.visibility = visibility
