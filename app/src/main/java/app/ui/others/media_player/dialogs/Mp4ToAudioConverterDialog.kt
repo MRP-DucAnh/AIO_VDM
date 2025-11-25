@@ -101,13 +101,18 @@ object Mp4ToAudioConverterDialog {
 
 			fun onProgressUIUpdate(progress: Int) {
 				coroutineScope.launch(Dispatchers.Main) {
-					val resId = R.string.title_converting_audio_progress
-					val progressString = INSTANCE.getString(resId, "$progress%")
-					logger.d("Progress: $progress%")
-					waitingDialog.dialogBuilder
+					val progressTextView: TextView? = waitingDialog.dialogBuilder
 						?.view
-						?.findViewById<TextView>(R.id.txt_progress_info)
-						?.text = progressString
+						?.findViewById(R.id.txt_progress_info)
+
+					if (progressTextView != null) {
+						val resId = R.string.title_converting_audio_progress
+						val progressString = INSTANCE.getString(resId, "$progress%")
+						logger.d("Progress: $progress%")
+						progressTextView.text = progressString
+					} else {
+						logger.d("Progress update skipped: Dialog view already released.")
+					}
 				}
 			}
 
