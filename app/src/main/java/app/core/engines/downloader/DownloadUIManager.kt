@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.LinearLayout.LayoutParams
 import android.widget.LinearLayout.LayoutParams.MATCH_PARENT
 import android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
@@ -15,9 +16,10 @@ import app.ui.main.MotherActivity
 import app.ui.main.fragments.downloads.fragments.active.ActiveTasksFragment
 import app.ui.main.fragments.downloads.fragments.finished.FinishedTasksFragment
 import com.aio.R
-import lib.process.AsyncJobUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import lib.process.LogHelperUtils
-import lib.process.ThreadsUtility
 
 class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 
@@ -28,71 +30,61 @@ class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 	var finishedTasksFragment: FinishedTasksFragment? = null
 	var loadingDownloadModelTextview: TextView? = null
 
-	// Use two constant keys for clarity and type safety: one for the download ID, one for the UIManager instance
-	private val constantRowTagId = 1219012121 // Use a resource ID for tag keys
-	private val constantUIManagerTagId = 1212719910// Use a resource ID for tag keys
+	private val constantRowTagId = R.id.tag_download_id
+	private val constantUIManagerTagId = R.id.tag_download_ui_manager
+
+	private fun getUIManager(view: View): DownloaderRowUIManager? {
+		return view.getTag(constantUIManagerTagId) as? DownloaderRowUIManager
+	}
+
+	private fun getDownloadId(view: View): Int? {
+		return view.getTag(constantRowTagId) as? Int
+	}
 
 	@Synchronized
 	fun redrawEverything() {
-		logger.d("Redrawing all active download UI elements")
-		ThreadsUtility.executeInBackground(codeBlock = {
-			ThreadsUtility.executeOnMain(codeBlock = {
-				logger.d("Clearing active tasks container and canceling resources")
-				activeTasksFragment?.activeTasksListContainer?.let { container ->
-					// 1. CLEAR: Iterate through existing views and call clearResources()
-					container.children.forEach { view ->
-						(view.getTag(constantUIManagerTagId) as? DownloaderRowUIManager)?.clearResources()
-					}
-					container.removeAllViews()
-				}
+		safeMotherActivity?.getAttachedCoroutineScope()?.launch {
+			withContext(Dispatchers.IO) {
+				cleanupOrphans()
 
-				downloadSystem.activeDownloadDataModels.forEach { downloadDataModel ->
-					logger.d("Adding UI for active download: ${downloadDataModel.fileName}")
-					addNewActiveUI(downloadDataModel)
+				withContext(Dispatchers.Main) {
+					val viewContainer = getActiveListViewContainer()
+					viewContainer?.let { container ->
+						container.children.forEach { view -> getUIManager(view)?.clearResources() }
+						container.removeAllViews()
+					}
+
+					downloadSystem.activeDownloadDataModels.forEach { dataModel ->
+						addNewActiveUI(dataModel)
+					}
 				}
-			})
-		})
+			}
+		}
 	}
 
 	@Synchronized
 	fun addNewActiveUI(downloadModel: DownloadDataModel, position: Int = -1) {
-		logger.d("Adding new active UI for: ${downloadModel.fileName}, position=$position")
-		AsyncJobUtils.executeOnMainThread {
+		safeMotherActivity?.getAttachedCoroutineScope()?.launch(Dispatchers.Main) {
 			val rowUI = generateActiveUI(downloadModel)
-			logger.d("Generated new row UI for: ${downloadModel.fileName}")
 			configureActiveUI(rowUI, downloadModel)
-			val activeDownloadsListContainer = activeTasksFragment?.activeTasksListContainer
-			if (position != -1) {
-				logger.d("Inserting row at position: $position")
-				activeDownloadsListContainer?.addView(rowUI, position)
-			} else {
-				logger.d("Appending row at end")
-				activeDownloadsListContainer?.addView(rowUI)
-			}
+			val viewContainer = getActiveListViewContainer()
+			if (position != -1) viewContainer?.addView(rowUI, position)
+			else viewContainer?.addView(rowUI)
 		}
 	}
 
 	@Synchronized
 	fun updateActiveUI(downloadModel: DownloadDataModel) {
-		logger.d("Updating active UI for: ${downloadModel.fileName}")
-		AsyncJobUtils.executeOnMainThread {
-			val activeDownloadsListContainer = activeTasksFragment?.activeTasksListContainer
-			val resultedRow = findViewByDownloadId(activeDownloadsListContainer, downloadModel.downloadId)
-			if (resultedRow != null) {
-				logger.d("Found existing row, configuring UI for: ${downloadModel.fileName}")
-				configureActiveUI(resultedRow, downloadModel)
-			} else {
-				logger.d("No existing row found for: ${downloadModel.fileName}. Trying to add.")
-				// OPTIMIZATION: If we are updating an item but the UI is missing (e.g., due to filtering/recycling issue)
-				// we should add it back to ensure consistency.
-				addNewActiveUI(downloadModel)
-			}
+		safeMotherActivity?.getAttachedCoroutineScope()?.launch(Dispatchers.Main) {
+			val viewContainer = getActiveListViewContainer()
+			val resultedRow = findViewByDownloadId(viewContainer, downloadModel.downloadId)
+			if (resultedRow != null) configureActiveUI(resultedRow, downloadModel)
+			else addNewActiveUI(downloadModel)
 		}
 	}
 
 	@SuppressLint("InflateParams")
 	private fun generateActiveUI(downloadModel: DownloadDataModel): View {
-		logger.d("Generating UI for download model: ${downloadModel.fileName}")
 		val rowUI = if (safeMotherActivity == null) {
 			val inflater = LayoutInflater.from(AIOApp.INSTANCE)
 			inflater.inflate(R.layout.frag_down_3_active_1_row_1, null)
@@ -102,18 +94,15 @@ class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 			inflater.inflate(R.layout.frag_down_3_active_1_row_1, null)
 		}
 
+		val activeFrag = activeTasksFragment
 		rowUI.apply {
-			// Set Download ID tag
 			setTag(constantRowTagId, downloadModel.downloadId)
 			isClickable = true
-			setOnClickListener {
-				logger.d("Row clicked for: ${downloadModel.fileName}")
-				activeTasksFragment?.onDownloadUIItemClick(downloadModel)
-			}
+			setOnClickListener { activeFrag?.onDownloadUIItemClick(downloadModel) }
 			setOnLongClickListener {
-				logger.d("Row long-clicked for: ${downloadModel.fileName}")
-				activeTasksFragment?.safeMotherActivityRef?.doSomeVibration(50)
-				activeTasksFragment?.onDownloadUIItemClick(downloadModel); true
+				activeFrag?.safeMotherActivityRef?.doSomeVibration()
+				activeFrag?.onDownloadUIItemClick(downloadModel)
+				true
 			}
 			val dpValue = 0f
 			val pixels = dpValue * context.resources.displayMetrics.density
@@ -127,57 +116,58 @@ class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 
 	@Synchronized
 	fun removeActiveUI(downloadModel: DownloadDataModel) {
-		logger.d("Removing active UI for: ${downloadModel.fileName}")
-		val activeDownloadListContainer = activeTasksFragment?.activeTasksListContainer
-		activeDownloadListContainer?.let { container ->
+		val viewContainer = getActiveListViewContainer()
+		viewContainer?.let { container ->
 			val resultedRow = findViewByDownloadId(container, downloadModel.downloadId)
-
 			if (resultedRow != null) {
-				logger.d("Found row to remove for: ${downloadModel.fileName}")
-
-				// 1. GC-PROOF STEP: Clear the resources (cancel coroutines, clear weak refs)
-				(resultedRow.getTag(constantUIManagerTagId) as? DownloaderRowUIManager)?.clearResources()
-				logger.d("Cleared resources for DownloaderRowUIManager: ${downloadModel.fileName}")
-
-				// 2. REMOVAL: Remove the view from the container
+				getUIManager(resultedRow)?.clearResources()
 				container.removeView(resultedRow)
-				logger.d("Removed row from activeTasksListContainer: ${downloadModel.fileName}")
-
-				// 3. OPTIMIZATION: Remove redundant background cleanup logic.
-				// container.removeView(resultedRow) is usually sufficient if the view is a direct child.
-				// The inner ThreadsUtility block for cleanup is confusing and likely unnecessary
-				// since removeView(resultedRow) already handles removing it from its parent.
-			} else {
-				logger.d("No row found to remove for: ${downloadModel.fileName}")
 			}
-		}
-	}
-
-	private fun findViewByDownloadId(container: ViewGroup?, downloadId: Int): View? {
-		// OPTIMIZATION: Use the resource ID tag constant
-		return container?.children?.firstOrNull {
-			it.getTag(constantRowTagId) == downloadId
 		}
 	}
 
 	@Synchronized
+	fun cleanupOrphans() {
+		val viewContainer = getActiveListViewContainer()
+		val fragmentRunning = activeTasksFragment?.isFragmentRunning ?: false
+		val activityScope = safeMotherActivity?.getAttachedCoroutineScope()
+
+		if (viewContainer != null && !fragmentRunning && activityScope != null) {
+			activityScope.launch(Dispatchers.Main) {
+				viewContainer.children.toList().forEach { view ->
+					getUIManager(view)?.clearResources()
+					viewContainer.removeView(view)
+				}
+			}
+		}
+	}
+
+	private fun getActiveListViewContainer(): LinearLayout? {
+		return activeTasksFragment?.activeTasksListViewContainer
+	}
+
+	private fun findViewByDownloadId(container: ViewGroup?, downloadId: Int): View? {
+		return container?.children?.firstOrNull { getDownloadId(it) == downloadId }
+	}
+
+	@Synchronized
 	private fun configureActiveUI(rowUI: View, downloadModel: DownloadDataModel) {
-		logger.d("Configuring UI for: ${downloadModel.fileName}")
-		AsyncJobUtils.executeOnMainThread {
-			// OPTIMIZATION: Use the dedicated UIManager Tag Key for storage
-			var rowUIManager = rowUI.getTag(constantUIManagerTagId) as? DownloaderRowUIManager
+		safeMotherActivity?.getAttachedCoroutineScope()?.launch(Dispatchers.Main) {
+			var rowUIManager = getUIManager(rowUI)
 
 			if (rowUIManager == null) {
-				logger.d("Creating new DownloaderRowUI for: ${downloadModel.fileName}")
 				rowUIManager = DownloaderRowUIManager(rowUI)
-				// Store the UIManager instance using the dedicated tag key
 				rowUI.setTag(constantUIManagerTagId, rowUIManager)
 			}
 
-			rowUIManager.apply {
-				logger.d("Updating DownloaderRowUI for: ${downloadModel.fileName}")
-				updateView(downloadModel)
+			rowUIManager.apply { updateView(downloadModel) }
+		} ?: run {
+			var rowUIManager = getUIManager(rowUI)
+			if (rowUIManager == null) {
+				rowUIManager = DownloaderRowUIManager(rowUI)
+				rowUI.setTag(constantUIManagerTagId, rowUIManager)
 			}
+			rowUIManager.updateView(downloadModel)
 		}
 	}
 }
