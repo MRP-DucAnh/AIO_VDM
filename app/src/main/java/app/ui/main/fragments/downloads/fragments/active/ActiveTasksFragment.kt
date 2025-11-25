@@ -12,149 +12,92 @@ import app.core.engines.downloader.DownloadDataModel
 import app.ui.main.MotherActivity
 import app.ui.main.fragments.downloads.DownloadsFragment
 import com.aio.R
-import java.lang.ref.WeakReference
+import java.lang.ref.WeakReference // New Import
 
-/**
- * Fragment that displays and manages currently active downloads.
- *
- * This fragment:
- * - Shows a list of ongoing downloads
- * - Registers with the download system to receive updates
- * - Handles timer-based checks for completed downloads
- * - Provides options for interacting with active downloads
- * - Automatically switches to finished downloads when all complete
- *
- * Inherits from BaseFragment for common fragment functionality
- * Implements AIOTimerListener for periodic updates
- */
 open class ActiveTasksFragment : BaseFragment(), AIOTimerListener {
 
-	// Weak references to avoid memory leaks
-	open val safeMotherActivityRef by lazy {
-		WeakReference(safeBaseActivityRef as MotherActivity).get()
-	}
+	// 1. Fragment's Self-Reference: Used when passing 'this' to static/global managers.
+	// We now use an explicit WeakReference to 'this' to prevent leaks if unregister fails.
+	private val fragmentWeakRef = WeakReference(this)
 
-	open val safeActiveTasksFragmentRef by lazy { WeakReference(this).get() }
+	// Using getter properties for safe type casting and access (already good practice)
+	val safeMotherActivityRef: MotherActivity?
+		get() = safeBaseActivityRef as? MotherActivity
 
-	// Container view for the list of active downloads
-	open val activeTasksListContainer: LinearLayout? by lazy {
+	val safeActiveTasksFragmentRef: ActiveTasksFragment?
+		get() = safeBaseFragmentRef as? ActiveTasksFragment
+
+	open val activeTasksListViewContainer: LinearLayout? by lazy {
 		safeFragmentLayoutRef?.findViewById(R.id.container_download_tasks_queue)
 	}
 
-	/**
-	 * Provides the layout resource ID for this fragment
-	 * @return The layout resource ID (R.layout.frag_down_3_active_1)
-	 */
 	override fun getLayoutResId(): Int {
 		return R.layout.frag_down_3_active_1
 	}
 
-	/**
-	 * Called after the fragment layout is loaded
-	 * @param layoutView The inflated layout view
-	 * @param state Saved instance state bundle
-	 */
+	// --- Lifecycle Methods ---
+
 	override fun onAfterLayoutLoad(layoutView: View, state: Bundle?) {
 		initViewsClickEvents(layoutView)
-		registerToDownloadSystem()
+		registerToDownloadSystemUI()
 	}
 
-	/**
-	 * Called when the fragment resumes
-	 * Registers with necessary systems and updates UI
-	 */
 	override fun onResumeFragment() {
-		registerToDownloadSystem()
+		registerToDownloadSystemUI()
 		selfRegisterToParentFragment()
 		safeActiveTasksFragmentRef?.let { AIOApp.aioTimer.register(it) }
 	}
 
-	/**
-	 * Called when the fragment pauses
-	 * Unregisters from systems to prevent leaks
-	 */
 	override fun onPauseFragment() {
-		unregisterFromDownloadSystem()
+		unregisterFromDownloadSystemUI()
 		selfRegisterToParentFragment()
 		safeActiveTasksFragmentRef?.let { AIOApp.aioTimer.unregister(it) }
 	}
 
-	/**
-	 * Called when the fragment view is destroyed
-	 * Cleans up registration with download system
-	 */
 	override fun onDestroyView() {
-		unregisterFromDownloadSystem()
+		unregisterFromDownloadSystemUI()
 		super.onDestroyView()
 	}
 
-	/**
-	 * Timer callback that checks for completed downloads
-	 * @param loopCount The current timer loop count
-	 */
+	// --- AIOTimerListener ---
+
 	override fun onAIOTimerTick(loopCount: Double) {
-		// Switch to finished downloads if no active downloads remain
 		if (downloadSystem.activeDownloadDataModels.isEmpty()) {
 			openToFinishedTab()
 		}
 	}
 
-	/**
-	 * Opens the finished downloads tab in parent fragment
-	 */
+	// --- Internal Methods ---
+
 	private fun openToFinishedTab() {
 		val downloadFragment = parentFragment as? DownloadsFragment
 		downloadFragment?.openFinishedTab()
 	}
 
-	/**
-	 * Registers this fragment with the download system for UI updates
-	 */
-	private fun registerToDownloadSystem() {
-		// Clear previous registration before re-registering
+	private fun registerToDownloadSystemUI() {
 		downloadSystem.downloadsUIManager.activeTasksFragment = null
-		downloadSystem.downloadsUIManager.activeTasksFragment = safeActiveTasksFragmentRef
-
-		// Force UI refresh
+		downloadSystem.downloadsUIManager.activeTasksFragment = fragmentWeakRef.get()
 		downloadSystem.downloadsUIManager.redrawEverything()
 	}
 
-	/**
-	 * Unregisters this fragment from the download system
-	 */
-	private fun unregisterFromDownloadSystem() {
+	private fun unregisterFromDownloadSystemUI() {
+		downloadSystem.downloadsUIManager.cleanupOrphans()
 		downloadSystem.downloadsUIManager.activeTasksFragment = null
 	}
 
-	/**
-	 * Handles click events for download items
-	 * @param downloadModel The DownloadDataModel associated with clicked item
-	 */
 	fun onDownloadUIItemClick(downloadModel: DownloadDataModel) {
 		ActiveTasksOptions(motherActivity = safeMotherActivityRef).show(downloadModel)
 	}
 
-	/**
-	 * Registers this fragment with its parent DownloadsFragment
-	 * Updates the parent's title and reference to this fragment
-	 */
 	private fun selfRegisterToParentFragment() {
 		val downloadFragment = parentFragment as? DownloadsFragment
-		// Update parent's reference to this fragment
 		downloadFragment?.activeTasksFragment = safeActiveTasksFragmentRef
-		// Update title in parent fragment
 		downloadFragment?.safeFragmentLayoutRef?.let {
 			val title = it.findViewById<TextView>(R.id.txt_current_frag_name)
 			title?.setText(R.string.title_active_downloads)
 		}
 	}
 
-	/**
-	 * Initializes click listeners for views within the provided layout.
-	 * Currently sets up the back button to trigger the activity's back press action.
-	 *
-	 * @param layoutView The root view containing the clickable elements
-	 */
 	private fun initViewsClickEvents(layoutView: View) {
 		layoutView.findViewById<View>(R.id.btn_go_back_finished_tasks)
 			.setOnClickListener { safeMotherActivityRef?.onBackPressActivity() }
