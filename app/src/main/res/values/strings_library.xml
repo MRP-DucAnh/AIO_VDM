@@ -613,11 +613,16 @@
 	<string name="title_sample_storage_info">97.4 GB Used / 108.0 GB (Available: 11.1GB)</string>
 	<string name="title_new">NEW</string>
 	<string name="text_empty_string_two_lines"> \n  </string>
-	<string name="title_show_privates">Show Privates</string>
-	<string name="title_hide_privates">Hide Privates</string>
+	<string name="title_open_privates">Open Privates</string>
+	<string name="title_closed_privates">Close Privates</string>
 	<string name="title_129">129</string>
 	<string name="title_close_private_files">Close Private Files</string>
 	<string name="title_activated">Activated</string>
 	<string name="title_private_files">Private Files</string>
+	<string name="title_start_connection">Start Connection</string>
+	<string name="title_stop_connection">Stop Connection</string>
+	<string name="title_resume_download">Resume Download</string>
+	<string name="title_resume_the_task">Resume The Task</string>
+	<string name="title_pause_the_task">Pause The Task</string>
 
 </resources>

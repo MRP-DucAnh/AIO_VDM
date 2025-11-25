@@ -130,7 +130,7 @@
 						android:fontFamily="@font/application_font_family"
 						android:text="@string/title_time_representation"
 						android:textColor="@color/color_on_primary"
-						android:textFontWeight="500"
+						android:textFontWeight="700"
 						android:textSize="@dimen/smallest_text_size"
 						android:textStyle="normal"
 						tools:ignore="TextContrastCheck" />
@@ -216,7 +216,7 @@
 						android:singleLine="true"
 						android:text="@string/text_empty_string"
 						android:textColor="@color/color_text_hint"
-						android:textFontWeight="500"
+						android:textFontWeight="600"
 						android:textSize="@dimen/smaller_text_size"
 						android:textStyle="italic"
 						tools:ignore="TextContrastCheck" />
