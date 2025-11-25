@@ -152,22 +152,13 @@ class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 
 	@Synchronized
 	private fun configureActiveUI(rowUI: View, downloadModel: DownloadDataModel) {
-		safeMotherActivity?.getAttachedCoroutineScope()?.launch(Dispatchers.Main) {
-			var rowUIManager = getUIManager(rowUI)
+		var rowUIManager = getUIManager(rowUI)
 
-			if (rowUIManager == null) {
-				rowUIManager = DownloaderRowUIManager(rowUI)
-				rowUI.setTag(constantUIManagerTagId, rowUIManager)
-			}
-
-			rowUIManager.apply { updateView(downloadModel) }
-		} ?: run {
-			var rowUIManager = getUIManager(rowUI)
-			if (rowUIManager == null) {
-				rowUIManager = DownloaderRowUIManager(rowUI)
-				rowUI.setTag(constantUIManagerTagId, rowUIManager)
-			}
-			rowUIManager.updateView(downloadModel)
+		if (rowUIManager == null) {
+			rowUIManager = DownloaderRowUIManager(rowUI)
+			rowUI.setTag(constantUIManagerTagId, rowUIManager)
 		}
+
+		rowUIManager.apply { updateView(downloadModel) }
 	}
 }
