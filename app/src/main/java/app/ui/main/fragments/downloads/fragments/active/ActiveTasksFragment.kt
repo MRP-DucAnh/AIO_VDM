@@ -12,15 +12,12 @@ import app.core.engines.downloader.DownloadDataModel
 import app.ui.main.MotherActivity
 import app.ui.main.fragments.downloads.DownloadsFragment
 import com.aio.R
-import java.lang.ref.WeakReference // New Import
+import java.lang.ref.WeakReference
 
 open class ActiveTasksFragment : BaseFragment(), AIOTimerListener {
 
-	// 1. Fragment's Self-Reference: Used when passing 'this' to static/global managers.
-	// We now use an explicit WeakReference to 'this' to prevent leaks if unregister fails.
 	private val fragmentWeakRef = WeakReference(this)
 
-	// Using getter properties for safe type casting and access (already good practice)
 	val safeMotherActivityRef: MotherActivity?
 		get() = safeBaseActivityRef as? MotherActivity
 
@@ -34,8 +31,6 @@ open class ActiveTasksFragment : BaseFragment(), AIOTimerListener {
 	override fun getLayoutResId(): Int {
 		return R.layout.frag_down_3_active_1
 	}
-
-	// --- Lifecycle Methods ---
 
 	override fun onAfterLayoutLoad(layoutView: View, state: Bundle?) {
 		initViewsClickEvents(layoutView)
@@ -59,15 +54,11 @@ open class ActiveTasksFragment : BaseFragment(), AIOTimerListener {
 		super.onDestroyView()
 	}
 
-	// --- AIOTimerListener ---
-
 	override fun onAIOTimerTick(loopCount: Double) {
 		if (downloadSystem.activeDownloadDataModels.isEmpty()) {
 			openToFinishedTab()
 		}
 	}
-
-	// --- Internal Methods ---
 
 	private fun openToFinishedTab() {
 		val downloadFragment = parentFragment as? DownloadsFragment
@@ -102,5 +93,4 @@ open class ActiveTasksFragment : BaseFragment(), AIOTimerListener {
 		layoutView.findViewById<View>(R.id.btn_go_back_finished_tasks)
 			.setOnClickListener { safeMotherActivityRef?.onBackPressActivity() }
 	}
-
 }
