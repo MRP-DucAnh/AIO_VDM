@@ -218,14 +218,13 @@
 					android:layout_marginTop="@dimen/_1"
 					android:background="@drawable/rounded_secondary_color"
 					android:gravity="center"
+					android:includeFontPadding="false"
 					android:paddingStart="@dimen/_3"
-					android:paddingTop="@dimen/_1"
 					android:paddingEnd="@dimen/_3"
-					android:paddingBottom="@dimen/_1"
 					android:text="@string/text_empty_string"
 					android:textColor="@color/color_on_secondary"
-					android:textFontWeight="500"
-					android:textSize="@dimen/smallest_text_size"
+					android:textFontWeight="700"
+					android:textSize="@dimen/smaller_text_size"
 					android:visibility="gone" />
 			</RelativeLayout>
 		</LinearLayout>

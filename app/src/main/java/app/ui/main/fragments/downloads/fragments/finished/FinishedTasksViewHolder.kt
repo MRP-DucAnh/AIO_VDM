@@ -336,7 +336,10 @@ class FinishedTasksViewHolder(layout: View) {
 		} catch (error: Exception) {
 			logger.e("updateFaviconInfo: Error loading favicon " +
 				"- ${error.message}", error)
-			faviconImgView?.setImageResource(defaultFaviconResId)
+			withContext(Main) {
+				if (!isActive) return@withContext
+				faviconImgView?.setImageResource(defaultFaviconResId)
+			}
 		}
 	}
 
