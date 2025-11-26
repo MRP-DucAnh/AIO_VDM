@@ -81,10 +81,11 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 		this@ActiveTasksOptions.downloadDataModel = dataModel
 		dialogBuilder.setView(layout.frag_down_3_active_1_onclick_1)
 		setupDialogClickListeners()
-
 		if (dialogBuilder.isShowing == false) {
 			dialogBuilder.show()
 			updateDialogFileInfo()
+			dialogBuilder.dialog.setOnCancelListener { this@ActiveTasksOptions.close() }
+			dialogBuilder.dialog.setOnDismissListener { this@ActiveTasksOptions.close() }
 		}
 	}
 
@@ -95,9 +96,14 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 		if (dialogBuilder == null) return
 		if (activityRef == null) return
 
-		if (dialogBuilder.isShowing) {
-			dialogBuilder.close()
-		}
+		if (dialogBuilder.isShowing) dialogBuilder.close()
+		clearReferences()
+	}
+
+	private fun clearReferences() {
+		dialogBuilder = null
+		downloadDataModel = null
+		activityWeakRef?.clear()
 	}
 
 	private fun updateDialogFileInfo() {
@@ -473,7 +479,7 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 				)?.apply {
 					setOnClickForPositiveButton {
 						this.close()
-						dialogBuilder.close()
+						this@ActiveTasksOptions.close()
 						downloadSystem.pauseDownload(dataModel)
 					}
 				}?.show()
@@ -605,17 +611,15 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 				)
 				return@launch
 			}
-			val downloadFileRenamer = DownloadFileRenamer(activityRef, dataModel) { dialogBuilder.close() }
+			val downloadFileRenamer = DownloadFileRenamer(activityRef, dataModel) { this@ActiveTasksOptions.close() }
 			downloadFileRenamer.show(dataModel)
 		}
 	}
 
 	private fun toggleDownloadThumbnail() {
-		val dialogBuilder = dialogBuilder
-		val activityRef = getSafeActivity()
 		val dataModel = downloadDataModel
+		val activityRef = getSafeActivity()
 
-		if (dialogBuilder == null) return
 		if (activityRef == null) return
 		if (dataModel == null) return
 
@@ -625,7 +629,7 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 		dataModel.updateInStorage()
 		downloadSystem.downloadsUIManager.updateActiveUI(dataModel)
 		updateDownloadSettingsUI()
-		dialogBuilder.view.apply {
+		dialogBuilder?.view?.apply {
 			updateFileTitle(dataModel)
 			updateFileUrl(dataModel)
 			updateThumbnail(dataModel)

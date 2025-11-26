@@ -4,6 +4,7 @@ import android.os.CountDownTimer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.Default
+import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -23,10 +24,23 @@ open class AIOTimer(
 	private val timerListeners = CopyOnWriteArrayList<WeakReference<AIOTimerListener>>()
 	private val limitedParallelism = Default.limitedParallelism(maxConcurrentListeners)
 	private val listenerScope = CoroutineScope(SupervisorJob() + limitedParallelism)
+	private val gcIntervalTicks: Int = (GC_INTERVAL_MILLIS / countDownInterval).toInt()
+
+	companion object {
+		private const val GC_INTERVAL_SECONDS = 30
+		private const val GC_INTERVAL_MILLIS: Long = GC_INTERVAL_SECONDS * 1000L
+	}
 
 	override fun onTick(millisUntilFinished: Long) {
 		loopCount++
-		logger.d("Tick $loopCount")
+		logger.d("Tick $loopCount (GC check every $gcIntervalTicks ticks)")
+
+		if (loopCount.toInt() % gcIntervalTicks == 0) {
+			listenerScope.launch(IO) {
+				logger.d("Forcing Garbage Collection via System.gc() at tick $loopCount")
+				System.gc()
+			}
+		}
 
 		val iterator = timerListeners.iterator()
 		while (iterator.hasNext()) {

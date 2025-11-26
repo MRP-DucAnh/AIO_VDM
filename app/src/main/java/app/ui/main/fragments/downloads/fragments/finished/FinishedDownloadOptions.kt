@@ -127,6 +127,8 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 		setDownloadModel(dataModel)
 		updateDialogViewsWith(dataModel)
 		dialogBuilder.show()
+		dialogBuilder.dialog.setOnCancelListener { this@FinishedDownloadOptions.close() }
+		dialogBuilder.dialog.setOnDismissListener { this@FinishedDownloadOptions.close() }
 	}
 
 	fun close() {
@@ -139,6 +141,14 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 		if (dialogBuilder == null) return
 		if (!dialogBuilder.isShowing) return
 		dialogBuilder.close()
+		clearReferences()
+	}
+
+	private fun clearReferences() {
+		dialogBuilder = null
+		downloadModel = null
+		activityWeakRef?.clear()
+		fragmentWeakRef?.clear()
 	}
 
 	override fun onClick(view: View?) {
