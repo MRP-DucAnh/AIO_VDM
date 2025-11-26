@@ -1962,6 +1962,18 @@ object ViewUtility {
 		this.setCompoundDrawables(drawable, null, null, null)
 	}
 
+	@JvmStatic
+	fun TextView.setRightSideDrawable(drawableResIdRes: Int, keepExistingDrawables: Boolean = false) {
+		val newDrawable = getDrawable(INSTANCE, drawableResIdRes)
+		newDrawable?.setBounds(0, 0, newDrawable.intrinsicWidth, newDrawable.intrinsicHeight)
+		if (keepExistingDrawables) {
+			val (left, top, _, bottom) = this.compoundDrawables
+			this.setCompoundDrawables(left, top, newDrawable, bottom)
+		} else {
+			this.setCompoundDrawables(null, null, newDrawable, null)
+		}
+	}
+
 	/**
 	 * Matches the height of a [View] to the top display cutout (notch) area if present on the device.
 	 *

@@ -57,6 +57,7 @@ import lib.ui.ViewUtility.getThumbnailFromFile
 import lib.ui.ViewUtility.rotateBitmap
 import lib.ui.ViewUtility.saveBitmapToFile
 import lib.ui.ViewUtility.setLeftSideDrawable
+import lib.ui.ViewUtility.setRightSideDrawable
 import lib.ui.ViewUtility.showView
 import lib.ui.builders.DialogBuilder
 import lib.ui.builders.ToastView.Companion.showToast
@@ -77,7 +78,7 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 	private fun getSafeActivity(): MotherActivity? = activityWeakRef?.get()
 
 	init {
-		initializeDialogViews()
+		setupDialogClickListeners()
 	}
 
 	fun show(downloadModel: DownloadDataModel) {
@@ -139,6 +140,8 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 			} else {
 				findViewById<View>(R.id.container_media_duration).visibility = View.GONE
 			}
+
+			refreshToggleSwitchUI()
 		}
 	}
 
@@ -778,7 +781,79 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 		).show()
 	}
 
-	private fun initializeDialogViews() {
+	private fun toggleWifiOnlyDownload() {
+		val dataModel = downloadDataModel
+		val activityRef = getSafeActivity()
+
+		if (activityRef == null) return
+		if (dataModel == null) return
+
+		val settings = dataModel.globalSettings
+		val isDownloadWifiOnly = settings.downloadWifiOnly
+		settings.downloadWifiOnly = !isDownloadWifiOnly
+		dataModel.updateInStorage()
+		refreshToggleSwitchUI()
+	}
+
+	private fun toggleDownloadNotification() {
+		val dataModel = downloadDataModel
+		val activityRef = getSafeActivity()
+
+		if (activityRef == null) return
+		if (dataModel == null) return
+
+		val settings = dataModel.globalSettings
+		val isDownloadWifiOnly = settings.downloadHideNotification
+		settings.downloadHideNotification = !isDownloadWifiOnly
+		dataModel.updateInStorage()
+		refreshToggleSwitchUI()
+	}
+
+	private fun toggleDownloadSound() {
+		val dataModel = downloadDataModel
+		val activityRef = getSafeActivity()
+
+		if (activityRef == null) return
+		if (dataModel == null) return
+
+		val settings = dataModel.globalSettings
+		val isDownloadWifiOnly = settings.downloadPlayNotificationSound
+		settings.downloadPlayNotificationSound = !isDownloadWifiOnly
+		dataModel.updateInStorage()
+		refreshToggleSwitchUI()
+	}
+
+	private fun refreshToggleSwitchUI() {
+		val dataModel = downloadDataModel
+		val activityRef = getSafeActivity()
+
+		if (activityRef == null) return
+		if (dataModel == null) return
+
+		val settings = dataModel.globalSettings
+		dialogBuilder.view.findViewById<TextView>(R.id.txt_wifi_only_download).apply {
+			val drawableResIdRes = if (settings.downloadWifiOnly) {
+				R.drawable.ic_button_checked_circle_small
+			} else R.drawable.ic_button_unchecked_circle_small
+			setRightSideDrawable(drawableResIdRes, true)
+		}
+
+		dialogBuilder.view.findViewById<TextView>(R.id.txt_download_notification).apply {
+			val drawableResIdRes = if (settings.downloadHideNotification) {
+				R.drawable.ic_button_unchecked_circle_small
+			} else R.drawable.ic_button_checked_circle_small
+			setRightSideDrawable(drawableResIdRes, true)
+		}
+
+		dialogBuilder.view.findViewById<TextView>(R.id.txt_play_download_sound).apply {
+			val drawableResIdRes = if (settings.downloadPlayNotificationSound) {
+				R.drawable.ic_button_checked_circle_small
+			} else R.drawable.ic_button_unchecked_circle_small
+			setRightSideDrawable(drawableResIdRes, true)
+		}
+	}
+
+	private fun setupDialogClickListeners() {
 		dialogBuilder.setView(layout.frag_down_3_active_1_onclick_1).view.apply {
 			val clickActions = mapOf(
 				R.id.btn_file_info_card to { openDownloadReferrerLink() },
@@ -792,6 +867,9 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 				R.id.btn_copy_download_url to { copyDownloadFileLink() },
 				R.id.btn_share_download_url to { shareDownloadFileLink() },
 				R.id.btn_open_website to { openDownloadReferrerLink() },
+				R.id.btn_wifi_only_download to { toggleWifiOnlyDownload() },
+				R.id.btn_download_notification to { toggleDownloadNotification() },
+				R.id.btn_play_download_sound to { toggleDownloadSound() },
 				R.id.btn_download_other_resolution to { downloadOtherYTResolutions() },
 				R.id.btn_download_system_information to { openDownloadInfoTracker() }
 			)

@@ -38,14 +38,16 @@ open class AIOTimer(
 
 		timerListeners.forEach { listenerRef ->
 			listenerRef.get()?.let { listener ->
+				val classSimpleName = listener.javaClass.simpleName
+
 				listenerScope.launch {
 					try {
 						withContext(Dispatchers.Main) {
-							logger.d("Notifying ${listener.javaClass.simpleName} @ $loopCount")
+							logger.d("Notifying $classSimpleName @ $loopCount")
 							listener.onAIOTimerTick(loopCount)
 						}
 					} catch (error: Exception) {
-						logger.e("Error in listener callback: ${listener.javaClass.simpleName}", error)
+						logger.e("Error in listener callback: $classSimpleName", error)
 					}
 				}
 			}
@@ -58,17 +60,19 @@ open class AIOTimer(
 	}
 
 	fun register(listener: AIOTimerListener) {
+		val classSimpleName = listener.javaClass.simpleName
 		if (timerListeners.none { it.get() == listener }) {
 			timerListeners.add(WeakReference(listener))
-			logger.d("Listener registered: ${listener.javaClass.simpleName}")
-		} else {
-			logger.d("Listener already registered: ${listener.javaClass.simpleName}")
+			logger.d("Listener registered: $classSimpleName")
+		} else if (timerListeners.any { it.get() == listener }) {
+			logger.d("Listener already registered: $classSimpleName")
 		}
 	}
 
 	fun unregister(listener: AIOTimerListener) {
+		val classSimpleName = listener.javaClass.simpleName
 		timerListeners.removeIf { it.get() == listener }
-		logger.d("Listener unregistered: ${listener.javaClass.simpleName}")
+		logger.d("Listener unregistered: $classSimpleName")
 	}
 
 	fun stop() {
