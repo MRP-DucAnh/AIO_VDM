@@ -155,25 +155,40 @@ class DownloaderRowUIManager(downloadRowView: View) {
 	private suspend fun refreshThumbnail(downloadModel: DownloadDataModel) {
 		withContext(Dispatchers.Default) {
 			val settings = downloadModel.globalSettings
-			val shouldHideThumbnail = settings.downloadHideVideoThumbnail
-			logger.d("updateFileThumbnail: id=${downloadModel.downloadId}, " +
-				"hideThumb=$shouldHideThumbnail")
+			val shouldHideThumbnailSetting = settings.downloadHideVideoThumbnail
 
-			if (shouldHideThumbnail != isThumbnailSettingsChanged) {
+			if (shouldHideVideoThumbnail(downloadModel)) {
+				val defaultThumbResource = R.drawable.image_no_thumb_available
+				val resources = weakReferenceOfLayout.get()?.context?.resources
+				val defaultThumbDrawable = ResourcesCompat.getDrawable(
+					resources ?: INSTANCE.resources, defaultThumbResource, null
+				)
+
+				logger.d("Video thumbnails not allowed, using default for id=${downloadModel.downloadId}")
+				withContext(Dispatchers.Main) {
+					thumbnailView?.setImageDrawable(defaultThumbDrawable)
+					thumbnailView?.tag = false
+					isThumbnailSettingsChanged = shouldHideThumbnailSetting
+				}
+				return@withContext
+			}
+
+			if (shouldHideThumbnailSetting != isThumbnailSettingsChanged) {
 				isThumbnailSettingsChanged = true
 			}
 
 			if (thumbnailView?.tag == null || isThumbnailSettingsChanged) {
 				val imageUri = downloadModel.getThumbnailURI()
-				if (shouldHideThumbnail && imageUri != null) {
+
+				if (!shouldHideThumbnailSetting && imageUri != null) {
 					logger.d("Setting actual thumbnail URI for id=${downloadModel.downloadId}")
 					withContext(Dispatchers.Main) {
 						thumbnailView?.setImageURI(imageUri)
 						thumbnailView?.tag = true
-						isThumbnailSettingsChanged = shouldHideThumbnail
+						isThumbnailSettingsChanged = shouldHideThumbnailSetting
 					}
 				} else {
-					logger.d("Using default thumbnail logic for id=${downloadModel.downloadId}")
+					logger.d("Using default thumbnail logic or hiding for id=${downloadModel.downloadId}")
 					loadDefaultThumbnail(downloadModel)
 				}
 			}

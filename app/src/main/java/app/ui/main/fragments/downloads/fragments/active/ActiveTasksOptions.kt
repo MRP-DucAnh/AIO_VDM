@@ -67,12 +67,9 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 
 	private fun getSafeActivity(): MotherActivity? = activityWeakRef?.get()
 
-	init {
-		dialogBuilder = DialogBuilder(getSafeActivity())
-		setupDialogClickListeners()
-	}
-
 	fun show(downloadModel: DownloadDataModel?) {
+		this.dialogBuilder = DialogBuilder(getSafeActivity())
+
 		val dialogBuilder = dialogBuilder
 		val activityRef = getSafeActivity()
 		val dataModel = downloadModel
@@ -82,6 +79,9 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 		if (dataModel == null) return
 
 		this@ActiveTasksOptions.downloadDataModel = dataModel
+		dialogBuilder.setView(layout.frag_down_3_active_1_onclick_1)
+		setupDialogClickListeners()
+
 		if (dialogBuilder.isShowing == false) {
 			dialogBuilder.show()
 			updateDialogFileInfo()
@@ -533,8 +533,7 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 	}
 
 	private suspend fun searchActiveTaskByDownloadModel(dataModel: DownloadDataModel): DownloadTaskInf? {
-		withContext(IO) { return@withContext downloadSystem.searchActiveDownloadTaskWith(dataModel) }
-		return null
+		return withContext(IO) { downloadSystem.searchActiveDownloadTaskWith(dataModel) }
 	}
 
 	private fun deleteDownloadTask() {
@@ -624,8 +623,18 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 		val shouldHideVideoThumbnail = settings.downloadHideVideoThumbnail
 		settings.downloadHideVideoThumbnail = !shouldHideVideoThumbnail
 		dataModel.updateInStorage()
+		downloadSystem.downloadsUIManager.updateActiveUI(dataModel)
 		updateDownloadSettingsUI()
-		dialogBuilder.view.updateThumbnail(dataModel)
+		dialogBuilder.view.apply {
+			updateFileTitle(dataModel)
+			updateFileUrl(dataModel)
+			updateThumbnail(dataModel)
+			updateFileTypeIndicator(dataModel)
+			updatePrivateFolderIndicator(dataModel)
+			updateUrlFavicon(dataModel)
+			updateMediaPlayIndicator(dataModel)
+			updateMediaDuration(dataModel)
+		}
 	}
 
 	private fun copyDownloadFileLink() {
@@ -656,10 +665,10 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 		if (dataModel == null) return
 
 		dataModel.siteReferrer.takeIf { isValidURL(it) }?.let { fileUrl ->
-				copyTextToClipboard(activityRef, fileUrl)
-				showToast(activityRef, string.title_file_url_has_been_copied)
-				close()
-			} ?: run {
+			copyTextToClipboard(activityRef, fileUrl)
+			showToast(activityRef, string.title_file_url_has_been_copied)
+			close()
+		} ?: run {
 			showToast(activityRef, string.title_dont_have_anything_to_copy)
 		}
 	}
@@ -823,7 +832,7 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 		if (activityRef == null) return
 		if (dataModel == null) return
 
-		dialogBuilder.setView(layout.frag_down_3_active_1_onclick_1).view.apply {
+		dialogBuilder.view.apply {
 			val clickActions = mapOf(
 				R.id.btn_file_info_card to { openDownloadReferrerLink() },
 				R.id.btn_resume_download to { resumeDownloadTask() },
