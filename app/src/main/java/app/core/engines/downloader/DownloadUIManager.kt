@@ -77,9 +77,10 @@ class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 	fun updateActiveUI(downloadModel: DownloadDataModel) {
 		safeMotherActivity?.getAttachedCoroutineScope()?.launch(Dispatchers.Main) {
 			val viewContainer = getActiveListViewContainer()
-			val resultedRow = findViewByDownloadId(viewContainer, downloadModel.downloadId)
+			val downloadId = downloadModel.downloadId
+			val resultedRow = findViewByDownloadId(viewContainer, downloadId)
 			if (resultedRow != null) configureActiveUI(resultedRow, downloadModel)
-			else addNewActiveUI(downloadModel)
+			else logger.d("Update requested for ID $downloadId but UI view not found. Skipping.")
 		}
 	}
 
