@@ -433,17 +433,17 @@
 								android:layout_width="match_parent"
 								android:layout_height="match_parent"
 								android:layout_margin="@dimen/_8"
-								android:drawableStart="@drawable/ic_button_hide_eye"
+								android:drawableStart="@drawable/ic_button_thumbnail"
+								android:drawableRight="@drawable/ic_button_checked_circle_small"
 								android:drawablePadding="@dimen/_5"
 								android:drawableTint="@color/color_secondary"
 								android:ellipsize="end"
 								android:fontFamily="@font/application_font_family"
 								android:singleLine="true"
-								android:text="@string/title_hide_thumbnail"
+								android:text="@string/title_thumbnail"
 								android:textColor="@color/color_text_primary"
 								android:textSize="@dimen/normal_text_size" />
 						</LinearLayout>
-
 					</LinearLayout>
 
 					<View

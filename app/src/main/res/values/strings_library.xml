@@ -630,5 +630,6 @@
 	<string name="title_notification">Notification</string>
 	<string name="title_play_sound">Play Sound</string>
 	<string name="title_user_agent">User Agent</string>
+	<string name="title_thumbnail">Thumbnail</string>
 
 </resources>

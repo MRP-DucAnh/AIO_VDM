@@ -1,40 +1,36 @@
 package app.ui.main.fragments.downloads.fragments.active
 
-import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.annotation.OptIn
 import androidx.core.content.res.ResourcesCompat.getDrawable
 import androidx.core.net.toUri
-import androidx.media3.common.util.UnstableApi
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioFavicons
 import app.core.AIOApp.Companion.downloadSystem
 import app.core.engines.downloader.DownloadDataModel
 import app.core.engines.downloader.DownloadDataModel.Companion.THUMB_EXTENSION
 import app.core.engines.downloader.DownloadStatus.DOWNLOADING
+import app.core.engines.downloader.DownloadTaskInf
 import app.core.engines.settings.AIOSettings.Companion.PRIVATE_FOLDER
 import app.core.engines.video_parser.dialogs.VideoLinkPasteEditor
-import app.core.engines.video_parser.parsers.VideoFormat
-import app.core.engines.video_parser.parsers.VideoInfo
 import app.ui.main.MotherActivity
 import app.ui.main.fragments.downloads.dialogs.DownloadFileRenamer
 import app.ui.main.fragments.downloads.dialogs.DownloadInfoTracker
-import app.ui.others.media_player.MediaPlayerActivity
-import app.ui.others.media_player.MediaPlayerActivity.Companion.INTENT_EXTRA_STREAM_TITLE
-import app.ui.others.media_player.MediaPlayerActivity.Companion.INTENT_EXTRA_STREAM_URL
 import com.aio.R
 import com.aio.R.layout
 import com.aio.R.string
-import com.yausername.youtubedl_android.YoutubeDL.getInstance
-import com.yausername.youtubedl_android.YoutubeDLRequest
+import com.bumptech.glide.Glide
+import com.bumptech.glide.signature.ObjectKey
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import lib.device.ShareUtility.shareUrl
 import lib.files.FileSystemUtility.isArchiveByName
 import lib.files.FileSystemUtility.isAudioByName
@@ -44,16 +40,13 @@ import lib.files.FileSystemUtility.isProgramByName
 import lib.files.FileSystemUtility.isVideo
 import lib.files.FileSystemUtility.isVideoByName
 import lib.networks.URLUtility.isValidURL
-import lib.process.AsyncJobUtils.executeInBackground
-import lib.process.AsyncJobUtils.executeOnMainThread
 import lib.process.LogHelperUtils
-import lib.process.ThreadsUtility
 import lib.texts.ClipboardUtils.copyTextToClipboard
 import lib.texts.CommonTextUtils.getText
-import lib.ui.ActivityAnimator.animActivitySwipeLeft
 import lib.ui.MsgDialogUtils.getMessageDialog
 import lib.ui.MsgDialogUtils.showMessageDialog
 import lib.ui.ViewUtility.getThumbnailFromFile
+import lib.ui.ViewUtility.normalizeTallSymbols
 import lib.ui.ViewUtility.rotateBitmap
 import lib.ui.ViewUtility.saveBitmapToFile
 import lib.ui.ViewUtility.setLeftSideDrawable
@@ -61,7 +54,6 @@ import lib.ui.ViewUtility.setRightSideDrawable
 import lib.ui.ViewUtility.showView
 import lib.ui.builders.DialogBuilder
 import lib.ui.builders.ToastView.Companion.showToast
-import lib.ui.builders.WaitingDialog
 import java.io.File
 import java.lang.ref.WeakReference
 
@@ -70,116 +62,152 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 	private val logger = LogHelperUtils.from(javaClass)
 	private val activityWeakRef = motherActivity?.let { WeakReference(it) }
 
-	private val dialogBuilder: DialogBuilder = DialogBuilder(getSafeActivity())
+	private var dialogBuilder: DialogBuilder? = null
 	private var downloadDataModel: DownloadDataModel? = null
-	private lateinit var downloadFileRenamer: DownloadFileRenamer
-	private lateinit var downloadInfoTracker: DownloadInfoTracker
 
 	private fun getSafeActivity(): MotherActivity? = activityWeakRef?.get()
 
 	init {
+		dialogBuilder = DialogBuilder(getSafeActivity())
 		setupDialogClickListeners()
 	}
 
-	fun show(downloadModel: DownloadDataModel) {
-		if (!dialogBuilder.isShowing) {
-			downloadDataModel = downloadModel
+	fun show(downloadModel: DownloadDataModel?) {
+		val dialogBuilder = dialogBuilder
+		val activityRef = getSafeActivity()
+		val dataModel = downloadModel
+
+		if (dialogBuilder == null) return
+		if (activityRef == null) return
+		if (dataModel == null) return
+
+		this@ActiveTasksOptions.downloadDataModel = dataModel
+		if (dialogBuilder.isShowing == false) {
 			dialogBuilder.show()
-			updateDialogFileInfo(downloadModel)
+			updateDialogFileInfo()
 		}
 	}
 
 	fun close() {
+		val dialogBuilder = dialogBuilder
+		val activityRef = getSafeActivity()
+
+		if (dialogBuilder == null) return
+		if (activityRef == null) return
+
 		if (dialogBuilder.isShowing) {
 			dialogBuilder.close()
 		}
 	}
 
-	private fun updateDialogFileInfo(downloadModel: DownloadDataModel) {
-		dialogBuilder.view.apply {
-			findViewById<TextView>(R.id.txt_file_title).apply {
-				isSelected = true
-				text = downloadModel.fileName
+	private fun updateDialogFileInfo() {
+		val dialogBuilder = dialogBuilder
+		val activityRef = getSafeActivity()
+		val dataModel = downloadDataModel
+
+		if (dialogBuilder == null) return
+		if (activityRef == null) return
+		if (dataModel == null) return
+
+		val dialogLayout = dialogBuilder.view
+		dialogLayout.apply {
+			updateFileTitle(dataModel)
+			updateFileUrl(dataModel)
+			updateThumbnail(dataModel)
+			updateFileTypeIndicator(dataModel)
+			updatePrivateFolderIndicator(dataModel)
+			updateUrlFavicon(dataModel)
+			updateMediaPlayIndicator(dataModel)
+			updateMediaDuration(dataModel)
+			updateDownloadSettingsUI()
+		}
+	}
+
+	private fun View.updateMediaDuration(dataModel: DownloadDataModel) {
+		val mediaDurContainer = findViewById<View>(R.id.container_media_duration)
+		if (isMediaFile(dataModel)) {
+			mediaDurContainer.apply {
+				val durationTextView = findViewById<TextView>(R.id.txt_media_duration)
+				val durationString = dataModel.mediaFilePlaybackDuration
+				val formattedDuration = durationString.replace("(", "").replace(")", "")
+				if (formattedDuration.isNotEmpty()) {
+					showView(this, true)
+					showView(durationTextView, true)
+					durationTextView.text = formattedDuration
+				}
+			}
+		} else {
+			mediaDurContainer.visibility = View.GONE
+		}
+	}
+
+	private fun View.updateMediaPlayIndicator(dataModel: DownloadDataModel) {
+		val playIndicatorIcon = findViewById<ImageView>(R.id.img_media_play_indicator)
+		playIndicatorIcon.apply { updatePlayIconVisibility(this, dataModel) }
+	}
+
+	private fun updatePlayIconVisibility(imageView: ImageView, dataModel: DownloadDataModel) {
+		imageView.visibility = (if (isMediaFile(dataModel)) View.VISIBLE else View.GONE)
+	}
+
+	private fun View.updateUrlFavicon(dataModel: DownloadDataModel) {
+		val siteFavicon = findViewById<ImageView>(R.id.img_site_favicon)
+		siteFavicon.apply { updateFaviconInfo(this, dataModel) }
+	}
+
+	private fun updateFaviconInfo(favicon: ImageView, downloadDataModel: DownloadDataModel) {
+		getSafeActivity()?.getAttachedCoroutineScope()?.launch(IO) {
+			val defaultFaviconResId = R.drawable.ic_image_default_favicon
+			val defaultFaviconDrawable = getDrawable(INSTANCE.resources, defaultFaviconResId, null)
+
+			if (isVideoThumbnailNotAllowed(downloadDataModel)) {
+				withContext(Main) { favicon.setImageDrawable(defaultFaviconDrawable) }
+				return@launch
 			}
 
-			findViewById<TextView>(R.id.txt_file_url).apply {
-				text = downloadModel.fileURL
-			}
+			try {
+				val referralSite = downloadDataModel.siteReferrer
+				aioFavicons.getFavicon(referralSite)?.let { faviconFilePath ->
+					val faviconImgFile = File(faviconFilePath)
+					if (!faviconImgFile.exists() || !faviconImgFile.isFile) {
+						return@launch
+					}
+					val faviconImgURI = faviconImgFile.toUri()
+					val signature = ObjectKey(File(faviconFilePath).lastModified())
 
-			findViewById<ImageView>(R.id.img_file_thumbnail).apply {
-				updateThumbnail(this, downloadModel)
-			}
-
-			findViewById<ImageView>(R.id.img_file_type_indicator).apply {
-				updateFileTypeIndicator(this, downloadModel)
-			}
-
-			findViewById<ImageView>(R.id.img_private_folder_indicator).apply {
-				updatePrivateFolderIndicator(this, downloadModel)
-			}
-
-			findViewById<ImageView>(R.id.img_site_favicon).apply {
-				updateFaviconInfo(this, downloadModel)
-			}
-
-			findViewById<ImageView>(R.id.img_media_play_indicator).apply {
-				updateMediaPlayIndicator(this, downloadModel)
-			}
-
-			if (isMediaFile(downloadModel)) {
-				findViewById<View>(R.id.container_media_duration).apply {
-					val txtMediaPlaybackDuration = findViewById<TextView>(R.id.txt_media_duration)
-					val mediaFilePlaybackDuration = downloadModel.mediaFilePlaybackDuration
-					val playbackTimeString = mediaFilePlaybackDuration.replace("(", "").replace(")", "")
-					if (playbackTimeString.isNotEmpty()) {
-						showView(this, true)
-						showView(txtMediaPlaybackDuration, true)
-						txtMediaPlaybackDuration.text = playbackTimeString
+					withContext(Main) {
+						try {
+							showView(favicon, true)
+							Glide.with(favicon)
+								.load(faviconImgURI)
+								.placeholder(defaultFaviconDrawable)
+								.signature(signature)
+								.into(favicon)
+						} catch (error: Exception) {
+							error.printStackTrace()
+							showView(favicon, true)
+							favicon.setImageResource(defaultFaviconResId)
+						}
 					}
 				}
-			} else {
-				findViewById<View>(R.id.container_media_duration).visibility = View.GONE
+			} catch (error: Exception) {
+				withContext(Main) {
+					favicon.setImageDrawable(defaultFaviconDrawable)
+				}
 			}
-
-			refreshToggleSwitchUI()
 		}
 	}
 
-	private fun isMediaFile(downloadModel: DownloadDataModel): Boolean =
-		isAudioByName(downloadModel.fileName) || isVideoByName(downloadModel.fileName)
-
-	private fun updateMediaPlayIndicator(
-		mediaPlayIndicator: ImageView,
-		downloadDataModel: DownloadDataModel
-	) {
-		mediaPlayIndicator.visibility = if (isMediaFile(downloadDataModel)) {
-			View.VISIBLE
-		} else {
-			View.GONE
-		}
+	private fun View.updatePrivateFolderIndicator(dataModel: DownloadDataModel) {
+		val folderIndicatorView = findViewById<ImageView>(R.id.img_private_folder_indicator)
+		folderIndicatorView.apply { setDownloadDestinationIcon(this, dataModel) }
 	}
 
-	private fun updateFileTypeIndicator(
-		fileTypeIndicator: ImageView,
-		downloadDataModel: DownloadDataModel
-	) {
-		fileTypeIndicator.setImageResource(
-			when {
-				isImageByName(downloadDataModel.fileName) -> R.drawable.ic_button_images
-				isAudioByName(downloadDataModel.fileName) -> R.drawable.ic_button_audio
-				isVideoByName(downloadDataModel.fileName) -> R.drawable.ic_button_video
-				isDocumentByName(downloadDataModel.fileName) -> R.drawable.ic_button_document
-				isArchiveByName(downloadDataModel.fileName) -> R.drawable.ic_button_archives
-				isProgramByName(downloadDataModel.fileName) -> R.drawable.ic_button_programs
-				else -> R.drawable.ic_button_file
-			}
-		)
-	}
+	private fun setDownloadDestinationIcon(imageView: ImageView, dataModel: DownloadDataModel) {
+		val globalSettings = dataModel.globalSettings
+		val downloadLocation = globalSettings.defaultDownloadLocation
 
-	private fun updatePrivateFolderIndicator(privateFolderImageView: ImageView, downloadModel: DownloadDataModel) {
-		val downloadLocation = downloadModel.globalSettings.defaultDownloadLocation
-
-		privateFolderImageView.setImageResource(
+		imageView.setImageResource(
 			when (downloadLocation) {
 				PRIVATE_FOLDER -> R.drawable.ic_button_lock
 				else -> R.drawable.ic_button_folder
@@ -187,68 +215,82 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 		)
 	}
 
-	private fun updateFaviconInfo(favicon: ImageView, downloadDataModel: DownloadDataModel) {
-		val defaultFaviconResId = R.drawable.ic_image_default_favicon
-		val defaultFaviconDrawable = getDrawable(INSTANCE.resources, defaultFaviconResId, null)
-
-		if (isVideoThumbnailNotAllowed(downloadDataModel)) {
-			executeOnMainThread { favicon.setImageDrawable(defaultFaviconDrawable) }
-			return
-		}
-
-		ThreadsUtility.executeInBackground(codeBlock = {
-			val referralSite = downloadDataModel.siteReferrer
-			aioFavicons.getFavicon(referralSite)?.let { faviconFilePath ->
-				val faviconImgFile = File(faviconFilePath)
-				if (!faviconImgFile.exists() || !faviconImgFile.isFile) {
-					return@executeInBackground
-				}
-				val faviconImgURI = faviconImgFile.toUri()
-				ThreadsUtility.executeOnMain(codeBlock = {
-					try {
-						showView(favicon, true)
-						favicon.setImageURI(faviconImgURI)
-					} catch (error: Exception) {
-						error.printStackTrace()
-						showView(favicon, true)
-						favicon.setImageResource(defaultFaviconResId)
-					}
-				})
-			}
-		}, errorHandler = {
-			favicon.setImageDrawable(defaultFaviconDrawable)
-		})
+	private fun View.updateFileTypeIndicator(dataModel: DownloadDataModel) {
+		val fileTypeIcon = findViewById<ImageView>(R.id.img_file_type_indicator)
+		fileTypeIcon.apply { setFileTypeIcon(this, dataModel) }
 	}
+
+	private fun setFileTypeIcon(imageView: ImageView, dataModel: DownloadDataModel) {
+		imageView.setImageResource(
+			when {
+				isImageByName(dataModel.fileName) -> R.drawable.ic_button_images
+				isAudioByName(dataModel.fileName) -> R.drawable.ic_button_audio
+				isVideoByName(dataModel.fileName) -> R.drawable.ic_button_video
+				isDocumentByName(dataModel.fileName) -> R.drawable.ic_button_document
+				isArchiveByName(dataModel.fileName) -> R.drawable.ic_button_archives
+				isProgramByName(dataModel.fileName) -> R.drawable.ic_button_programs
+				else -> R.drawable.ic_button_file
+			}
+		)
+	}
+
+	private fun View.updateThumbnail(dataModel: DownloadDataModel) {
+		val thumbnailImageView = findViewById<ImageView>(R.id.img_file_thumbnail)
+		thumbnailImageView.apply { loadThumbnail(this, dataModel) }
+	}
+
+	private fun View.updateFileUrl(dataModel: DownloadDataModel) {
+		val fileUrlLabel = findViewById<TextView>(R.id.txt_file_url)
+		fileUrlLabel.apply { text = dataModel.fileURL }
+	}
+
+	private fun View.updateFileTitle(dataModel: DownloadDataModel) {
+		val fileTitleLabel = findViewById<TextView>(R.id.txt_file_title)
+		fileTitleLabel.apply { isSelected = true; text = dataModel.fileName }
+		fileTitleLabel.normalizeTallSymbols()
+	}
+
+	private fun isMediaFile(downloadModel: DownloadDataModel): Boolean =
+		isAudioByName(downloadModel.fileName) || isVideoByName(downloadModel.fileName)
 
 	private fun isVideoThumbnailNotAllowed(downloadDataModel: DownloadDataModel): Boolean {
 		val isVideoHidden = downloadDataModel.globalSettings.downloadHideVideoThumbnail
 		return isVideo(downloadDataModel.getDestinationDocumentFile()) && isVideoHidden
 	}
 
-	private fun updateThumbnail(thumbImageView: ImageView, downloadModel: DownloadDataModel) {
-		val destinationFile = downloadModel.getDestinationFile()
-		val defaultThumb = downloadModel.getThumbnailDrawableID()
-		val defaultThumbDrawable = getDrawable(INSTANCE.resources, defaultThumb, null)
+	private fun loadThumbnail(imageView: ImageView, dataModel: DownloadDataModel) {
+		getSafeActivity()?.getAttachedCoroutineScope()?.launch(IO) {
+			val destinationFile = dataModel.getDestinationFile()
+			val defaultThumb = dataModel.getThumbnailDrawableID()
+			val defaultThumbDrawable = getDrawable(INSTANCE.resources, defaultThumb, null)
 
-		if (loadApkThumbnail(
-				downloadModel = downloadModel,
-				imageViewHolder = thumbImageView,
-				defaultThumbDrawable = defaultThumbDrawable
-			)
-		) {
-			return
-		}
-
-		ThreadsUtility.executeInBackground(codeBlock = {
-			val cachedThumbPath = downloadModel.thumbPath
-			if (cachedThumbPath.isNotEmpty()) {
-				executeOnMainThread {
-					loadBitmapWithGlide(thumbImageView, downloadModel.thumbPath, defaultThumb)
-				}
-				return@executeInBackground
+			if (dataModel.globalSettings.downloadHideVideoThumbnail) {
+				imageView.setImageResource(defaultThumb)
+				return@launch
 			}
 
-			val thumbnailUrl = downloadModel.videoInfo?.videoThumbnailUrl
+			var shouldReturn = false
+			withContext(Main) {
+				if (loadApkThumbnail(dataModel, imageView, defaultThumbDrawable)) {
+					shouldReturn = true
+				}
+			}
+
+			if (shouldReturn) return@launch
+
+			val cachedThumbPath = dataModel.thumbPath
+			if (cachedThumbPath.isNotEmpty()) {
+				withContext(Main) {
+					loadBitmapWithGlide(
+						imageView = imageView,
+						filePath = dataModel.thumbPath,
+						defaultThumb = defaultThumb
+					)
+				}
+				return@launch
+			}
+
+			val thumbnailUrl = dataModel.videoInfo?.videoThumbnailUrl
 			val bitmap = getThumbnailFromFile(destinationFile, thumbnailUrl, 420)
 
 			if (bitmap != null) {
@@ -257,50 +299,47 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 					rotateBitmap(bitmap = bitmap, angle = 270f)
 				} else bitmap
 
-				val thumbnailName = "${downloadModel.downloadId}$THUMB_EXTENSION"
+				val thumbnailName = "${dataModel.downloadId}$THUMB_EXTENSION"
 				saveBitmapToFile(rotatedBitmap, thumbnailName)?.let { filePath ->
-					downloadModel.thumbPath = filePath
-					downloadModel.updateInStorage()
-
-					executeOnMainThread {
+					dataModel.thumbPath = filePath
+					dataModel.updateInStorage()
+					withContext(Main) {
 						loadBitmapWithGlide(
-							thumbImageView = thumbImageView,
-							thumbFilePath = downloadModel.thumbPath,
+							imageView = imageView,
+							filePath = dataModel.thumbPath,
 							defaultThumb = defaultThumb
 						)
 					}
 				}
 			}
-		})
-	}
-
-	private fun loadBitmapWithGlide(
-		thumbImageView: ImageView,
-		thumbFilePath: String,
-		defaultThumb: Int
-	) {
-		try {
-			val imgURI = File(thumbFilePath).toUri()
-			thumbImageView.setImageURI(imgURI)
-		} catch (error: Exception) {
-			thumbImageView.setImageResource(defaultThumb)
 		}
 	}
 
-	private fun loadApkThumbnail(
-		downloadModel: DownloadDataModel,
-		imageViewHolder: ImageView,
-		defaultThumbDrawable: Drawable?
-	): Boolean {
-		getSafeActivity()?.let { safeMotherActivityRef ->
-			val apkFile = downloadModel.getDestinationFile()
+	private fun loadBitmapWithGlide(imageView: ImageView, filePath: String, defaultThumb: Int) {
+		try {
+			val imageFile = File(filePath)
+			val signature = ObjectKey(imageFile.lastModified())
+			Glide.with(imageView)
+				.load(imageFile)
+				.placeholder(defaultThumb)
+				.signature(signature)
+				.into(imageView)
+		} catch (error: Exception) {
+			imageView.setImageResource(defaultThumb)
+		}
+	}
+
+	private fun loadApkThumbnail(dataModel: DownloadDataModel,
+		imageView: ImageView, fallbackDrawable: Drawable?): Boolean {
+		getSafeActivity()?.let { activityRef ->
+			val apkFile = dataModel.getDestinationFile()
 
 			if (!apkFile.exists() || !apkFile.name.lowercase().endsWith(".apk")) {
-				imageViewHolder.setImageDrawable(defaultThumbDrawable)
+				imageView.setImageDrawable(fallbackDrawable)
 				return false
 			}
 
-			val packageManager: PackageManager = safeMotherActivityRef.packageManager
+			val packageManager: PackageManager = activityRef.packageManager
 			return try {
 				val packageInfo: PackageInfo? = packageManager.getPackageArchiveInfo(
 					apkFile.absolutePath,
@@ -312,16 +351,16 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 					appInfo.publicSourceDir = apkFile.absolutePath
 
 					val icon: Drawable = appInfo.loadIcon(packageManager)
-					imageViewHolder.setImageDrawable(icon)
+					imageView.setImageDrawable(icon)
 					true
 				} ?: run {
 					false
 				}
 			} catch (error: Exception) {
-				imageViewHolder.apply {
+				imageView.apply {
 					scaleType = ImageView.ScaleType.FIT_CENTER
 					setPadding(0, 0, 0, 0)
-					setImageDrawable(defaultThumbDrawable)
+					setImageDrawable(fallbackDrawable)
 				}
 				false
 			}
@@ -329,379 +368,294 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 		return false
 	}
 
-	@OptIn(UnstableApi::class)
-	private fun playTheMedia() {
-		getSafeActivity()?.let { safeMotherActivityRef ->
-			close()
-
-			if (downloadDataModel?.videoInfo != null && downloadDataModel?.videoFormat != null) {
-				val waitingDialog = WaitingDialog(
-					baseActivityInf = safeMotherActivityRef,
-					loadingMessage = getText(string.title_preparing_video_please_wait)
-				)
-				waitingDialog.show()
-
-				executeInBackground {
-					val videoUrl = downloadDataModel!!.videoInfo!!.videoUrl
-					val request = YoutubeDLRequest(videoUrl).apply {
-						addOption("-f", "best")
-					}
-
-					getInstance().getInfo(request).let { info ->
-						executeOnMainThread {
-							waitingDialog.dialogBuilder?.let { dialogBuilder ->
-								if (dialogBuilder.isShowing) {
-									waitingDialog.close()
-
-									info.url?.let { extractedUrl ->
-										openMediaPlayerActivity(
-											downloadDataModel!!.videoInfo!!,
-											downloadDataModel!!.videoFormat!!,
-											extractedUrl
-										)
-									}
-								}
-							}
-						}
-					}
-				}
-
-				animActivitySwipeLeft(safeMotherActivityRef)
-			} else {
-				this.close()
-				val context = safeMotherActivityRef
-				val destinationActivity = MediaPlayerActivity::class.java
-
-				context.startActivity(Intent(context, destinationActivity).apply {
-					flags = context.getSingleTopIntentFlags()
-					downloadDataModel?.let {
-						putExtra(INTENT_EXTRA_STREAM_URL, it.fileURL)
-						putExtra(INTENT_EXTRA_STREAM_TITLE, it.fileName)
-					}
-				})
-
-				animActivitySwipeLeft(context)
-				this@ActiveTasksOptions.close()
-			}
-		}
-	}
-
-	@OptIn(UnstableApi::class)
-	private fun openMediaPlayerActivity(
-		videoInfo: VideoInfo,
-		videoFormat: VideoFormat,
-		streamableMediaUrl: String
-	) {
-		getSafeActivity()?.let { safeMotherActivityRef ->
-			val activity = safeMotherActivityRef
-			val playerClass = MediaPlayerActivity::class.java
-
-			activity.startActivity(Intent(activity, playerClass).apply {
-				flags = activity.getSingleTopIntentFlags()
-				putExtra(INTENT_EXTRA_STREAM_URL, streamableMediaUrl)
-
-				val selectedExtension = videoFormat.formatExtension
-				val streamingTitle = "${videoInfo.videoTitle}.$selectedExtension"
-				putExtra(INTENT_EXTRA_STREAM_TITLE, streamingTitle)
-			})
-		}
-	}
-
 	private fun resumeDownloadTask() {
-		close()
+		val dialogBuilder = dialogBuilder
+		val activityRef = getSafeActivity()
+		val dataModel = downloadDataModel
 
-		downloadDataModel?.let { model ->
-			ThreadsUtility.executeInBackground(codeBlock = {
-				if (downloadSystem.searchActiveDownloadTaskWith(model) != null) {
-					ThreadsUtility.executeOnMain { pauseDownloadTask() }
-					delay(1000)
-				}
+		if (dialogBuilder == null) return
+		if (activityRef == null) return
+		if (dataModel == null) return
 
-				ThreadsUtility.executeOnMain {
-					val hasProblem = model.isYtdlpHavingProblem &&
-						model.ytdlpProblemMsg.isNotEmpty() &&
-						model.status != DOWNLOADING
-					val isLoginIssue = model.ytdlpProblemMsg.contains("login", true)
+		this@ActiveTasksOptions.close()
+		activityRef.getAttachedCoroutineScope().launch(Main) {
+			if (searchActiveTaskByDownloadModel(dataModel) != null) {
+				pauseDownloadTask()
+				delay(1000)
+			}
 
-					if (hasProblem && isLoginIssue) {
-						showMessageDialog(
-							baseActivityInf = getSafeActivity(),
-							titleTextViewCustomize = {
-								it.setText(string.title_login_required)
-								getSafeActivity()?.getColor(R.color.color_error)
-									?.let { colorResId -> it.setTextColor(colorResId) }
-							},
-							messageTextViewCustomize = {
-								it.setText(string.text_login_to_download_private_videos)
-							},
-							isNegativeButtonVisible = false,
-							positiveButtonTextCustomize = {
-								it.setText(string.title_login_now)
-								it.setLeftSideDrawable(R.drawable.ic_button_login)
-							}
-						)?.apply {
-							setOnClickForPositiveButton {
-								close()
+			val isDownloadProblematic = dataModel.isYtdlpHavingProblem &&
+				dataModel.ytdlpProblemMsg.isNotEmpty() &&
+				dataModel.status != DOWNLOADING
 
-								getSafeActivity()?.let { safeMotherActivityRef ->
-									val browserFragment = safeMotherActivityRef.browserFragment
-									val webviewEngine = browserFragment?.getBrowserWebEngine()
-										?: return@setOnClickForPositiveButton
+			val requiresLogin = dataModel.ytdlpProblemMsg.contains("login", true)
 
-									val sideNavigation = safeMotherActivityRef.sideNavigation
-									sideNavigation?.addNewBrowsingTab(model.siteReferrer, webviewEngine)
-									safeMotherActivityRef.openBrowserFragment()
-
-									model.isYtdlpHavingProblem = false
-									model.ytdlpProblemMsg = ""
-								}
-							}
-						}?.show()
-					} else {
-						downloadSystem.resumeDownload(
-							downloadModel = model,
-							coroutineScope = CoroutineScope(Dispatchers.IO),
-							onResumed = {
-								showToast(
-									activityInf = getSafeActivity(),
-									msgId = string.title_resumed_task_successfully
-								)
-							}
-						)
+			if (!isDownloadProblematic && !requiresLogin) {
+				downloadSystem.resumeDownload(
+					downloadModel = dataModel,
+					coroutineScope = CoroutineScope(IO),
+					onResumed = {
+						val toastMsgId = string.title_resumed_task_successfully
+						showToast(activityRef, toastMsgId)
 					}
+				)
+				return@launch
+			}
+
+			showMessageDialog(
+				baseActivityInf = activityRef,
+				isNegativeButtonVisible = false,
+				titleTextViewCustomize = {
+					it.setText(string.title_login_required)
+					activityRef.getColor(R.color.color_error).let { colorResId ->
+						it.setTextColor(colorResId)
+					}
+				},
+				messageTextViewCustomize = {
+					val loginPromptResId = string.text_login_to_download_private_videos
+					it.setText(loginPromptResId)
+				},
+				positiveButtonTextCustomize = {
+					it.setText(string.title_login_now)
+					it.setLeftSideDrawable(R.drawable.ic_button_login)
 				}
-			})
+			)?.apply {
+				setOnClickForPositiveButton {
+					this.close()
+					val browserFragment = activityRef.browserFragment
+					val webviewEngine = browserFragment?.getBrowserWebEngine()
+						?: return@setOnClickForPositiveButton
+
+					val sideNavigation = activityRef.sideNavigation
+					sideNavigation?.addNewBrowsingTab(dataModel.siteReferrer, webviewEngine)
+					activityRef.openBrowserFragment()
+
+					dataModel.isYtdlpHavingProblem = false
+					dataModel.ytdlpProblemMsg = ""
+				}
+			}?.show()
 		}
 	}
 
 	private fun pauseDownloadTask() {
-		getSafeActivity()?.let { safeMotherActivityRef ->
-			close()
+		val dialogBuilder = dialogBuilder
+		val activityRef = getSafeActivity()
+		val dataModel = downloadDataModel
 
-			downloadDataModel?.let { downloadModel ->
-				if (downloadSystem.searchActiveDownloadTaskWith(downloadModel) == null) {
-					showToast(
-						activityInf = safeMotherActivityRef,
-						msgId = string.title_download_task_already_paused
-					)
-					return
-				}
+		if (dialogBuilder == null) return
+		if (activityRef == null) return
+		if (dataModel == null) return
 
-				if (!downloadModel.isResumeSupported) {
-					getMessageDialog(
-						baseActivityInf = safeMotherActivityRef,
-						isNegativeButtonVisible = false,
-						messageTextViewCustomize = {
-							it.setText(string.text_warning_resume_not_supported)
-						},
-						negativeButtonTextCustomize = {
-							it.setLeftSideDrawable(R.drawable.ic_button_cancel)
-						},
-						positiveButtonTextCustomize = {
-							it.setText(string.title_pause_anyway)
-							it.setLeftSideDrawable(R.drawable.ic_button_media_pause)
-						}
-					)?.apply {
-						setOnClickForPositiveButton {
-							this.close()
-							dialogBuilder.close()
-							downloadSystem.pauseDownload(downloadModel = downloadModel)
-						}
-						this.show()
+		this@ActiveTasksOptions.close()
+		activityRef.getAttachedCoroutineScope().launch(Main) {
+			if (searchActiveTaskByDownloadModel(dataModel) == null) {
+				val msgId = string.title_download_task_already_paused
+				showToast(activityRef, msgId)
+				return@launch
+			}
+
+			if (!dataModel.isResumeSupported) {
+				getMessageDialog(
+					baseActivityInf = activityRef,
+					isNegativeButtonVisible = false,
+					messageTextViewCustomize = {
+						val warningTextResId = string.text_warning_resume_not_supported
+						it.setText(warningTextResId)
+					},
+					negativeButtonTextCustomize = {
+						val drawableResId = R.drawable.ic_button_cancel
+						it.setLeftSideDrawable(drawableResId)
+					},
+					positiveButtonTextCustomize = {
+						it.setText(string.title_pause_anyway)
+						it.setLeftSideDrawable(R.drawable.ic_button_media_pause)
 					}
-				} else {
-					downloadSystem.pauseDownload(downloadModel = downloadModel)
-				}
+				)?.apply {
+					setOnClickForPositiveButton {
+						this.close()
+						dialogBuilder.close()
+						downloadSystem.pauseDownload(dataModel)
+					}
+				}?.show()
+			} else {
+				downloadSystem.pauseDownload(dataModel)
 			}
 		}
 	}
 
 	private fun removeDownloadTask() {
-		getSafeActivity()?.let { safeMotherActivityRef ->
-			downloadDataModel?.let { downloadDataModel ->
-				ThreadsUtility.executeInBackground(codeBlock = {
-					if (downloadSystem.searchActiveDownloadTaskWith(downloadDataModel) != null) {
-						ThreadsUtility.executeOnMain { pauseDownloadTask() }
-						delay(1500)
-					}
+		val dialogBuilder = dialogBuilder
+		val activityRef = getSafeActivity()
+		val dataModel = downloadDataModel
 
-					ThreadsUtility.executeOnMain {
-						val taskInf = downloadSystem.searchActiveDownloadTaskWith(downloadDataModel)
-						if (taskInf != null) {
-							showMessageDialog(
-								baseActivityInf = safeMotherActivityRef,
-								isNegativeButtonVisible = false,
-								messageTextViewCustomize = {
-									it.setText(string.text_cant_remove_one_active_download)
-								},
-								positiveButtonTextCustomize = {
-									it.setLeftSideDrawable(R.drawable.ic_button_checked_circle)
-								}
-							)
-							return@executeOnMain
-						}
-					}
-				})
+		if (dialogBuilder == null) return
+		if (activityRef == null) return
+		if (dataModel == null) return
+
+		activityRef.getAttachedCoroutineScope().launch(Main) {
+			if (searchActiveTaskByDownloadModel(dataModel) != null) {
+				pauseDownloadTask()
+				delay(1500)
+			}
+
+			if (searchActiveTaskByDownloadModel(dataModel) != null) {
+				showMessageDialog(
+					baseActivityInf = activityRef,
+					isNegativeButtonVisible = false,
+					messageTextViewCustomize = { it.setText(string.text_cant_remove_one_active_download) },
+					positiveButtonTextCustomize = { it.setLeftSideDrawable(R.drawable.ic_button_checked_circle) }
+				)
+				return@launch
 			}
 
 			getMessageDialog(
-				baseActivityInf = safeMotherActivityRef,
+				baseActivityInf = activityRef,
 				isTitleVisible = true,
 				isNegativeButtonVisible = false,
-				titleTextViewCustomize = {
-					it.setText(string.title_are_you_sure_about_this)
-				},
-				messageTextViewCustomize = {
-					it.setText(string.text_are_you_sure_about_clear)
-				},
+				titleTextViewCustomize = { it.setText(string.title_are_you_sure_about_this) },
+				messageTextViewCustomize = { it.setText(string.text_are_you_sure_about_clear) },
 				positiveButtonTextCustomize = {
 					it.setText(string.title_clear_from_list)
 					it.setLeftSideDrawable(R.drawable.ic_button_clear)
 				}
 			)?.apply {
 				setOnClickForPositiveButton {
-					close()
+					this.close()
 					this@ActiveTasksOptions.close()
-
-					downloadDataModel?.let {
+					dataModel.let {
 						downloadSystem.clearDownload(it) {
-							executeOnMainThread {
-								showToast(
-									activityInf = safeMotherActivityRef,
-									msgId = string.title_successfully_cleared
-								)
-							}
+							showToast(activityRef, string.title_successfully_cleared)
 						}
 					}
 				}
-				show()
-			}
+			}?.show()
 		}
+	}
+
+	private suspend fun searchActiveTaskByDownloadModel(dataModel: DownloadDataModel): DownloadTaskInf? {
+		withContext(IO) { return@withContext downloadSystem.searchActiveDownloadTaskWith(dataModel) }
+		return null
 	}
 
 	private fun deleteDownloadTask() {
-		getSafeActivity()?.let { safeMotherActivityRef ->
-			downloadDataModel?.let { downloadDataModel ->
-				ThreadsUtility.executeInBackground(codeBlock = {
-					if (downloadSystem.searchActiveDownloadTaskWith(downloadDataModel) != null) {
-						ThreadsUtility.executeOnMain { pauseDownloadTask() }
-						delay(1500)
-					}
+		val dialogBuilder = dialogBuilder
+		val activityRef = getSafeActivity()
+		val dataModel = downloadDataModel
 
-					ThreadsUtility.executeOnMain {
-						val taskInf = downloadSystem.searchActiveDownloadTaskWith(downloadDataModel)
-						if (taskInf != null) {
-							showMessageDialog(
-								baseActivityInf = safeMotherActivityRef,
-								isNegativeButtonVisible = false,
-								messageTextViewCustomize = {
-									it.setText(string.text_cant_delete_on_active_download)
-								},
-								positiveButtonTextCustomize = {
-									it.setLeftSideDrawable(R.drawable.ic_button_checked_circle)
-								}
-							)
-							return@executeOnMain
-						}
-					}
-				})
+		if (dialogBuilder == null) return
+		if (activityRef == null) return
+		if (dataModel == null) return
+
+		activityRef.getAttachedCoroutineScope().launch(Main) {
+			if (downloadSystem.searchActiveDownloadTaskWith(dataModel) != null) {
+				pauseDownloadTask()
+				delay(1500)
 			}
 
-			getMessageDialog(
-				baseActivityInf = safeMotherActivityRef,
-				titleTextViewCustomize = {
-					it.setText(string.title_are_you_sure_about_this)
-				},
-				isTitleVisible = true,
-				isNegativeButtonVisible = false,
-				messageTextViewCustomize = {
-					it.setText(string.text_are_you_sure_about_delete)
-				},
-				positiveButtonTextCustomize = {
-					it.setText(string.title_delete_file)
-					it.setLeftSideDrawable(R.drawable.ic_button_checked_circle)
-				}
-			)?.apply {
-				setOnClickForPositiveButton {
-					close()
-					this@ActiveTasksOptions.close()
-
-					downloadDataModel?.let {
-						downloadSystem.deleteDownload(it) {
-							executeOnMainThread {
-								showToast(
-									activityInf = safeMotherActivityRef,
-									msgId = string.title_successfully_deleted
-								)
-							}
-						}
-					}
-				}
-				show()
+			if (downloadSystem.searchActiveDownloadTaskWith(dataModel) != null) {
+				showMessageDialog(
+					baseActivityInf = activityRef,
+					isNegativeButtonVisible = false,
+					messageTextViewCustomize = { it.setText(string.text_cant_delete_on_active_download) },
+					positiveButtonTextCustomize = { it.setLeftSideDrawable(R.drawable.ic_button_checked_circle) }
+				)
+				return@launch
 			}
 		}
+
+		getMessageDialog(
+			baseActivityInf = activityRef,
+			isTitleVisible = true,
+			isNegativeButtonVisible = false,
+			titleTextViewCustomize = { it.setText(string.title_are_you_sure_about_this) },
+			messageTextViewCustomize = { it.setText(string.text_are_you_sure_about_delete) },
+			positiveButtonTextCustomize = {
+				it.setText(string.title_delete_file)
+				it.setLeftSideDrawable(R.drawable.ic_button_checked_circle)
+			}
+		)?.apply {
+			setOnClickForPositiveButton {
+				this.close()
+				this@ActiveTasksOptions.close()
+
+				dataModel.let {
+					downloadSystem.deleteDownload(it) {
+						showToast(activityRef, string.title_successfully_deleted)
+					}
+				}
+			}
+		}?.show()
 	}
 
 	private fun renameDownloadTask() {
-		getSafeActivity()?.let { safeMotherActivityRef ->
-			if (!::downloadFileRenamer.isInitialized) {
-				downloadFileRenamer = DownloadFileRenamer(
-					motherActivity = safeMotherActivityRef,
-					downloadDataModel = downloadDataModel!!
-				) { dialogBuilder.close() }
-			}
+		val dialogBuilder = dialogBuilder
+		val activityRef = getSafeActivity()
+		val dataModel = downloadDataModel
 
-			downloadDataModel?.let { downloadDataModel ->
-				val taskInf = downloadSystem.searchActiveDownloadTaskWith(downloadDataModel)
-				if (taskInf != null) {
-					showMessageDialog(
-						baseActivityInf = safeMotherActivityRef,
-						isNegativeButtonVisible = false,
-						messageTextViewCustomize = {
-							it.setText(string.text_cant_rename_on_active_download)
-						},
-						positiveButtonTextCustomize = {
-							it.setLeftSideDrawable(R.drawable.ic_button_checked_circle)
-						}
-					)
-					return
-				}
+		if (dialogBuilder == null) return
+		if (activityRef == null) return
+		if (dataModel == null) return
 
-				downloadFileRenamer.show(downloadDataModel)
+		activityRef.getAttachedCoroutineScope().launch(Main) {
+			if (downloadSystem.searchActiveDownloadTaskWith(dataModel) != null) {
+				showMessageDialog(
+					baseActivityInf = activityRef,
+					isNegativeButtonVisible = false,
+					messageTextViewCustomize = { it.setText(string.text_cant_rename_on_active_download) },
+					positiveButtonTextCustomize = { it.setLeftSideDrawable(R.drawable.ic_button_checked_circle) }
+				)
+				return@launch
 			}
+			val downloadFileRenamer = DownloadFileRenamer(activityRef, dataModel) { dialogBuilder.close() }
+			downloadFileRenamer.show(dataModel)
 		}
 	}
 
 	private fun toggleDownloadThumbnail() {
-		getSafeActivity()?.let { safeMotherActivity ->
-			safeMotherActivity.doSomeVibration(50)
-			showToast(
-				activityInf = safeMotherActivity,
-				msgId = string.title_experimental_feature
-			)
-		}
+		val dialogBuilder = dialogBuilder
+		val activityRef = getSafeActivity()
+		val dataModel = downloadDataModel
+
+		if (dialogBuilder == null) return
+		if (activityRef == null) return
+		if (dataModel == null) return
+
+		val settings = dataModel.globalSettings
+		val shouldHideVideoThumbnail = settings.downloadHideVideoThumbnail
+		settings.downloadHideVideoThumbnail = !shouldHideVideoThumbnail
+		dataModel.updateInStorage()
+		updateDownloadSettingsUI()
+		dialogBuilder.view.updateThumbnail(dataModel)
 	}
 
 	private fun copyDownloadFileLink() {
-		downloadDataModel?.fileURL?.takeIf { isValidURL(it) }?.let { fileUrl ->
-			copyTextToClipboard(getSafeActivity(), fileUrl)
-			showToast(getSafeActivity(), string.title_file_url_has_been_copied)
+		val dialogBuilder = dialogBuilder
+		val activityRef = getSafeActivity()
+		val dataModel = downloadDataModel
+
+		if (dialogBuilder == null) return
+		if (activityRef == null) return
+		if (dataModel == null) return
+
+		dataModel.fileURL.takeIf { isValidURL(it) }?.let { fileUrl ->
+			copyTextToClipboard(activityRef, fileUrl)
+			showToast(activityRef, string.title_file_url_has_been_copied)
 			close()
 		} ?: run {
-			showToast(getSafeActivity(), string.title_dont_have_anything_to_copy)
+			showToast(activityRef, string.title_dont_have_anything_to_copy)
 		}
 	}
 
 	private fun copyWebsiteLink() {
-		val dataModel = downloadDataModel
+		val dialogBuilder = dialogBuilder
 		val activityRef = getSafeActivity()
+		val dataModel = downloadDataModel
 
+		if (dialogBuilder == null) return
 		if (activityRef == null) return
 		if (dataModel == null) return
 
-		dataModel.siteReferrer
-			.takeIf { isValidURL(it) }
-			?.let { fileUrl ->
+		dataModel.siteReferrer.takeIf { isValidURL(it) }?.let { fileUrl ->
 				copyTextToClipboard(activityRef, fileUrl)
 				showToast(activityRef, string.title_file_url_has_been_copied)
 				close()
@@ -711,57 +665,55 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 	}
 
 	private fun shareDownloadFileLink() {
-		downloadDataModel?.fileURL?.takeIf { isValidURL(it) }?.let { fileUrl ->
+		val dialogBuilder = dialogBuilder
+		val activityRef = getSafeActivity()
+		val dataModel = downloadDataModel
+
+		if (dialogBuilder == null) return
+		if (activityRef == null) return
+		if (dataModel == null) return
+
+		dataModel.fileURL.takeIf { isValidURL(it) }?.let { fileUrl ->
 			val titleText = getText(string.title_share_download_file_url)
-			shareUrl(getSafeActivity(), fileUrl, titleText) {
-				close()
-			}
+			shareUrl(activityRef, fileUrl, titleText) { close() }
 		} ?: run {
-			showToast(getSafeActivity(), string.title_dont_have_anything_to_share)
+			showToast(activityRef, string.title_dont_have_anything_to_share)
 		}
 	}
 
 	private fun openDownloadReferrerLink() {
-		getSafeActivity()?.let { safeMotherActivityRef ->
-			val downloadSiteReferrerLink = downloadDataModel?.siteReferrer
+		val dialogBuilder = dialogBuilder
+		val activityRef = getSafeActivity()
+		val dataModel = downloadDataModel
 
-			if (downloadSiteReferrerLink.isNullOrEmpty()) {
-				safeMotherActivityRef.doSomeVibration(50)
-				showToast(
-					activityInf = safeMotherActivityRef,
-					msgId = string.title_no_referer_link_found
-				)
-				return
-			}
+		if (dialogBuilder == null) return
+		if (activityRef == null) return
+		if (dataModel == null) return
 
-			this.close()
-			this@ActiveTasksOptions.close()
-
-			val webviewEngine = safeMotherActivityRef.browserFragment?.browserFragmentBody?.webviewEngine!!
-			safeMotherActivityRef.sideNavigation?.addNewBrowsingTab(downloadSiteReferrerLink, webviewEngine)
-			safeMotherActivityRef.openBrowserFragment()
+		val downloadSiteReferrerLink = dataModel.siteReferrer
+		if (downloadSiteReferrerLink.isEmpty()) {
+			activityRef.doSomeVibration()
+			showToast(activityRef, string.title_no_referer_link_found)
+			return
 		}
+
+		this@ActiveTasksOptions.close()
+		val webviewEngine = activityRef.browserFragment?.browserFragmentBody?.webviewEngine!!
+		activityRef.sideNavigation?.addNewBrowsingTab(downloadSiteReferrerLink, webviewEngine)
+		activityRef.openBrowserFragment()
 	}
 
 	private fun openDownloadInfoTracker() {
-		getSafeActivity()?.let { safeMotherActivityRef ->
-			if (!::downloadInfoTracker.isInitialized) {
-				downloadInfoTracker = DownloadInfoTracker(safeMotherActivityRef)
-			}
+		val dialogBuilder = dialogBuilder
+		val activityRef = getSafeActivity()
+		val dataModel = downloadDataModel
 
-			downloadInfoTracker.show(downloadDataModel!!)
-			close()
-		}
-	}
+		if (dialogBuilder == null) return
+		if (activityRef == null) return
+		if (dataModel == null) return
 
-	private fun openAdvancedDownloadSettings() {
-		getSafeActivity()?.let { safeMotherActivity ->
-			safeMotherActivity.doSomeVibration(50)
-			showToast(
-				activityInf = safeMotherActivity,
-				msgId = string.title_experimental_feature
-			)
-		}
+		DownloadInfoTracker(activityRef).show(dataModel)
+		this@ActiveTasksOptions.close()
 	}
 
 	private fun downloadOtherYTResolutions() {
@@ -792,7 +744,7 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 		val isDownloadWifiOnly = settings.downloadWifiOnly
 		settings.downloadWifiOnly = !isDownloadWifiOnly
 		dataModel.updateInStorage()
-		refreshToggleSwitchUI()
+		updateDownloadSettingsUI()
 	}
 
 	private fun toggleDownloadNotification() {
@@ -806,7 +758,7 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 		val isDownloadWifiOnly = settings.downloadHideNotification
 		settings.downloadHideNotification = !isDownloadWifiOnly
 		dataModel.updateInStorage()
-		refreshToggleSwitchUI()
+		updateDownloadSettingsUI()
 	}
 
 	private fun toggleDownloadSound() {
@@ -820,13 +772,15 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 		val isDownloadWifiOnly = settings.downloadPlayNotificationSound
 		settings.downloadPlayNotificationSound = !isDownloadWifiOnly
 		dataModel.updateInStorage()
-		refreshToggleSwitchUI()
+		updateDownloadSettingsUI()
 	}
 
-	private fun refreshToggleSwitchUI() {
-		val dataModel = downloadDataModel
+	private fun updateDownloadSettingsUI() {
+		val dialogBuilder = dialogBuilder
 		val activityRef = getSafeActivity()
+		val dataModel = downloadDataModel
 
+		if (dialogBuilder == null) return
 		if (activityRef == null) return
 		if (dataModel == null) return
 
@@ -851,9 +805,24 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 			} else R.drawable.ic_button_unchecked_circle_small
 			setRightSideDrawable(drawableResIdRes, true)
 		}
+
+		dialogBuilder.view.findViewById<TextView>(R.id.txt_remove_thumbnail).apply {
+			val drawableResIdRes = if (settings.downloadHideVideoThumbnail) {
+				R.drawable.ic_button_checked_circle_small
+			} else R.drawable.ic_button_unchecked_circle_small
+			setRightSideDrawable(drawableResIdRes, true)
+		}
 	}
 
 	private fun setupDialogClickListeners() {
+		val dialogBuilder = dialogBuilder
+		val activityRef = getSafeActivity()
+		val dataModel = downloadDataModel
+
+		if (dialogBuilder == null) return
+		if (activityRef == null) return
+		if (dataModel == null) return
+
 		dialogBuilder.setView(layout.frag_down_3_active_1_onclick_1).view.apply {
 			val clickActions = mapOf(
 				R.id.btn_file_info_card to { openDownloadReferrerLink() },
