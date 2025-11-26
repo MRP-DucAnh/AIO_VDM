@@ -235,7 +235,6 @@
 						android:tint="@color/color_secondary"
 						android:visibility="gone"
 						tools:ignore="ContentDescription" />
-
 				</RelativeLayout>
 			</LinearLayout>
 		</RelativeLayout>

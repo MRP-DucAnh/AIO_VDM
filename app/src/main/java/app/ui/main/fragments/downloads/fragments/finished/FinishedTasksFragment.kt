@@ -57,6 +57,7 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 	}
 
 	override fun onPauseFragment() {
+		lastCheckedFinishedTasks = -2
 		safeFinishTasksFragment?.let {
 			aioTimer.unregister(it)
 		}

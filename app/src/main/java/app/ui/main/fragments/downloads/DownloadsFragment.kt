@@ -195,10 +195,10 @@ open class DownloadsFragment : BaseFragment() {
 			}
 
 			if (isShowingPrivateFiles) {
-				txt.text = getText(R.string.title_hide_privates)
+				txt.text = getText(R.string.title_closed_privates)
 				txt.setLeftSideDrawable(R.drawable.ic_button_lock)
 			} else {
-				txt.text = getText(R.string.title_show_privates)
+				txt.text = getText(R.string.title_open_privates)
 				txt.setLeftSideDrawable(R.drawable.ic_button_unlock_v1)
 			}
 
@@ -221,6 +221,7 @@ open class DownloadsFragment : BaseFragment() {
 
 	var isShowingPrivateFiles = false
 	fun togglePrivateFiles() {
+		openFinishedTab()
 		val adapter = finishedTasksFragment?.finishedTasksListAdapter ?: return
 
 		if (isShowingPrivateFiles) {
@@ -236,7 +237,6 @@ open class DownloadsFragment : BaseFragment() {
 			}
 			return
 		}
-
 		togglePrivateFilesButtonUI()
 	}
 

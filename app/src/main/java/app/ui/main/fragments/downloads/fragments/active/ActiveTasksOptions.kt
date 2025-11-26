@@ -1258,10 +1258,6 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 					logger.d("Discover more button clicked")
 					openDownloadReferrerLink()
 				},
-				R.id.btn_advanced_download_settings to {
-					logger.d("Advance download settings button clicked")
-					openAdvancedDownloadSettings()
-				},
 				R.id.btn_download_system_information to {
 					logger.d("Download system info button clicked")
 					openDownloadInfoTracker()

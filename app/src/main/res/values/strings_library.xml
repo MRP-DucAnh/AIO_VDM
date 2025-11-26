@@ -528,7 +528,7 @@
 	<string name="title_successfully_deleted">Successfully Deleted</string>
 	<string name="title_open_website">Open Website</string>
 	<string name="title_fix_unseekable_mp4_file_risky">Fix Unseekable MP4 Files (Risky)</string>
-	<string name="title_download_other_resolution">Download Other Resolution (YouTube)</string>
+	<string name="title_download_other_resolution">Download Other Resolutions (YT)</string>
 	<string name="title_fixing_mp4_file_please_wait">Fixing MP4 File, Please Wait…</string>
 
 	<!-- Section Break -->
@@ -624,5 +624,11 @@
 	<string name="title_resume_download">Resume Download</string>
 	<string name="title_resume_the_task">Resume The Task</string>
 	<string name="title_pause_the_task">Pause The Task</string>
+	<string name="title_modify_download_settings">Modify Download Settings</string>
+	<string name="title_apply_the_settings">Apply The Settings</string>
+	<string name="title_wifi_only">WiFi Only</string>
+	<string name="title_notification">Notification</string>
+	<string name="title_play_sound">Play Sound</string>
+	<string name="title_user_agent">User Agent</string>
 
 </resources>
