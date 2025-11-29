@@ -62,14 +62,12 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 	private val logger = LogHelperUtils.from(javaClass)
 	private val activityWeakRef = motherActivity?.let { WeakReference(it) }
 
-	private var dialogBuilder: DialogBuilder? = null
+	private var dialogBuilder: DialogBuilder? = DialogBuilder(getSafeActivity())
 	private var downloadDataModel: DownloadDataModel? = null
 
 	private fun getSafeActivity(): MotherActivity? = activityWeakRef?.get()
 
 	fun show(downloadModel: DownloadDataModel?) {
-		this.dialogBuilder = DialogBuilder(getSafeActivity())
-
 		val dialogBuilder = dialogBuilder
 		val activityRef = getSafeActivity()
 		val dataModel = downloadModel
