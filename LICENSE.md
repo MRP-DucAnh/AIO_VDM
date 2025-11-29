@@ -1,49 +1,108 @@
 # Non-Commercial Use Free License (NCUF)
 
 ## AIO-Video-Downloader (the "Software")
-**Copyright (c) 2025 shibaFoss (the "Licensor")**
+Copyright (c) 2025 shibaFoss (the "Licensor")
 
 This license grants rights for Non-Commercial Use of the Software only. Commercial Use of the Software requires obtaining a separate, paid Commercial License from the Licensor.
+
+---
 
 ## 1. Definitions
 
 ### 1.1. "Software"
-Refers to the original work, and any modifications or derivative works based on the original work.
+Refers to the original work, and any modifications, updates, enhancements, bug fixes, or derivative works based on the original work.
 
 ### 1.2. "Non-Commercial Use"
 Means use of the Software:
-- **a)** Solely for personal, academic, educational, or research purposes;
-- **b)** By a non-profit organization; or
-- **c)** In an open-source project, provided that project itself does not generate any revenue or other commercial gain through licensing, advertising, or selling the product.
+- a) Solely for personal, academic, educational, or research purposes;
+- b) By a non-profit organization; or
+- c) In an open-source project, provided that project itself does not generate revenue or commercial gain through licensing, advertising, donations tied to feature development, paid releases, sponsorships, or selling the product.
 
 ### 1.3. "Commercial Use"
 Means any use of the Software that is not Non-Commercial Use, including but not limited to:
-- **a)** Use of the Software within a for-profit organization, regardless of whether the organization directly sells the Software or uses it internally;
-- **b)** Incorporating the Software into a product or service that is sold, licensed, or otherwise generates revenue;
-- **c)** Using the Software to provide services for a fee (e.g., SaaS, consulting, paid support); or
-- **d)** Any use intended for, or directed toward, commercial advantage or monetary compensation.
+- a) Use within a for-profit organization;
+- b) Incorporating the Software into a product or service that is sold, licensed, rented, or otherwise monetized;
+- c) Using the Software to provide services for a fee (e.g., SaaS, consulting, paid support, custom integrations);
+- d) Using the Software as part of an automated system, pipeline, or tool that supports commercial activity;
+- e) Any use intended for, or directed toward, commercial advantage or monetary compensation.
+
+---
 
 ## 2. Grant of License (Non-Commercial)
 
-Subject to the terms and conditions of this License, the Licensor hereby grants to you a worldwide, royalty-free, non-exclusive, perpetual license to:
+Subject to the terms and conditions of this License, the Licensor grants you a worldwide, royalty-free, non-exclusive, perpetual license to:
 
-- Use and Execute the Software.
-- Modify the Software and create Derivative Works.
-- Reproduce and Distribute the Software and any Derivative Works.
+- Use and execute the Software.
+- Modify the Software and create derivative works.
+- Reproduce and distribute the Software and any derivative works.
 
-**This grant is strictly limited to Non-Commercial Use only.**
+This grant is strictly limited to **Non-Commercial Use only**.
+
+---
 
 ## 3. Commercial License Requirement
 
-You must obtain a separate, valid Commercial License from the Licensor before engaging in any Commercial Use of the Software.
+You must obtain a separate Commercial License from the Licensor before any Commercial Use.
 
-The Commercial License will specify the terms, fees, and conditions under which the Software may be used commercially. Any Commercial Use without an active Commercial License is a breach of this agreement and is strictly prohibited.
+Any Commercial Use without a valid Commercial License is strictly prohibited and constitutes a breach of this License. The Licensor reserves the right to take legal action against unauthorized commercial usage.
 
-## 4. Source Code and Attribution
+---
 
-- **Source Code:** The source code of the Software is provided under this license and must be included with any distribution.
-- **Attribution:** You must retain all copyright notices, license terms, and disclaimers in the Software.
+## 4. Distribution Requirements
 
-## 5. Disclaimer of Warranty
+4.1. **Source Code**  
+The source code of the Software must be included with any redistribution.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+4.2. **Attribution**  
+All copyright notices, this license text, and any disclaimers must be preserved in all copies or substantial portions of the Software.
+
+4.3. **Derivative Works**  
+Derivative Works must clearly state that they are based on the Software and must retain attribution to the original authors.
+
+4.4. **No Misrepresentation**  
+You may not misrepresent the origin of the Software. You may not imply that your modified version is the official version.
+
+---
+
+## 5. Limitations
+
+- You may not sublicense the Software.
+- You may not remove, hide, or alter any notices about usage restrictions.
+- You may not attempt to circumvent the Non-Commercial limitation.
+- You may not use the Software for web scraping, automated downloading, or data harvesting in violation of any third-party terms of service.
+
+---
+
+## 6. Termination
+
+This License terminates automatically if:
+- You engage in Commercial Use without a valid Commercial License.
+- You violate any terms of this License.
+
+Upon termination, you must cease all use, distribution, and reproduction of the Software and its derivatives.
+
+Termination does not require notice from the Licensor.
+
+---
+
+## 7. No Trademark Rights
+
+This License does not grant permission to use the names, logos, or trademarks of the Licensor.
+
+---
+
+## 8. Governing Law
+
+This License is governed by the laws of the jurisdiction in which the Licensor resides, unless otherwise required by applicable law.
+
+---
+
+## 9. Disclaimer of Warranty
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+## 10. Acceptance
+
+By using, downloading, modifying, or distributing the Software, you acknowledge that you have read, understood, and agreed to the terms of this License.
