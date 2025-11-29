@@ -510,40 +510,75 @@ object ViewUtility {
 		}
 	}
 
+	/**
+	 * Reduces the size of non-Latin characters in a [TextView] to improve visual balance.
+	 *
+	 * This function iterates through the text of a `TextView` and identifies character clusters
+	 * that are not part of the Latin script (e.g., Arabic, Cyrillic, CJK). It then applies a
+	* `RelativeSizeSpan` to these clusters, reducing their font size by a specified factor.
+	 * This is useful for normalizing the appearance of mixed-script text where some characters
+	 * (like those in certain Asian or Middle Eastern languages) may appear disproportionately
+	 * tall compared to Latin characters, leading to uneven line height.
+	 *
+	 * The processing is performed asynchronously in a coroutine to avoid blocking the main thread.
+	 *
+	 * @param reductionFactor The factor by which to reduce the size of non-Latin characters.
+	 *                        Defaults to `0.8f` (i.e., 80% of the original size).
+	 * @param scope The [CoroutineScope] in which to launch the text processing task.
+	 *              Defaults to a scope using the `Default` dispatcher.
+	 * @param onDone A callback that is invoked on the main thread after the spannable text
+	 *               has been applied, passing the generated [Spannable] as an argument.
+	 */
 	@JvmStatic
 	fun TextView.normalizeTallSymbols(
 		reductionFactor: Float = 0.8f,
 		scope: CoroutineScope = CoroutineScope(Default),
 		onDone: (Spannable) -> Unit = {}
 	) {
+		// Get the full text from the TextView.
 		val fullText = this@normalizeTallSymbols.text.toString()
+		// If the text is empty, there's nothing to process, so we skip execution.
 		if (fullText.isEmpty()) {
 			logger.d("normalizeTallSymbols: empty text, skipping")
 			return
 		}
 
+		// Launch a coroutine on a background thread (Default dispatcher) to avoid blocking the UI.
 		scope.launch(Default) {
 			logger.d("normalizeTallSymbols: processing text=\"$fullText\"")
 
+			// Create a SpannableStringBuilder to apply formatting changes to the text.
 			val spannable = SpannableStringBuilder(fullText)
+			// Use BreakIterator to correctly identify boundaries of user-perceived
+			// characters (grapheme clusters). This is for handling complex scripts and emoji.
 			val boundaryIterator = getCharacterInstance(Locale.getDefault())
 			boundaryIterator.setText(fullText)
 
+			// Initialize the iterator to find the first character cluster.
 			var currentStart = boundaryIterator.first()
 			var currentEnd = boundaryIterator.next()
 
+			// Loop through each character cluster in the text.
 			while (currentEnd != BreakIterator.DONE) {
+				// Extract the current character cluster
+				// (which could be a single character or a more complex grapheme).
 				val cluster = fullText.substring(currentStart, currentEnd)
 
+				// Determine if this cluster should be reduced in size.
+				// A reduction is applied if the cluster contains any character that is:
+				// 1. Not a space character.
+				// 2. Not part of the Latin script (e.g., CJK, Arabic, Cyrillic, etc.).
 				val shouldReduce = cluster.any { char ->
 					!Character.isSpaceChar(char) &&
 						!Character.UnicodeScript.of(char.code).isLatin()
 				}
 
+				// If the cluster needs to be reduced, apply the RelativeSizeSpan.
 				if (shouldReduce) {
 					logger.d("normalizeTallSymbols: reducing " +
 						"cluster=\"$cluster\" at [$currentStart, $currentEnd]")
 					try {
+						// Apply a span that changes the font size relative to the default size.
 						spannable.setSpan(
 							RelativeSizeSpan(reductionFactor),
 							currentStart,
@@ -551,14 +586,17 @@ object ViewUtility {
 							Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
 						)
 					} catch (error: Exception) {
+						// Log any errors during the spanning process to avoid crashing the app.
 						logger.d("normalizeTallSymbols: span error $error")
 					}
 				}
 
+				// Move to the next character cluster for the next iteration.
 				currentStart = currentEnd
 				currentEnd = boundaryIterator.next()
 			}
 
+			// Switch back to the main thread to update the UI.
 			withContext(Dispatchers.Main) {
 				logger.d("normalizeTallSymbols: finished")
 				this@normalizeTallSymbols.text = spannable
@@ -567,6 +605,12 @@ object ViewUtility {
 		}
 	}
 
+	/**
+	 * Checks if a `UnicodeScript` is Latin.
+	 *
+	 * @return `true` if the script is [Character.UnicodeScript.LATIN], `false` otherwise.
+	 *         Handles `null` receivers gracefully by returning `false`.
+	 */
 	private fun Character.UnicodeScript?.isLatin(): Boolean {
 		return this == Character.UnicodeScript.LATIN
 	}
