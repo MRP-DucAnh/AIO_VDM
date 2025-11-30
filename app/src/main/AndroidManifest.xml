@@ -1,43 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- =========================================================================
-     Android Manifest Configuration
-     Defines application permissions, components, and system integration
-     for the AIO (All-In-One) application. Includes media playback,
-     browser functionality, file management, and cloud synchronization.
-     ========================================================================= -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:tools="http://schemas.android.com/tools"
 	tools:ignore="AllFilesAccessPolicy,ScopedStorage,ForegroundServicesPolicy,RequestInstallPackagesPolicy">
 
-	<!-- =======================
-	     REQUIRED PERMISSIONS
-	     Core system permissions needed for application functionality
-	     including network access, storage, and background operations.
-	     ======================= -->
-
-	<!-- Internet access for network requests (API, downloads, Parse server, etc.) -->
 	<uses-permission android:name="android.permission.INTERNET" />
-
-	<!-- Network state check (Wi-Fi/Mobile Data detection) -->
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
-	<!-- Wi-Fi state info (used in telemetry/logging) -->
 	<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-
-	<!-- Push notifications support (Android 13+) -->
 	<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
-	<!-- Vibration control (for notifications and alerts) -->
 	<uses-permission android:name="android.permission.VIBRATE" />
-
-	<!-- Auto-start and background service management -->
 	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 	<uses-permission android:name="android.permission.WAKE_LOCK" />
-
-	<!-- All files access (Android 11+, requires justification on Play Store) -->
 	<uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
 
-	<!-- File access (legacy support for Android <= 12 / API 32) -->
 	<uses-permission
 		android:name="android.permission.WRITE_EXTERNAL_STORAGE"
 		android:maxSdkVersion="32" />
@@ -45,20 +19,12 @@
 		android:name="android.permission.READ_EXTERNAL_STORAGE"
 		android:maxSdkVersion="32" />
 
-	<!-- Foreground service permissions -->
-	<!-- Used for handling background operations such as sync, downloads, and playback -->
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
-	<!-- APK installation permission (used for installing APKs directly from the app) -->
 	<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
-	<!-- =======================
-	     APPLICATION CONFIGURATION
-	     Main application definition with component declarations,
-	     theme configuration, and backend service integration.
-	     ======================= -->
 	<application
 		android:name="app.core.AIOApp"
 		android:enableOnBackInvokedCallback="true"
@@ -74,13 +40,6 @@
 		android:usesCleartextTraffic="true"
 		tools:targetApi="33">
 
-		<!-- ======================================================
-		     ACTIVITY DECLARATIONS
-		     Defines all application screens and their behavior
-		     including launch modes, themes, and intent filters.
-		     ====================================================== -->
-
-		<!-- Launcher activity (entry point of the app) -->
 		<activity
 			android:name="app.ui.others.startup.LauncherActivity"
 			android:exported="true">
@@ -90,7 +49,6 @@
 			</intent-filter>
 		</activity>
 
-		<!-- Splash/Opening screen activity -->
 		<activity
 			android:name="app.ui.others.startup.OpeningActivity"
 			android:excludeFromRecents="true"
@@ -100,7 +58,6 @@
 			android:taskAffinity=""
 			android:windowSoftInputMode="adjustResize" />
 
-		<!-- Activity for intercepting share/send intents -->
 		<activity
 			android:name="app.ui.others.information.IntentInterceptActivity"
 			android:clearTaskOnLaunch="true"
@@ -120,7 +77,6 @@
 			</intent-filter>
 		</activity>
 
-		<!-- Built-in media player activity -->
 		<activity
 			android:name="app.ui.others.media_player.MediaPlayerActivity"
 			android:exported="false"
@@ -133,7 +89,6 @@
 			android:theme="@style/style.application.video_player_activity"
 			android:windowSoftInputMode="adjustResize" />
 
-		<!-- Main container activity -->
 		<activity
 			android:name="app.ui.main.MotherActivity"
 			android:alwaysRetainTaskState="true"
@@ -145,72 +100,47 @@
 			android:theme="@style/style.application"
 			android:windowSoftInputMode="adjustPan" />
 
-		<!-- Advance browser settings activity -->
 		<activity
 			android:name="app.ui.main.fragments.settings.activities.browser.AdvBrowserSettingsActivity"
 			android:exported="false"
 			android:launchMode="singleTop"
 			android:windowSoftInputMode="adjustPan" />
 
-		<!-- User feedback screen -->
 		<activity
 			android:name="app.ui.others.information.UserFeedbackActivity"
 			android:exported="false"
 			android:launchMode="singleTop"
 			android:windowSoftInputMode="adjustPan" />
 
-		<!-- Browser: Bookmarks management activity -->
 		<activity
 			android:name="app.ui.main.fragments.browser.activities.BookmarksActivity"
 			android:exported="false"
 			android:launchMode="singleTop"
 			android:windowSoftInputMode="adjustPan" />
 
-		<!-- Browser: History management activity -->
 		<activity
 			android:name="app.ui.main.fragments.browser.activities.HistoryActivity"
 			android:exported="false"
 			android:launchMode="singleTop"
 			android:windowSoftInputMode="adjustPan" />
 
-		<!-- Empty layout screen (utility activity) -->
 		<activity
 			android:name="app.ui.others.startup.EmptyLayoutActivity"
 			android:exported="false"
 			android:launchMode="singleTop"
 			android:windowSoftInputMode="adjustPan" />
 
-		<!-- ======================================================
-		     SERVICE DECLARATIONS
-		     Background services for downloads, synchronization,
-		     and other long-running operations.
-		     ====================================================== -->
-
-		<!-- Foreground service handling downloads/sync -->
 		<service
 			android:name="app.core.engines.services.AIOForegroundService"
 			android:enabled="true"
 			android:exported="false"
 			android:foregroundServiceType="dataSync" />
 
-		<!-- ======================================================
-		     BROADCAST RECEIVER DECLARATIONS
-		     System event handlers for boot completion and
-		     service management.
-		     ====================================================== -->
-
-		<!-- Broadcast receiver for restarting idle services -->
 		<receiver
 			android:name="app.core.engines.services.RestartIdleServiceReceiver"
 			android:enabled="true"
 			android:exported="false" />
 
-		<!-- ======================================================
-		     CONTENT PROVIDER DECLARATIONS
-		     Secure file sharing and data access providers.
-		     ====================================================== -->
-
-		<!-- File provider for secure URI-based file sharing -->
 		<provider
 			android:name="androidx.core.content.FileProvider"
 			android:authorities="${applicationId}.provider"
@@ -221,48 +151,32 @@
 				android:resource="@xml/file_paths" />
 		</provider>
 
-		<!-- ======================================================
-		     BACKEND CONFIGURATION (Parse/Back4App)
-		     Cloud service integration for data synchronization,
-		     user management, and remote configuration.
-		     ====================================================== -->
-
-		<!-- Server URL -->
 		<meta-data
 			android:name="com.parse.SERVER_URL"
 			android:value="@string/text_back4app_server_url" />
 
-		<!-- Application ID -->
 		<meta-data
 			android:name="com.parse.APPLICATION_ID"
 			android:value="@string/text_back4app_app_id" />
 
-		<!-- Client Key -->
 		<meta-data
 			android:name="com.parse.CLIENT_KEY"
 			android:value="@string/text_back4app_client_key" />
+
 	</application>
 
-	<!-- =======================
-	     QUERIES DECLARATION
-	     Defines package intents for interacting with other
-	     installed applications (sharing, playback, etc.)
-	     ======================= -->
 	<queries>
-		<!-- Email sharing support -->
 		<intent>
 			<action android:name="android.intent.action.SEND" />
 			<data android:mimeType="message/rfc822" />
 		</intent>
 
-		<!-- Web browsing support -->
 		<intent>
 			<action android:name="android.intent.action.VIEW" />
 			<category android:name="android.intent.category.BROWSABLE" />
 			<data android:scheme="https" />
 		</intent>
 
-		<!-- Supported third-party apps for sharing and playback -->
 		<package android:name="com.google.android.youtube" />
 		<package android:name="com.instagram.android" />
 		<package android:name="com.facebook.katana" />

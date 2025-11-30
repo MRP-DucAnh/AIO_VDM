@@ -1,12 +1,12 @@
 buildscript {
 	ext.objectboxVersion = "5.0.1"
-
+	
 	repositories {
 		google()
 		mavenCentral()
 		gradlePluginPortal()
 	}
-
+	
 	dependencies {
 		classpath "io.objectbox:objectbox-gradle-plugin:$objectboxVersion"
 	}

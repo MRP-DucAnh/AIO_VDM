@@ -17,7 +17,7 @@ object LocalizationHelper {
 	}
 
 	@JvmStatic
-	fun getLocalizedString(context: Context, @StringRes resId: Int): String {
+	fun getLocalizedString(context: Context, resId: Int): String {
 		val resources = context.resources
 		return if (currentLocale != null) {
 			val config = Configuration(resources.configuration)

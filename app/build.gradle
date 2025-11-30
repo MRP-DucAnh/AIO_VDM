@@ -1,130 +1,130 @@
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
-    alias(libs.plugins.objectbox.db)
+	alias(libs.plugins.android.application)
+	alias(libs.plugins.kotlin.android)
+	alias(libs.plugins.kotlin.kapt)
+	alias(libs.plugins.objectbox.db)
 }
 
 android {
-    namespace 'com.aio'
-    compileSdkVersion 36
-    ndkVersion '28.0.12916984 rc3'
-
-    defaultConfig {
-        applicationId "com.aio.video_downloader"
-        minSdk 28
-        targetSdk 36
-        versionCode 82
-        versionName '2025.11.11'
-        vectorDrawables.useSupportLibrary = true
-        multiDexEnabled true
-
-        ndk {
-            abiFilters "x86", "x86_64", "armeabi-v7a", "arm64-v8a"
-        }
-    }
-
-    buildTypes {
-        debug {
-            debuggable true
-            minifyEnabled false
-            shrinkResources false
-            buildConfigField "boolean", "IS_DEBUG_MODE_ON", "true"
-        }
-
-        release {
-            minifyEnabled false
-            shrinkResources false
-            debuggable false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
-                    'proguard-rules.pro'
-            buildConfigField "boolean", "IS_DEBUG_MODE_ON", "false"
-        }
-    }
-
-    buildTypes.release.ndk.debugSymbolLevel = "FULL"
-    android.buildFeatures.buildConfig = true
-
-    packagingOptions {
-        exclude 'META-INF/LICENSE'
-        exclude 'META-INF/NOTICE'
-        exclude 'META-INF/*.kotlin_module'
-        jniLibs.useLegacyPackaging = true
-    }
-
-    splits {
-        abi {
-            enable true
-            reset()
-            include 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
-            universalApk true
-        }
-    }
-
-    compileOptions {
-        coreLibraryDesugaringEnabled true
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-
-    kotlin {
-        jvmToolchain(17)
-    }
-
-    dependenciesInfo {
-        includeInBundle false
-        includeInApk false
-    }
+	namespace 'com.aio'
+	compileSdkVersion 36
+	ndkVersion '28.0.12916984 rc3'
+	
+	defaultConfig {
+		applicationId "com.aio.video_downloader"
+		minSdk 28
+		targetSdk 36
+		versionCode 82
+		versionName '2025.11.11'
+		vectorDrawables.useSupportLibrary = true
+		multiDexEnabled true
+		
+		ndk {
+			abiFilters "x86", "x86_64", "armeabi-v7a", "arm64-v8a"
+		}
+	}
+	
+	buildTypes {
+		debug {
+			debuggable true
+			minifyEnabled false
+			shrinkResources false
+			buildConfigField "boolean", "IS_DEBUG_MODE_ON", "true"
+		}
+		
+		release {
+			minifyEnabled false
+			shrinkResources false
+			debuggable false
+			proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
+				'proguard-rules.pro'
+			buildConfigField "boolean", "IS_DEBUG_MODE_ON", "false"
+		}
+	}
+	
+	buildTypes.release.ndk.debugSymbolLevel = "FULL"
+	android.buildFeatures.buildConfig = true
+	
+	packagingOptions {
+		exclude 'META-INF/LICENSE'
+		exclude 'META-INF/NOTICE'
+		exclude 'META-INF/*.kotlin_module'
+		jniLibs.useLegacyPackaging = true
+	}
+	
+	splits {
+		abi {
+			enable true
+			reset()
+			include 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
+			universalApk true
+		}
+	}
+	
+	compileOptions {
+		coreLibraryDesugaringEnabled true
+		sourceCompatibility JavaVersion.VERSION_17
+		targetCompatibility JavaVersion.VERSION_17
+	}
+	
+	kotlin {
+		jvmToolchain(17)
+	}
+	
+	dependenciesInfo {
+		includeInBundle false
+		includeInApk false
+	}
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-
-    implementation libs.androidx.appcompat
-    implementation libs.androidx.viewpager2
-    implementation libs.androidx.cardview
-    implementation libs.androidx.core.ktx
-    implementation libs.constraint.layout
-    implementation libs.androidx.webkit
-    implementation libs.androidx.biometric
-    implementation libs.androidx.lifecycle.process
-
-    implementation libs.kotlin.coroutines.core
-    implementation libs.kotlin.coroutines
-
-    implementation libs.media3.exoplayer
-    implementation libs.media3.exoplayer.hls
-    implementation libs.media3.exoplayer.dash
-    implementation libs.media3.datasource
-    implementation libs.media3.ui
-    implementation libs.media3.session
-
-    implementation libs.objectbox.android
-    implementation libs.objectbox.kotlin
-
-    implementation libs.fst
-    implementation libs.jsoup
-    implementation libs.gson
-    implementation(libs.dsljson)
-    kapt(libs.dsljson)
-    compileOnly(libs.jsonbind.api)
-
-    implementation libs.retrofit
-    implementation libs.retrofit.converter.gson
-    implementation libs.okhttp
-
-    implementation libs.lottie
-    implementation libs.glide
-    implementation libs.circleimageview
-    implementation libs.permissionx
-
-    implementation libs.saf.storage
-    implementation libs.parse
-
-    implementation libs.ytdlp.library
-    implementation libs.ytdlp.ffmpeg
-    implementation libs.newpipe.extractor
-    implementation libs.mp4.iso.parser
-
-    coreLibraryDesugaring libs.desugar.jdk.libs.nio
+	implementation fileTree(dir: 'libs', include: ['*.jar'])
+	
+	implementation libs.androidx.appcompat
+	implementation libs.androidx.viewpager2
+	implementation libs.androidx.cardview
+	implementation libs.androidx.core.ktx
+	implementation libs.constraint.layout
+	implementation libs.androidx.webkit
+	implementation libs.androidx.biometric
+	implementation libs.androidx.lifecycle.process
+	
+	implementation libs.kotlin.coroutines.core
+	implementation libs.kotlin.coroutines
+	
+	implementation libs.media3.exoplayer
+	implementation libs.media3.exoplayer.hls
+	implementation libs.media3.exoplayer.dash
+	implementation libs.media3.datasource
+	implementation libs.media3.ui
+	implementation libs.media3.session
+	
+	implementation libs.objectbox.android
+	implementation libs.objectbox.kotlin
+	
+	implementation libs.fst
+	implementation libs.jsoup
+	implementation libs.gson
+	implementation(libs.dsljson)
+	kapt(libs.dsljson)
+	compileOnly(libs.jsonbind.api)
+	
+	implementation libs.retrofit
+	implementation libs.retrofit.converter.gson
+	implementation libs.okhttp
+	
+	implementation libs.lottie
+	implementation libs.glide
+	implementation libs.circleimageview
+	implementation libs.permissionx
+	
+	implementation libs.saf.storage
+	implementation libs.parse
+	
+	implementation libs.ytdlp.library
+	implementation libs.ytdlp.ffmpeg
+	implementation libs.newpipe.extractor
+	implementation libs.mp4.iso.parser
+	
+	coreLibraryDesugaring libs.desugar.jdk.libs.nio
 }

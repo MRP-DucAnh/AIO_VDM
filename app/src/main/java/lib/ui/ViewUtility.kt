@@ -515,7 +515,7 @@ object ViewUtility {
 	 *
 	 * This function iterates through the text of a `TextView` and identifies character clusters
 	 * that are not part of the Latin script (e.g., Arabic, Cyrillic, CJK). It then applies a
-	* `RelativeSizeSpan` to these clusters, reducing their font size by a specified factor.
+	 * `RelativeSizeSpan` to these clusters, reducing their font size by a specified factor.
 	 * This is useful for normalizing the appearance of mixed-script text where some characters
 	 * (like those in certain Asian or Middle Eastern languages) may appear disproportionately
 	 * tall compared to Latin characters, leading to uneven line height.
@@ -1177,19 +1177,6 @@ object ViewUtility {
 		return intArrayOf(view.measuredWidth, view.measuredHeight)
 	}
 
-	/**
-	 * Animates the visibility of a [targetView] with smooth fade-in or fade-out transition.
-	 *
-	 * This function uses ViewPropertyAnimator for hardware-accelerated alpha transitions
-	 * with proper visibility state management. Automatically handles visibility flag changes
-	 * at appropriate animation phases to ensure smooth visual transitions without flickering.
-	 *
-	 * @param targetView The [View] whose visibility needs animated transition.
-	 * @param visibility The target visibility state ([VISIBLE], [GONE], or [INVISIBLE]).
-	 *                   VISIBLE triggers fade-in, other values trigger fade-out.
-	 * @param duration The duration of the alpha animation in milliseconds. Longer durations
-	 *                 create more gradual, smoother fade transitions.
-	 */
 	@JvmStatic
 	fun animateViewVisibility(targetView: View, visibility: Int, duration: Int) {
 		val alpha = if (visibility == VISIBLE) 1f else 0f
@@ -1201,40 +1188,20 @@ object ViewUtility {
 			.withEndAction { if (visibility != VISIBLE) targetView.visibility = visibility }
 	}
 
-	/**
-	 * Applies a horizontal shake animation to a [targetView] with configurable timing parameters.
-	 *
-	 * This function creates a realistic shake effect by rapidly translating the view along the X-axis
-	 * in a decreasing amplitude pattern (10px → -10px → 5px → -5px → 0px). Uses ObjectAnimator
-	 * for smooth property animation and Handler for precise timing control of the animation sequence.
-	 * Automatically stops after the specified total duration to prevent infinite animation loops.
-	 *
-	 * @param targetView The [View] to apply the horizontal shake animation effect to.
-	 * @param durationOfShake The duration of each individual shake movement in milliseconds.
-	 *                        Controls the speed of each back-and-forth motion.
-	 * @param durationOfAnim The total duration of the entire shake animation sequence in milliseconds.
-	 *                       Defines how long the complete shaking effect will continue.
-	 */
 	@JvmStatic
 	fun shakeAnimationOnView(targetView: View, durationOfShake: Long, durationOfAnim: Long) {
-		// Create horizontal translation animation with decreasing amplitude for natural shake effect
 		val shakeX = ofFloat(
 			targetView, "translationX",
 			0f, 10f, -10f, 10f, -10f, 5f, -5f, 0f
 		)
 		shakeX.duration = durationOfShake
 
-		// Set up animator set to manage the shake animation sequence
 		val animatorSet = AnimatorSet()
 		animatorSet.play(shakeX)
 
-		// Create timing control for the complete animation duration
 		val handler = Handler(Looper.getMainLooper())
 		val endTime = System.currentTimeMillis() + durationOfAnim
 
-		/**
-		 * Recursive function that starts shake animations until total duration is reached
-		 */
 		fun startShaking() {
 			if (System.currentTimeMillis() < endTime) {
 				animatorSet.start()
@@ -1245,27 +1212,15 @@ object ViewUtility {
 		startShaking()
 	}
 
-	/**
-	 * Animates a view with a continuous fade-in and fade-out pulsing effect.
-	 *
-	 * This function creates an infinite alpha animation that cycles between transparent and opaque,
-	 * creating a subtle pulsing effect to draw attention to the view. Includes duplicate animation
-	 * prevention by checking for existing running animations. Uses the legacy AlphaAnimation API
-	 * for broad compatibility across Android versions.
-	 *
-	 * @param targetView The [View] to animate with fade pulsing effect. If null, function exits silently.
-	 */
 	@JvmStatic
 	fun animateFadInOutAnim(targetView: View?) {
 		if (targetView == null) return
 
-		// Check if animation already running to prevent duplicate animations
 		val current = targetView.animation
 		if (current != null && !current.hasEnded()) {
-			return   // already animating
+			return
 		}
 
-		// Create infinite alpha animation with reverse repeat mode for smooth pulsing
 		val anim = AlphaAnimation(0f, 1f).apply {
 			duration = 500
 			repeatCount = Animation.INFINITE
@@ -1275,48 +1230,22 @@ object ViewUtility {
 		targetView.startAnimation(anim)
 	}
 
-	/**
-	 * Stops any running animation on the given [view] and clears animation state.
-	 *
-	 * This function uses the legacy View.clearAnimation() method to immediately halt
-	 * any active animations and reset the view's transformation state. For modern
-	 * ViewPropertyAnimator or ObjectAnimator instances, consider also calling
-	 * view.animate().cancel() for complete animation termination.
-	 *
-	 * @param view The [View] to stop all animations on and reset to default state.
-	 */
 	@JvmStatic
 	fun closeAnyAnimation(view: View?) = view?.clearAnimation()
 
-	/**
-	 * Fades out a view with smooth alpha transition and optional completion callback.
-	 *
-	 * This function creates a fade-out animation that gradually reduces the view's opacity
-	 * from fully visible to completely transparent. Uses the legacy AlphaAnimation API
-	 * with fillAfter enabled to maintain the faded state after animation completion.
-	 * Includes animation listener for precise callback timing when fade completes.
-	 *
-	 * @param view The [View] to fade out from fully visible to completely transparent.
-	 * @param duration The duration of the fade-out animation in milliseconds (default: 300ms).
-	 *                 Longer durations create slower, more gradual fade effects.
-	 * @param onAnimationEnd Optional callback function executed when the fade animation
-	 *                       completes and the view is fully transparent.
-	 */
 	@JvmStatic
 	fun fadeOutView(
 		view: View?, duration: Long = 300L,
 		onAnimationEnd: (() -> Unit)? = null
 	) {
-		//Early return for null view provided
 		if (view == null) return
-		// Create alpha animation from fully opaque to fully transparent
 		val fadeOut = AlphaAnimation(1.0f, 0.0f).apply {
 			this.duration = duration
-			fillAfter = true  // Maintain transparent state after animation
+			fillAfter = true
 			setAnimationListener(object : Animation.AnimationListener {
 				override fun onAnimationStart(animation: Animation?) {}
 				override fun onAnimationEnd(animation: Animation?) {
-					onAnimationEnd?.invoke()  // Execute callback when fade completes
+					onAnimationEnd?.invoke()
 				}
 
 				override fun onAnimationRepeat(animation: Animation?) {}
@@ -1325,77 +1254,23 @@ object ViewUtility {
 		view.startAnimation(fadeOut)
 	}
 
-	/**
-	 * Safely updates the text of a [TextView] inside an [Activity].
-	 *
-	 * This method checks for a valid Activity and TextView before applying the text,
-	 * preventing crashes when the Activity is null, finishing, or the view is not found.
-	 * No extra references are stored, so it avoids memory-related issues.
-	 *
-	 * @param activity The Activity that contains the target TextView. If null, the call is ignored.
-	 * @param id The view ID of the TextView to update.
-	 * @param text The text value to set on the TextView.
-	 */
 	@JvmStatic
 	fun setTextViewText(activity: Activity?, @IdRes id: Int, text: String) {
-		// Safely find TextView and update text only if activity and view exist
 		activity?.findViewById<TextView>(id)?.text = text
 	}
 
-	/**
-	 * Sets the drawable of an [ImageView] within an [Activity] with comprehensive safety checks.
-	 *
-	 * This method safely updates ImageView content while handling null activities,
-	 * missing views, and null drawables. Prevents crashes when activities are destroyed
-	 * or during configuration changes by using null-safe navigation.
-	 *
-	 * @param activity The [Activity] context containing the target ImageView.
-	 *                 Null-safe handling prevents memory leaks from destroyed activities.
-	 * @param id The resource ID of the [ImageView] to update with the new drawable.
-	 * @param drawable The [Drawable] to display in the ImageView. Can be null to clear the image.
-	 */
 	@JvmStatic
 	fun setImageViewDrawable(activity: Activity?, @IdRes id: Int, drawable: Drawable?) {
-		// Safely update ImageView drawable with null handling for all parameters
 		activity?.findViewById<ImageView>(id)?.setImageDrawable(drawable)
 	}
 
-	/**
-	 * Gets the text content of a [TextView] within an [Activity] with safe fallback.
-	 *
-	 * This utility method retrieves TextView content while gracefully handling null
-	 * activities, missing views, and null text values. Returns empty string as default
-	 * to prevent null pointer exceptions in calling code.
-	 *
-	 * @param activity The [Activity] context where the TextView is located.
-	 *                 Null-safe access prevents crashes from destroyed activities.
-	 * @param id The resource ID of the [TextView] to retrieve text content from.
-	 * @return The text content of the specified TextView as a [String], or empty string
-	 *         if the Activity, TextView, or text content is null or unavailable.
-	 */
 	@JvmStatic
 	fun getTextViewText(activity: Activity?, @IdRes id: Int): String? {
-		// Safely retrieve text with null-to-string conversion for consistent return type
 		return activity?.findViewById<TextView>(id)?.text.toString()
 	}
 
-	/**
-	 * Gets the bitmap from an [ImageView] within an [Activity] with type safety.
-	 *
-	 * This method extracts the underlying bitmap from an ImageView's drawable while
-	 * performing comprehensive type checking. Only returns bitmaps from BitmapDrawable
-	 * instances, ensuring type safety and preventing class cast exceptions.
-	 *
-	 * @param activity The [Activity] context containing the target ImageView.
-	 *                 Uses null safety to handle destroyed or unavailable activities.
-	 * @param id The resource ID of the [ImageView] to extract the bitmap from.
-	 * @return The [Bitmap] from the ImageView if the drawable is a BitmapDrawable,
-	 *         or null if the Activity is null, ImageView not found, drawable is null,
-	 *         or drawable is not a BitmapDrawable instance.
-	 */
 	@JvmStatic
 	fun getImageViewBitmap(activity: Activity?, @IdRes id: Int): Bitmap? {
-		// Safely find ImageView and extract bitmap only from BitmapDrawable instances
 		val imageView = activity?.findViewById<ImageView>(id)
 		if (imageView != null) {
 			val drawable = imageView.drawable
@@ -1404,42 +1279,17 @@ object ViewUtility {
 		return null
 	}
 
-	/**
-	 * Gets the ID of a [View] with null safety and concise syntax.
-	 *
-	 * This utility function provides a clean way to access view IDs while handling
-	 * null views gracefully. Useful for conditional view operations and ID-based
-	 * view management where null safety is required.
-	 *
-	 * @param view The [View] to get the ID from. Can be null for safe handling.
-	 * @return The ID of the [View] as nullable Int, or null if the view is null.
-	 */
 	@JvmStatic
 	fun getId(view: View?): Int? = view?.id
 
-	/**
-	 * Loads a thumbnail image from a URL and sets it to an ImageView with intelligent orientation handling.
-	 *
-	 * This method performs network operations in background threads to prevent UI blocking.
-	 * Automatically detects portrait-oriented images and rotates them 90 degrees for proper display.
-	 * Includes comprehensive error handling with placeholder fallback and proper resource management.
-	 * Uses Glide for efficient image loading and caching after initial bitmap processing.
-	 *
-	 * @param thumbnailUrl The URL of the thumbnail image to load and display.
-	 * @param targetImageView The ImageView where the processed thumbnail will be displayed.
-	 * @param placeHolderDrawableId Optional placeholder drawable resource ID to display
-	 *                              if image loading fails or URL is inaccessible.
-	 */
 	@JvmStatic
 	fun loadThumbnailFromUrl(
 		thumbnailUrl: String,
 		targetImageView: ImageView,
 		placeHolderDrawableId: Int? = null
 	) {
-		// Execute the image loading in a background thread to prevent UI freezing
 		ThreadsUtility.executeInBackground(codeBlock = {
 			try {
-				// Create a connection to the image URL with proper configuration
 				val url = URL(thumbnailUrl)
 				val connection = url.openConnection() as HttpURLConnection
 				connection.doInput = true
@@ -1447,21 +1297,16 @@ object ViewUtility {
 				connection.readTimeout = 5000
 				connection.connect()
 
-				// Get the input stream and decode the image into a bitmap
 				val input: InputStream = connection.inputStream
 				val bitmap = decodeStream(input) ?: return@executeInBackground
 
-				// Check if the image is in portrait orientation (height > width)
 				val isPortrait = bitmap.height > bitmap.width
 
-				// Rotate the bitmap if it is portrait to ensure proper display orientation
 				val rotatedBitmap = if (isPortrait) {
 					rotateBitmap(bitmap, 90f)
 				} else bitmap
 
-				// Once the image is processed, update the UI on the main thread
 				ThreadsUtility.executeOnMain {
-					// Use Glide for efficient image loading and caching
 					Glide.with(targetImageView.context)
 						.load(rotatedBitmap).into(targetImageView)
 				}
@@ -1469,7 +1314,6 @@ object ViewUtility {
 				connection.disconnect()
 			} catch (error: Exception) {
 				logger.e("Error while loading thumbnail from a remote url:", error)
-				// Set placeholder image if provided, or leave it unchanged
 				if (placeHolderDrawableId != null) {
 					targetImageView.setImageResource(placeHolderDrawableId)
 				}
@@ -1477,30 +1321,14 @@ object ViewUtility {
 		})
 	}
 
-	/**
-	 * Rotates a bitmap by a specified angle with proper memory management.
-	 *
-	 * This method applies matrix transformation to create a rotated version of the bitmap.
-	 * It automatically recycles the original bitmap to free memory, making it suitable for
-	 * processing large images or working in memory-constrained environments. The rotation
-	 * is performed around the bitmap's center point.
-	 *
-	 * @param bitmap The original bitmap to rotate. Will be recycled after rotation.
-	 * @param angle The angle in degrees to rotate the bitmap (positive for clockwise).
-	 * @return A new bitmap instance containing the rotated image with identical dimensions
-	 *         and configuration as the original.
-	 */
 	@JvmStatic
 	fun rotateBitmap(bitmap: Bitmap, angle: Float): Bitmap {
-		// Create a matrix for rotation with the specified angle around center point
 		val matrix = Matrix().apply { postRotate(angle) }
 
-		// Create a rotated bitmap with the same configuration as the original
 		val rotatedBitmap = Bitmap.createBitmap(
 			bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true
 		)
 
-		// Recycle the original bitmap to free up memory if it's no longer needed
 		if (!bitmap.isRecycled) {
 			bitmap.recycle()
 		}
@@ -1508,59 +1336,31 @@ object ViewUtility {
 		return rotatedBitmap
 	}
 
-	/**
-	 * Retrieves a thumbnail image for a given file, either from the file itself or a provided URL.
-	 *
-	 * The method handles different file types, including audio, image, APK, and video files.
-	 * It uses the file's name to determine the type and attempts to extract a corresponding thumbnail:
-	 * - For audio files, it attempts to extract the album art.
-	 * - For image files, it scales the image to the required width.
-	 * - For APK files, it attempts to extract the app's icon.
-	 * - For video files, it attempts to retrieve a frame from the video file or uses a provided URL.
-	 *
-	 * If no thumbnail is available from these sources, the method returns null.
-	 *
-	 * @param targetFile The file for which the thumbnail is being requested.
-	 * @param thumbnailUrl An optional URL to an external thumbnail to be used if available.
-	 * @param requiredThumbWidth The required width for the thumbnail. The height will be adjusted
-	 *                           to maintain the aspect ratio.
-	 * @return A Bitmap representing the thumbnail image, or null if no thumbnail is found.
-	 */
 	@JvmStatic
 	fun getThumbnailFromFile(
 		targetFile: File,
 		thumbnailUrl: String? = null,
 		requiredThumbWidth: Int
 	): Bitmap? {
-		// Check if the file is audio and attempt to extract album art
 		if (FileSystemUtility.isAudioByName(targetFile.name)) {
 			extractAudioAlbumArt(targetFile)?.let { return it }
-		}
-
-		// Check if the file is an image and retrieve the bitmap, scaling it to the required width
-		else if (FileSystemUtility.isImageByName(targetFile.name)) {
+		} else if (FileSystemUtility.isImageByName(targetFile.name)) {
 			getBitmapFromFile(imageFile = targetFile)?.let {
 				return scaleBitmap(it, requiredThumbWidth)
 			}
-		}
-
-		// If the file is an APK, retrieve its icon/thumbnail
-		else if (targetFile.name.endsWith(".apk", true)) {
+		} else if (targetFile.name.endsWith(".apk", true)) {
 			var apkBitmap: Bitmap? = null
 			getApkThumbnail(targetFile, onApkIconFound = { bmp -> apkBitmap = bmp; bmp })
 			if (apkBitmap != null) return apkBitmap
 		}
 
-		// For video files or unknown types, attempt to extract a frame as the thumbnail
 		val retriever = MediaMetadataRetriever()
 		try {
 			var originalBitmap: Bitmap? = null
-			// Attempt to use the provided thumbnail URL
 			if (!thumbnailUrl.isNullOrEmpty()) {
 				originalBitmap = getBitmapFromThumbnailUrl(thumbnailUrl)
 			}
 
-			// If no URL, try extracting a frame from the video file itself
 			if (originalBitmap == null) {
 				retriever.setDataSource(targetFile.absolutePath)
 				originalBitmap = retriever
@@ -1568,7 +1368,6 @@ object ViewUtility {
 					?: retriever.frameAtTime
 			}
 
-			// Scale the bitmap to the required width, maintaining the aspect ratio
 			originalBitmap?.let {
 				if (it.width <= 0) return null
 				val aspectRatio = it.height.toFloat() / it.width
@@ -1581,24 +1380,9 @@ object ViewUtility {
 			retriever.release()
 		}
 
-		return null  // Return null if no thumbnail could be found
+		return null
 	}
 
-	/**
-	 * Attempts to extract and display the application icon from an APK file with comprehensive fallback handling.
-	 *
-	 * This method uses the Android package manager to parse APK files and extract embedded application icons.
-	 * It handles various edge cases including missing package info, corrupted APKs, and extraction failures.
-	 * Provides multiple output options including direct ImageView updates and bitmap callbacks for flexibility.
-	 * Includes proper scaling and padding configuration for optimal icon display in thumbnail contexts.
-	 *
-	 * @param apkFile The APK file object from which to extract the application icon.
-	 *                Must exist and have .apk extension; falls back to default if invalid.
-	 * @param imageViewHolder The ImageView to display the extracted icon in. Optional - can be null.
-	 * @param defaultThumbDrawable Fallback drawable to use if icon extraction fails or APK is invalid.
-	 * @param onApkIconFound Optional callback that receives the extracted bitmap for custom processing.
-	 * @return True if the application icon was successfully extracted and applied, false otherwise.
-	 */
 	@JvmStatic
 	fun getApkThumbnail(
 		apkFile: File,
@@ -1606,10 +1390,8 @@ object ViewUtility {
 		defaultThumbDrawable: Drawable? = null,
 		onApkIconFound: ((Bitmap) -> Bitmap)? = null
 	): Boolean {
-		// Validate file existence and extension before processing
 		val apkExtension = ".apk".lowercase(Locale.ROOT)
 		if (!apkFile.exists() || !apkFile.name.endsWith(apkExtension)) {
-			// Apply fallback drawable and return failure for invalid APK files
 			imageViewHolder?.apply { scaleType = ImageView.ScaleType.CENTER_INSIDE }
 			return false
 		}
@@ -1618,83 +1400,56 @@ object ViewUtility {
 		return try {
 			val apkPath = apkFile.absolutePath
 
-			// Extract package information from APK file to access application metadata
 			val packageInfo = packageManager.getPackageArchiveInfo(
 				apkPath, PackageManager.GET_META_DATA
 			)
 
-			// Process application info if package was successfully parsed
 			packageInfo?.applicationInfo?.let { appInfo ->
-				// Set source directories to enable icon loading from APK context
 				appInfo.sourceDir = apkPath
 				appInfo.publicSourceDir = apkPath
 
-				// Load the application icon using package manager
 				val drawableIcon = appInfo.loadIcon(packageManager)
 
-				// Apply the extracted icon to the ImageView with optimal display settings
 				imageViewHolder?.setImageDrawable(drawableIcon)
 				imageViewHolder?.scaleType = ImageView.ScaleType.CENTER_INSIDE
 				imageViewHolder?.setPadding(0, 0, 0, 0)
 
-				// Convert drawable to bitmap and invoke callback for additional processing
 				val bitmap = drawableToBitmap(drawableIcon)
 				if (bitmap != null) {
 					onApkIconFound?.invoke(bitmap)
 				}
 
-				return true  // Successfully extracted and applied APK icon
+				return true
 			}
 
-			// Fallback: No package info found, apply default drawable
 			imageViewHolder?.setImageDrawable(defaultThumbDrawable)
-			false  // Failed to extract icon from APK
+			false
 
 		} catch (error: Exception) {
-			// Log extraction error and apply graceful fallback with adjusted display settings
 			logger.e("Error found while extracting app icon thumbnail from an apk file:", error)
 			imageViewHolder?.apply {
 				scaleType = ImageView.ScaleType.FIT_CENTER
 				setPadding(0, 0, 0, 0)
 				setImageDrawable(defaultThumbDrawable)
 			}
-			false  // Exception occurred during extraction process
+			false
 		}
 	}
 
-	/**
-	 * Converts a [Drawable] to a [Bitmap] with intelligent handling of different drawable types.
-	 *
-	 * This method efficiently handles BitmapDrawable instances by returning their existing bitmap
-	 * without unnecessary conversion. For other drawable types, it creates a new bitmap using
-	 * the drawable's intrinsic dimensions or provides safe defaults for dimension-less drawables.
-	 * Includes comprehensive error handling to prevent crashes during drawable rendering and
-	 * bitmap creation operations.
-	 *
-	 * @param drawable The [Drawable] to be converted into a bitmap representation. Can be any
-	 *                 drawable type including VectorDrawable, ShapeDrawable, or BitmapDrawable.
-	 * @return A [Bitmap] representation of the drawable, or null if conversion fails due to
-	 *         invalid dimensions, rendering errors, or insufficient memory.
-	 */
 	@JvmStatic
 	fun drawableToBitmap(drawable: Drawable): Bitmap? {
-		// Check if the drawable is already a BitmapDrawable (no need to convert)
 		if (drawable is BitmapDrawable) return drawable.bitmap
 
-		// Set a default size if the drawable has no intrinsic size
 		val width = drawable.intrinsicWidth.takeIf { it > 0 } ?: 1
 		val height = drawable.intrinsicHeight.takeIf { it > 0 } ?: 1
 
 		return try {
-			// Create a bitmap with the drawable's intrinsic size
 			val bitmap = createBitmap(width, height)
 			val canvas = Canvas(bitmap)
 
-			// Set bounds and draw the drawable onto the canvas
 			drawable.setBounds(0, 0, canvas.width, canvas.height)
 			drawable.draw(canvas)
 
-			// Return the created bitmap
 			bitmap
 		} catch (error: Exception) {
 			logger.e("Error found while converting drawable to a bitmap:", error)
@@ -1702,21 +1457,6 @@ object ViewUtility {
 		}
 	}
 
-	/**
-	 * Scales the given [targetBitmap] to the specified width while maintaining aspect ratio.
-	 *
-	 * This method uses a memory-efficient scaling approach by disabling bitmap filtering
-	 * to reduce computational overhead and memory usage. It calculates the target height
-	 * automatically based on the original aspect ratio to prevent image distortion.
-	 * Includes optimization to return the original bitmap unchanged when dimensions
-	 * already match the required size, avoiding unnecessary bitmap recreation.
-	 *
-	 * @param targetBitmap The original Bitmap to be scaled to thumbnail dimensions.
-	 * @param requiredThumbWidth The target width for the scaled thumbnail in pixels.
-	 *                           Must be positive; returns original if invalid.
-	 * @return A new scaled Bitmap with preserved aspect ratio, or the original bitmap
-	 *         if scaling is not required or parameters are invalid.
-	 */
 	@JvmStatic
 	fun scaleBitmap(targetBitmap: Bitmap, requiredThumbWidth: Int): Bitmap {
 		if (requiredThumbWidth <= 0 || targetBitmap.width <= 0) return targetBitmap
@@ -1724,29 +1464,13 @@ object ViewUtility {
 		val aspectRatio = targetBitmap.height.toFloat() / targetBitmap.width
 		val targetHeight = (requiredThumbWidth * aspectRatio).toInt()
 
-		// Avoid unnecessary scaling if dimensions are same
 		if (targetBitmap.width == requiredThumbWidth && targetBitmap.height == targetHeight) {
 			return targetBitmap
 		}
 
-		// Use createScaledBitmap directly with "filter = false" to reduce memory overhead
 		return targetBitmap.scale(requiredThumbWidth, targetHeight, false)
 	}
 
-	/**
-	 * Extracts embedded album art from the specified audio file using MediaMetadataRetriever.
-	 *
-	 * This method efficiently retrieves album artwork embedded in audio files (MP3, FLAC, etc.)
-	 * while minimizing memory usage through intelligent bitmap sampling. It first analyzes
-	 * the embedded image dimensions without full decoding, then applies appropriate scaling
-	 * to prevent loading excessively large images into memory. Ensures proper resource
-	 * cleanup of the MediaMetadataRetriever to prevent memory leaks.
-	 *
-	 * @param audioFile The audio file object from which to extract embedded album artwork.
-	 *                  Must exist and be accessible; returns null if file doesn't exist.
-	 * @return A decoded Bitmap of the embedded album art scaled to reasonable dimensions,
-	 *         or null if no artwork is present, file is inaccessible, or extraction fails.
-	 */
 	@JvmStatic
 	fun extractAudioAlbumArt(audioFile: File): Bitmap? {
 		if (!audioFile.exists()) return null
@@ -1756,11 +1480,9 @@ object ViewUtility {
 			retriever.setDataSource(audioFile.absolutePath)
 			val embeddedPicture = retriever.embeddedPicture ?: return null
 
-			// Use inJustDecodeBounds to avoid decoding large images unnecessarily
 			val optionsBounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
 			decodeByteArray(embeddedPicture, 0, embeddedPicture.size, optionsBounds)
 
-			// Define a reasonable max dimension for album art (e.g., 412x412)
 			val maxSize = 412
 			val scale = maxOf(1, maxOf(optionsBounds.outWidth, optionsBounds.outHeight) / maxSize)
 
@@ -1777,20 +1499,6 @@ object ViewUtility {
 		}
 	}
 
-	/**
-	 * Downloads and decodes a Bitmap from a given image URL with comprehensive error handling.
-	 *
-	 * This function establishes a secure network connection, validates the HTTP response code
-	 * and content type, then decodes the image stream into a Bitmap. It implements proper
-	 * resource management by ensuring all streams and connections are closed in finally blocks,
-	 * preventing memory leaks and resource exhaustion. Includes timeout protection and
-	 * content validation to handle malformed responses gracefully.
-	 *
-	 * @param thumbnailUrl The URL string pointing to the remote thumbnail image resource.
-	 *                     Returns null if the URL is null, empty, or inaccessible.
-	 * @return The decoded Bitmap object if successful, null if network failure, invalid
-	 *         response, or image decoding error occurs.
-	 */
 	@JvmStatic
 	fun getBitmapFromThumbnailUrl(thumbnailUrl: String?): Bitmap? {
 		if (thumbnailUrl.isNullOrEmpty()) return null
@@ -1825,24 +1533,6 @@ object ViewUtility {
 		}
 	}
 
-	/**
-	 * Saves the given [Bitmap] to the app's internal storage with configurable format and quality.
-	 *
-	 * This method writes the bitmap to a private file within the application's internal storage
-	 * directory, ensuring data isolation and security. It handles the complete file output
-	 * stream lifecycle and provides compression control to balance image quality and storage
-	 * efficiency. The resulting file path can be used to reference the saved image later.
-	 *
-	 * @param bitmapToSave The Bitmap image data to be persisted to internal storage.
-	 * @param fileName The name of the file (without path) to save the bitmap as.
-	 *                 Should include appropriate file extension matching the format.
-	 * @param format The image compression format to use when encoding the bitmap.
-	 *               Defaults to [Bitmap.CompressFormat.JPEG] for photographic content.
-	 * @param quality The compression quality level ranging from 0 (lowest) to 100 (highest).
-	 *                Defaults to 60 for reasonable quality with moderate file size.
-	 * @return The absolute file system path to the saved image file, or null if saving
-	 *         failed due to I/O errors or compression failures.
-	 */
 	@JvmStatic
 	fun saveBitmapToFile(
 		bitmapToSave: Bitmap,
@@ -1854,7 +1544,6 @@ object ViewUtility {
 			val modePrivate = Context.MODE_PRIVATE
 			val appContext = INSTANCE
 			appContext.openFileOutput(fileName, modePrivate).use { outputStream ->
-				// Compress and write bitmap to output stream
 				if (!bitmapToSave.compress(format, quality, outputStream)) return null
 			}
 
@@ -1865,19 +1554,6 @@ object ViewUtility {
 		}
 	}
 
-	/**
-	 * Loads a [Bitmap] from a given image [File] with existence validation and error handling.
-	 *
-	 * This method performs file system checks to ensure the target file exists and is readable
-	 * before attempting bitmap decoding. It leverages Android's built-in bitmap decoding
-	 * capabilities with automatic format detection for common image types (JPEG, PNG, WEBP).
-	 * Provides graceful failure handling for corrupted, unreadable, or missing image files.
-	 *
-	 * @param imageFile The image file object from which the bitmap should be decoded and loaded.
-	 *                  Must represent a valid, accessible image file in supported format.
-	 * @return A decoded [Bitmap] object if successful, null if the file doesn't exist,
-	 *         is unreadable, contains unsupported format, or decoding fails.
-	 */
 	@JvmStatic
 	fun getBitmapFromFile(imageFile: File): Bitmap? {
 		return try {
@@ -1892,35 +1568,18 @@ object ViewUtility {
 		}
 	}
 
-	/**
-	 * Checks whether a given image file is entirely black by analyzing its pixel content.
-	 *
-	 * This method employs a memory-efficient approach by first loading only the image bounds
-	 * to calculate an optimal downscaling factor, then analyzing a scaled-down version of the
-	 * image. This prevents excessive memory usage while maintaining accurate detection of
-	 * completely black images. The algorithm iterates through all pixels and returns early
-	 * upon finding any non-black pixel for optimal performance.
-	 *
-	 * @param targetImageFile The image file to be analyzed for complete blackness.
-	 *                       Returns false if the file is null, doesn't exist, or cannot be decoded.
-	 * @return True if every pixel in the image is completely black (RGB 0,0,0),
-	 *         false if any non-black pixel is found or if image loading fails.
-	 */
 	@JvmStatic
 	fun isBlackThumbnail(targetImageFile: File?): Boolean {
 		if (targetImageFile == null || !targetImageFile.exists()) return false
 
-		// Step 1: Decode image bounds only (no memory allocation for pixels)
 		val options = BitmapFactory.Options().apply {
 			inJustDecodeBounds = true
 		}
 		decodeFile(targetImageFile.absolutePath, options)
 
-		// Step 2: Calculate downscale factor to reduce memory footprint
 		val maxSize = 64
 		val scale = maxOf(1, maxOf(options.outWidth, options.outHeight) / maxSize)
 
-		// Step 3: Decode scaled-down bitmap for analysis
 		val decodeOptions = BitmapFactory.Options().apply {
 			inSampleSize = scale
 		}
@@ -1928,77 +1587,40 @@ object ViewUtility {
 		val bitmap = decodeFile(targetImageFile.absolutePath, decodeOptions)
 			?: return false
 
-		// Step 4: Check if all pixels are black with early termination
 		for (x in 0 until bitmap.width) {
 			for (y in 0 until bitmap.height) {
 				if (bitmap[x, y] != Color.BLACK) {
-					bitmap.recycle() // Free memory immediately upon detection
+					bitmap.recycle()
 					return false
 				}
 			}
 		}
 
-		bitmap.recycle() // Always recycle bitmap to avoid memory leaks
+		bitmap.recycle()
 		return true
 	}
 
-	/**
-	 * Applies a Gaussian blur effect to the given [Bitmap] using RenderScript for hardware acceleration.
-	 *
-	 * This implementation uses the deprecated [RenderScript] API, which remains the most efficient
-	 * solution for devices below API 31 (Android 12). For Android 12 and above, consider migrating
-	 * to [RenderEffect] with [Paint.setRenderEffect] for future compatibility. The blur radius is
-	 * automatically clamped to the supported range to ensure stable operation across all devices.
-	 *
-	 * @param bitmap The input [Bitmap] to be processed with Gaussian blur effect.
-	 * @param radius The blur radius controlling effect intensity, clamped between `0f` and `25f`.
-	 *               Default is `20f` for moderate blur. Larger values increase blur strength but
-	 *               also processing time. Values outside range are automatically constrained.
-	 *
-	 * @return A new blurred [Bitmap] with identical dimensions and configuration as the input,
-	 *         preserving original image properties while applying the visual blur effect.
-	 *
-	 * @see RenderScript
-	 * @see ScriptIntrinsicBlur
-	 */
 	@Suppress("DEPRECATION")
 	fun blurBitmap(bitmap: Bitmap, radius: Float = 20f): Bitmap {
 		val safeConfig = bitmap.config ?: Bitmap.Config.ARGB_8888
 		val rs = RenderScript.create(INSTANCE)
 
-		// Create input allocation from the bitmap for RenderScript processing
 		val input = Allocation.createFromBitmap(rs, bitmap)
-
-		// Prepare output allocation to receive blurred result
 		val output = Allocation.createTyped(rs, input.type)
 
-		// Initialize the intrinsic blur script with optimized parameters
 		val script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs))
-		script.setRadius(radius.coerceIn(0f, 25f)) // Radius must be in [0..25]
+		script.setRadius(radius.coerceIn(0f, 25f))
 		script.setInput(input)
 		script.forEach(output)
 
-		// Copy result into a new bitmap with original configuration
 		val blurred = createBitmap(bitmap.width, bitmap.height, safeConfig)
 		output.copyTo(blurred)
 
-		// Clean up resources to prevent memory leaks in RenderScript context
 		rs.destroy()
 
 		return blurred
 	}
 
-	/**
-	 * Sets a drawable on the left side of a [TextView] using a specified drawable resource ID.
-	 *
-	 * This extension method provides a convenient way to add left-aligned icons or indicators
-	 * to text views without manual drawable management. It automatically handles bounds calculation
-	 * and proper drawable positioning within the text view's compound drawables array.
-	 *
-	 * @receiver TextView on which the left-side drawable will be positioned and displayed.
-	 * @param drawableResIdRes The resource ID of the drawable to be displayed on the left side.
-	 *                         The drawable is automatically scaled to its intrinsic dimensions.
-	 */
 	@JvmStatic
 	fun TextView.setLeftSideDrawable(drawableResIdRes: Int) {
 		val drawable = getDrawable(INSTANCE, drawableResIdRes)
@@ -2007,10 +1629,13 @@ object ViewUtility {
 	}
 
 	@JvmStatic
-	fun TextView.setRightSideDrawable(drawableResIdRes: Int, keepExistingDrawables: Boolean = false) {
-		val newDrawable = getDrawable(INSTANCE, drawableResIdRes)
+	fun TextView.setRightSideDrawable(
+		drawableResId: Int,
+		preserveExistingDrawables: Boolean = false
+	) {
+		val newDrawable = getDrawable(INSTANCE, drawableResId)
 		newDrawable?.setBounds(0, 0, newDrawable.intrinsicWidth, newDrawable.intrinsicHeight)
-		if (keepExistingDrawables) {
+		if (preserveExistingDrawables) {
 			val (left, top, _, bottom) = this.compoundDrawables
 			this.setCompoundDrawables(left, top, newDrawable, bottom)
 		} else {
@@ -2018,27 +1643,11 @@ object ViewUtility {
 		}
 	}
 
-	/**
-	 * Matches the height of a [View] to the top display cutout (notch) area if present on the device.
-	 *
-	 * This extension function should be used when designing adaptive layouts that need to accommodate
-	 * modern phones with notches, punch-hole cameras, or other display cutouts. It ensures proper
-	 * spacing and prevents content from being obscured by the cutout area. The height matching
-	 * is performed after the view's layout is complete to ensure accurate measurement.
-	 */
 	@JvmStatic
 	fun View.matchHeightToTopCutout() {
 		doOnLayout { updateCutoutHeight() }
 	}
 
-	/**
-	 * Updates the height of a [View] to match the height of the top display cutout area if present.
-	 *
-	 * This method examines the window insets to detect display cutouts and automatically adjusts
-	 * the view's layout parameters to align with the cutout dimensions. It handles multiple cutout
-	 * scenarios and selects the appropriate bounding rectangle that starts from the top edge (y=0).
-	 * Essential for creating notch-aware layouts that maintain visual consistency across devices.
-	 */
 	@JvmStatic
 	fun View.updateCutoutHeight() {
 		val rootWindowInsets = rootWindowInsets
@@ -2055,45 +1664,14 @@ object ViewUtility {
 		}
 	}
 
-	/**
-	 * Sets the text color of a [TextView] using a color resource ID with type safety.
-	 *
-	 * This extension method simplifies text color assignment by handling resource resolution
-	 * internally and providing a more Kotlin-idiomatic API compared to the native setTextColor
-	 * method. It automatically retrieves the color from the application resources and applies it.
-	 *
-	 * @receiver TextView whose text color will be modified and updated.
-	 * @param colorResId The color resource ID to be resolved and applied to the text.
-	 */
 	@JvmStatic
 	fun TextView.setTextColorKT(colorResId: Int) {
 		this.setTextColor(INSTANCE.getColor(colorResId))
 	}
 
-	/**
-	 * Converts an integer value in density-independent pixels (dp) to physical pixels (px).
-	 *
-	 * This extension function provides a convenient way to convert dp values to pixel values
-	 * using the system's display density metrics. Essential for creating responsive layouts
-	 * that maintain consistent sizing across different screen densities and resolutions.
-	 *
-	 * @receiver The dp value to be converted to pixels for actual screen rendering.
-	 * @return The corresponding pixel value as an integer, rounded from density calculation.
-	 */
 	@JvmStatic
 	fun Int.dpToPx(): Int = (this * Resources.getSystem().displayMetrics.density).toInt()
 
-	/**
-	 * Changes the app's theme to dark or light mode based on persistent user preference settings.
-	 *
-	 * This method forcefully applies the selected theme regardless of system default settings,
-	 * ensuring consistent visual experience across the application. It reads the theme preference
-	 * from a dedicated settings file and applies the corresponding night mode configuration.
-	 * Additionally updates the system navigation and status bars to match the chosen theme
-	 * for complete visual harmony.
-	 *
-	 * @param activity The current activity where the theme should be applied and rendered.
-	 */
 	@JvmStatic
 	fun changesSystemTheme(activity: BaseActivity) {
 		val tempFile = File(INSTANCE.filesDir, AIO_SETTING_DARK_MODE_FILE_NAME)
@@ -2110,20 +1688,6 @@ object ViewUtility {
 		}
 	}
 
-	/**
-	 * Detects and returns the current screen orientation of the given Activity as a descriptive string.
-	 *
-	 * Analyzes the device's configuration to determine whether the user interface is currently
-	 * displayed in landscape or portrait mode. This is essential for responsive layout adjustments,
-	 * orientation-specific optimizations, and conditional UI behavior based on screen aspect ratio.
-	 *
-	 * @param activity The Activity instance whose current screen orientation is to be determined
-	 *                 and analyzed for layout and behavior decisions.
-	 * @return A string representing the current orientation state with possible values:
-	 *         - "landscape" when the device width exceeds height (horizontal layout)
-	 *         - "portrait" when the device height exceeds width (vertical layout)
-	 *         - "undefined" when the orientation cannot be determined or is square aspect
-	 */
 	@JvmStatic
 	fun getCurrentOrientation(activity: Activity): String {
 		return when (activity.resources.configuration.orientation) {
@@ -2133,55 +1697,35 @@ object ViewUtility {
 		}
 	}
 
-	/**
-	 * Dynamically shrinks text content to fit within the available width of a TextView while
-	 * preserving important endings. Intelligently trims text from the end, prioritizing removal of
-	 * specified end patterns before general character removal. Handles measurement failures gracefully
-	 * and ensures text remains readable with minimum length constraints.
-	 *
-	 * @param textView The TextView component whose text needs to be fitted within its bounds
-	 * @param text The original text content that may exceed available display width
-	 * @param endMatch The suffix pattern to prioritize for removal during text shrinking operations
-	 */
 	@JvmStatic
 	fun shrinkTextToFitView(textView: TextView?, text: String, endMatch: String) {
-		// Safely return if null conditions are matched
 		if (textView == null) return
 
-		// Calculate available width accounting for padding to get true display area
 		val availableWidth = textView.width - textView.paddingStart - textView.paddingEnd
 		logger.d("Fit text: \"$text\" endMatch=\"$endMatch\"")
 
-		// If view width isn't available yet, retry after layout pass when dimensions are known
 		if (availableWidth <= 0) {
 			textView.doOnLayout { shrinkTextToFitView(textView, text, endMatch) }
 			return
 		}
 
 		var newText = text
-		// Create a copy of the TextView's paint for accurate text measurement without side effects
 		val paint = Paint(textView.paint)
 
 		try {
-			// Only attempt to trim if the text ends with the specified pattern for intelligent shortening
 			if (newText.endsWith(endMatch, ignoreCase = true)) {
 				logger.d("Trimming text end \"$endMatch\" if needed")
-				// Gradually remove characters until text fits or becomes too short for readability
 				while (paint.measureText(newText) > availableWidth && newText.length > 4) {
 					newText = if (newText.endsWith(endMatch, ignoreCase = true)) {
-						// Preferentially remove the endMatch pattern first for semantic preservation
 						newText.dropLast(endMatch.length)
 					} else {
-						// Fall back to removing single characters when pattern is exhausted
 						newText.dropLast(1)
 					}
 				}
 				logger.d("Trimmed text: \"$newText\"")
 			}
-			// Apply the potentially modified text to the TextView for display
 			textView.text = newText
 		} catch (error: Exception) {
-			// Fall back to original text if measurement fails to prevent display issues
 			logger.e("ShrinkText : Font measurement failed for text=$text", error)
 			textView.text = text
 		}
