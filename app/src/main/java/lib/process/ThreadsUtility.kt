@@ -11,7 +11,6 @@ import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -22,7 +21,7 @@ object ThreadsUtility : CoroutineScope {
 
 	private val logger = LogHelperUtils.from(javaClass)
 
-	private const val JOB_TIMEOUT = (10 * 1000 * 60L)
+	private const val JOB_TIMEOUT = (30 * 1000L)
 	private const val DEFAULT_RETRY_COUNT = 3
 	private const val DEFAULT_RETRY_DELAY = 1000L
 
@@ -62,7 +61,7 @@ object ThreadsUtility : CoroutineScope {
 		while (currentRetry <= retryCount) {
 			try {
 				val result = codeBlock()
-				onSuccess(result)
+				withContext(Dispatchers.Main) { onSuccess(result) }
 				return@launch
 			} catch (error: Exception) {
 				lastError = error
@@ -77,7 +76,13 @@ object ThreadsUtility : CoroutineScope {
 			}
 		}
 
-		onFinalError(lastError ?: Exception("Unknown error after $retryCount retries"))
+		lastError?.let { error ->
+			withContext(Dispatchers.Main) {
+				onFinalError(error)
+			}
+		} ?: withContext(Dispatchers.Main) {
+			onFinalError(Exception("Unknown error after $retryCount retries"))
+		}
 	}
 
 	suspend fun executeOnMain(codeBlock: suspend () -> Unit) {
@@ -130,13 +135,11 @@ object ThreadsUtility : CoroutineScope {
 	}
 
 	fun <T> createSafeFlow(block: () -> Flow<T>): Flow<T> {
-		return flow {
-			block().collect { value ->
-				emit(value)
+		return block()
+			.flowOn(Dispatchers.IO)
+			.catch { error ->
+				logger.e("Error in flow:", error)
 			}
-		}.flowOn(Dispatchers.IO).catch { error ->
-			logger.e("Error in flow:", error)
-		}
 	}
 
 	fun <T> collectFlowOnLifecycle(
@@ -156,7 +159,7 @@ object ThreadsUtility : CoroutineScope {
 
 		return { input: T ->
 			job?.cancel()
-			job = launch {
+			job = launch(Dispatchers.Main) {
 				delay(delayMs)
 				block(input)
 			}

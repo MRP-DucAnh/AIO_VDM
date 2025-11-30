@@ -5,6 +5,7 @@ import android.os.Looper;
 
 import androidx.annotation.NonNull;
 
+import java.lang.ref.WeakReference;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
 
@@ -13,9 +14,9 @@ public final class AsyncJobUtils<TaskResult> {
     private final LogHelperUtils logger = LogHelperUtils.from(getClass());
     private static final Handler UI_HANDLER = new Handler(Looper.getMainLooper());
 
-    private BackgroundTask<TaskResult> backgroundTask;
-    private ResultTask<TaskResult> resultTask;
-    private ProgressUpdateTask progressUpdateTask;
+    private WeakReference<BackgroundTask<TaskResult>> backgroundTaskRef;
+    private WeakReference<ResultTask<TaskResult>> resultTaskRef;
+    private WeakReference<ProgressUpdateTask> progressUpdateTaskRef;
     private ExecutorService executorService;
     private Thread backgroundThread;
     private FutureTask<?> backgroundFutureTask;
@@ -43,12 +44,18 @@ public final class AsyncJobUtils<TaskResult> {
     }
 
     public void start() {
-        if (backgroundTask != null) {
+        final BackgroundTask<TaskResult> taskInstance =
+            backgroundTaskRef != null ? backgroundTaskRef.get() : null;
+
+        if (taskInstance != null) {
             Runnable task = () -> {
-                result = backgroundTask.runInBackground(progress -> {
-                    if (progressUpdateTask != null) {
+                ProgressUpdateTask progressTaskInstance =
+                    progressUpdateTaskRef != null ? progressUpdateTaskRef.get() : null;
+
+                result = taskInstance.runInBackground(progress -> {
+                    if (progressTaskInstance != null) {
                         UI_HANDLER.post(() ->
-                            progressUpdateTask.onProgressUpdate(progress));
+                            progressTaskInstance.onProgressUpdate(progress));
                     }
                 });
                 deliverResult();
@@ -65,8 +72,11 @@ public final class AsyncJobUtils<TaskResult> {
     }
 
     private void deliverResult() {
-        if (resultTask != null) {
-            UI_HANDLER.post(() -> resultTask.onResult(result));
+        final ResultTask<TaskResult> resultTaskInstance =
+            resultTaskRef != null ? resultTaskRef.get() : null;
+
+        if (resultTaskInstance != null) {
+            UI_HANDLER.post(() -> resultTaskInstance.onResult(result));
         }
     }
 
@@ -87,35 +97,32 @@ public final class AsyncJobUtils<TaskResult> {
         this.executorService = executorService;
     }
 
-    @NonNull
     public BackgroundTask<TaskResult> getBackgroundTask() {
-        return backgroundTask;
+        return backgroundTaskRef != null ? backgroundTaskRef.get() : null;
     }
 
     public void setBackgroundTask(
         @NonNull BackgroundTask<TaskResult> backgroundTask
     ) {
-        this.backgroundTask = backgroundTask;
+        this.backgroundTaskRef = new WeakReference<>(backgroundTask);
     }
 
-    @NonNull
     public ResultTask<TaskResult> getResultTask() {
-        return resultTask;
+        return resultTaskRef != null ? resultTaskRef.get() : null;
     }
 
     public void setResultTask(@NonNull ResultTask<TaskResult> resultTask) {
-        this.resultTask = resultTask;
+        this.resultTaskRef = new WeakReference<>(resultTask);
     }
 
-    @NonNull
     public ProgressUpdateTask getProgressUpdateTask() {
-        return progressUpdateTask;
+        return progressUpdateTaskRef != null ? progressUpdateTaskRef.get() : null;
     }
 
     public void setProgressUpdateTask(
         @NonNull ProgressUpdateTask progressUpdateTask
     ) {
-        this.progressUpdateTask = progressUpdateTask;
+        this.progressUpdateTaskRef = new WeakReference<>(progressUpdateTask);
     }
 
     public interface BackgroundTask<Result> {

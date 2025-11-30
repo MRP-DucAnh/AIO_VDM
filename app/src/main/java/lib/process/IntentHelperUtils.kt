@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ResolveInfo
 import androidx.core.net.toUri
-import java.lang.ref.WeakReference
 
 object IntentHelperUtils {
 
@@ -14,9 +13,7 @@ object IntentHelperUtils {
 	@JvmStatic
 	fun getMatchingActivities(activity: Activity?, intent: Intent?): List<ResolveInfo> {
 		if (intent == null || activity == null) return emptyList()
-		WeakReference(activity).get()?.let { safeRef ->
-			return safeRef.packageManager.queryIntentActivities(intent, 0)
-		}; return emptyList()
+		return activity.packageManager.queryIntentActivities(intent, 0)
 	}
 
 	@JvmStatic

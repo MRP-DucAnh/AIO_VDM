@@ -4,7 +4,6 @@ package lib.process
 
 import android.content.Context
 import android.content.res.Configuration
-import androidx.annotation.StringRes
 import java.util.Locale
 
 object LocalizationHelper {
@@ -23,7 +22,8 @@ object LocalizationHelper {
 		return if (currentLocale != null) {
 			val config = Configuration(resources.configuration)
 			config.setLocale(currentLocale)
-			context.createConfigurationContext(config).resources.getString(resId)
+			val configurationContext = context.createConfigurationContext(config)
+			configurationContext.resources.getString(resId)
 		} else {
 			resources.getString(resId)
 		}
@@ -32,7 +32,8 @@ object LocalizationHelper {
 	@JvmStatic
 	private fun updateResources(context: Context, locale: Locale) {
 		val resources = context.resources
-		val config = Configuration(resources.configuration)
+		val configuration = resources.configuration
+		val config = Configuration(configuration)
 		config.setLocale(locale)
 		resources.updateConfiguration(config, resources.displayMetrics)
 	}

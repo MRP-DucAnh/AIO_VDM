@@ -3,6 +3,7 @@ package lib.texts
 import android.text.Html.FROM_HTML_MODE_COMPACT
 import android.text.Html.fromHtml
 import android.text.Spanned
+import androidx.annotation.StringRes
 import app.core.AIOApp.Companion.INSTANCE
 import lib.process.LocalizationHelper
 import lib.process.LogHelperUtils
@@ -50,7 +51,7 @@ object CommonTextUtils {
 	 * @return The localized string for the given resource ID.
 	 */
 	@JvmStatic
-	fun getText(resID: Int): String {
+	fun getText(@StringRes resID: Int): String {
 		val result = LocalizationHelper.getLocalizedString(INSTANCE, resID)
 		logger.d("getText: resID=$resID result='$result'")
 		return result
