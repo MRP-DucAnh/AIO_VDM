@@ -9,7 +9,7 @@
 	<string name="title_aio_programs" translatable="false">AIO Programs</string>
 	<string name="title_aio_archives" translatable="false">AIO Archives</string>
 	<string name="title_aio_others" translatable="false">AIO Others</string>
-
+	
 	<string name="text_sample_google_domain" translatable="false">https://www.google.com</string>
 	<string name="text_aio_official_page_url" translatable="false">https://github.com/shibaFoss/AIO-Video-Downloader</string>
 	<string name="text_aio_official_privacy_policy_url" translatable="false">https://github.com/shibaFoss/AIO-Video-Downloader/blob/master/PRIVACY_POLICY.md</string>
@@ -19,7 +19,7 @@
 	<string name="text_downloads_default_http_user_agent" translatable="false">Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36</string>
 	<string name="text_browser_default_mobile_http_user_agent" translatable="false">Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Mobile Safari/537.36</string>
 	<string name="text_default_aio_download_folder_path" translatable="false">/storage/emulated/0/Download/AIO Downloads</string>
-
+	
 	<string name="text_delete_browsing_history_confirmation">Deleting history is permanent and cannot be undone. <b>Are you sure you want to proceed?</b></string>
 	<string name="text_warning_not_enough_space_msg">Your device doesn\'t have enough storage space to complete the download. <b>Please free up some space.</b></string>
 	<string name="text_cant_rename_on_active_download">You cannot rename the file while the download is in progress. <b>Please pause it first.</b></string>
@@ -29,7 +29,7 @@
 	<string name="text_cant_remove_one_active_download">You cannot remove the file while the download is in progress. <b>Please pause it first.</b></string>
 	<string name="text_warning_resume_not_supported"><b>The file you are downloading does not support resuming.</b> If paused, it will resume from the beginning.</string>
 	<string name="text_no_referrer_message_warning">You haven\'t provided a referral site when adding this download. A referral site can be useful for tracking or resuming downloads, but it\'s not mandatory. You can still proceed to open the download URL directly if needed.</string>
-
+	
 	<string name="text_video_stream_info_unavailable">You are currently playing a streaming video. <b>Detailed media information is unavailable.</b></string>
 	<string name="text_open_stream_media_unavailable">You are currently playing a streaming video. <b>Opening video in unavailable.</b></string>
 	<string name="text_delete_stream_media_unavailable">You are currently playing a streaming video. <b>Deleting video is not possible.</b></string>
@@ -43,7 +43,7 @@
 	<string name="text_error_media_cant_be_played"><b>Unable to play due to an error.</b> Please check if the file format is supported by your device.</string>
 	<string name="text_streaming_link_invalid"><b>Video unavailable:</b> The provided link does\'t work. Please try another.</string>
 	<string name="text_failed_to_write_file_to_storage">Download failed to save the file. This may happen if access is denied or the file was deleted.\n\nTry restarting the download and choose a folder the app can access, like the Downloads folder.</string>
-
+	
 	<string name="text_missing_webpage_link_info">The downloaded file is missing <b> its associated webpage link</b>.</string>
 	<string name="text_allow_permission_in_setting">You need to allow necessary permissions in the settings manually.</string>
 	<string name="text_many_tabs_open_consider_warning"><b>You have %1$s browser tabs open.</b> After closing them, you can access the lost tabs <b>from your browser history</b>.</string>
@@ -71,7 +71,7 @@
 	<string name="text_unlock_before_access_private_file">Please confirm your device PIN, pattern, password, or biometric to securely access this private file.</string>
 	<string name="text_prompt_skip_or_play_private_video"><b>You are trying to access private videos.</b> Do you want to skip for this session or play them?</string>
 	<string name="text_file_system_permission_needed"><b>Please grant the storage permission</b> to allow changing the default download folder.</string>
-
+	
 	<string name="text_fb_how_to_guide_1">Tap the <b>Share 📤</b> button below the video or reel, then <b>Copy link 🔗</b> to copy its address.</string>
 	<string name="text_yt_how_to_guide_1">Tap the <b>Share 📤</b> button below the video, then <b>scroll ↔️</b> to find the <b>More...</b> option.</string>
 	<string name="text_fb_how_to_guide_2"><b>Return to AIO 🔄</b>, paste the copied link into <b>the search box 🔍</b>, then press <b>Download ⬇️</b>.</string>
@@ -80,18 +80,18 @@
 	<string name="text_yt_how_to_guide_3">When the <b>app list 📋</b> appears, find <b>AIO Video Downloader 📲</b> and select it.</string>
 	<string name="text_fb_how_to_guide_4">Tap the <b>Download ⬇️</b> button to save the video or reel to <b>your phone 💾</b> for offline viewing.</string>
 	<string name="text_yt_how_to_guide_4">Tap the <b>Download ⬇️</b> button to save the YouTube video to <b>your phone 💾</b>.</string>
-
+	
 	<string name="text_inst_how_to_guide_1"><b>Open the Instagram reel 🎬</b>, then tap the <b>Share 📤</b> icon to see sharing options.</string>
 	<string name="text_inst_how_to_guide_2"><b>Tap Share 📤 again</b> to see options to <b>share or copy the reel link 🔗</b>.</string>
 	<string name="text_inst_how_to_guide_3">Choose <b>AIO 📲</b> from the share options to open the app and <b>download the video instantly ⬇️</b>.</string>
 	<string name="text_inst_how_to_guide_4">Tap <b>Download ⬇️</b> to save the Instagram video or reel to <b>your phone 💾</b> for offline viewing.</string>
-
+	
 	<string name="text_web_how_to_guide_1">First, <b>play the video ▶️</b>. Then click the <b>Video Grabber 🎯</b> icon to see detected links.</string>
 	<string name="text_web_how_to_guide_2">Choose a <b>video resolution 🎥</b> from the detected links. <b>💡 Tip:</b> Higher resolutions give better quality.</string>
 	<string name="text_web_how_to_guide_3">Click the <b>Download ⬇️</b> button to start. Track <b>progress 📊</b> in the <b>Tasks 🗂️</b> section.</string>
-
+	
 	<string name="text_empty_string" translatable="false" />
-
+	
 	<!-- Section Break -->
 	<string name="title_home">Home</string>
 	<string name="title_browser">Browser</string>
@@ -170,7 +170,7 @@
 	<string name="title_closed">Closed</string>
 	<string name="title_in_progress">In Progress</string>
 	<string name="title_completed">Completed</string>
-
+	
 	<!-- Section Break -->
 	<string name="title_file_name_b_br"><![CDATA[<b>File Name:</b> %1$s<br>]]></string>
 	<string name="title_file_size_b_br"><![CDATA[<b>File Size:</b> %1$s<br>]]></string>
@@ -226,7 +226,7 @@
 	<string name="title_b_est_part_chunk_size_b_br"><![CDATA[<b>Est. Part Chunk Size:</b> %1$s<br>]]></string>
 	<string name="title_b_part_progress_percentages_b_br"><![CDATA[<b>Part Progress Percentages:</b> %1$s<br>]]></string>
 	<string name="title_b_parts_downloaded_bytes_b_br"><![CDATA[<b>Parts Downloaded Bytes:</b> %1$s<br>]]></string>
-
+	
 	<!-- Section Break -->
 	<string name="title_media_file_info">Media File Information</string>
 	<string name="title_validating_download_task">Validating Download Task…</string>
@@ -272,7 +272,7 @@
 	<string name="title_press_back_button_to_exit">Press Back Once More To Exit</string>
 	<string name="title_unknown_video_title">Unknown Video Title</string>
 	<string name="title_00_00">00:00</string>
-
+	
 	<!-- Section Break -->
 	<string name="title_failed_to_add_download_task">Failed To Add Download</string>
 	<string name="title_download_added_successfully">Download Added Successfully</string>
@@ -341,7 +341,7 @@
 	<string name="title_closed_tab">Closed Tab</string>
 	<string name="title_click_to_get_info">Click To Get Info…</string>
 	<string name="title_fetching_file_info">Fetching File Info…</string>
-
+	
 	<!-- Section Break -->
 	<string name="title_youtube_download_not_supported">YouTube Download Not Supported</string>
 	<string name="title_add_to_bookmark">Add To Bookmark</string>
@@ -397,7 +397,7 @@
 	<string name="title_login_required">Login Required</string>
 	<string name="title_open_web_history">Open Web History</string>
 	<string name="title_share_page_link">Share Page Link</string>
-
+	
 	<!-- Section Break -->
 	<string name="title_please_install_web_browser">Please Install Web Browser</string>
 	<string name="title_server_issue">%1$s: Server Issue</string>
@@ -441,7 +441,7 @@
 	<string name="title_experimental_feature">Experimental Feature</string>
 	<string name="title_proceed">Proceed</string>
 	<string name="title_restart_application">Restart Application</string>
-
+	
 	<!-- Section Break -->
 	<string name="title_left">Left</string>
 	<string name="title_spent">Spent</string>
@@ -490,7 +490,7 @@
 	<string name="title_enter_updated_history_title">Enter Updated History Title</string>
 	<string name="title_enter_updated_bookmark_url">Enter Updated Bookmark URL</string>
 	<string name="title_enter_updated_history_url">Enter Updated History URL</string>
-
+	
 	<!-- Section Break -->
 	<string name="title_bookmark_name_can_not_be_empty">Bookmark Name Cannot Be Empty</string>
 	<string name="title_bookmark_url_can_not_be_empty">Bookmark URL Cannot Be Empty</string>
@@ -530,7 +530,7 @@
 	<string name="title_fix_unseekable_mp4_file_risky">Fix Unseekable MP4 Files (Risky)</string>
 	<string name="title_download_other_resolution">Download Other Resolutions (YT)</string>
 	<string name="title_fixing_mp4_file_please_wait">Fixing MP4 File, Please Wait…</string>
-
+	
 	<!-- Section Break -->
 	<string name="title_fixing_mp4_done_successfully">Fixed MP4 File Successfully</string>
 	<string name="title_proceed_anyway">Proceed Anyway</string>
