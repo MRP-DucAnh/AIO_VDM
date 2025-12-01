@@ -7,12 +7,12 @@
 	android:background="@color/transparent"
 	android:orientation="vertical"
 	tools:ignore="UseCompatTextViewDrawableXml,UseAppTint,TooManyViews,VisualLintLongText">
-
+	
 	<LinearLayout
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
 		android:orientation="vertical">
-
+		
 		<androidx.cardview.widget.CardView
 			android:id="@+id/container_user_info"
 			android:layout_width="match_parent"
@@ -22,22 +22,22 @@
 			android:layout_marginEnd="@dimen/_10"
 			android:layout_marginBottom="@dimen/_0"
 			android:orientation="vertical"
-			android:visibility="gone"
+			android:visibility="visible"
 			app:cardBackgroundColor="@color/color_cardview_bg"
 			app:cardCornerRadius="@dimen/_10">
-
+			
 			<LinearLayout
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
 				android:orientation="vertical">
-
+				
 				<LinearLayout
 					android:layout_width="match_parent"
 					android:layout_height="wrap_content"
 					android:background="@color/color_cardview_title_bg"
 					android:gravity="center_vertical"
 					android:orientation="horizontal">
-
+					
 					<de.hdodenhof.circleimageview.CircleImageView
 						android:id="@+id/img_user_avatar"
 						android:layout_width="@dimen/_50"
@@ -47,7 +47,7 @@
 						android:layout_marginEnd="@dimen/_10"
 						android:layout_marginBottom="@dimen/_2"
 						android:src="@drawable/image_default_avatar" />
-
+					
 					<LinearLayout
 						android:id="@+id/btn_user_info"
 						android:layout_width="match_parent"
@@ -59,7 +59,7 @@
 						android:clickable="true"
 						android:orientation="vertical"
 						tools:ignore="TouchTargetSizeCheck">
-
+						
 						<TextView
 							android:id="@+id/txt_user_name"
 							android:layout_width="match_parent"
@@ -77,7 +77,7 @@
 							android:textFontWeight="600"
 							android:textSize="@dimen/normal_text_size"
 							tools:ignore="TouchTargetSizeCheck" />
-
+						
 						<TextView
 							android:id="@+id/txt_user_email"
 							android:layout_width="match_parent"
@@ -88,16 +88,17 @@
 							android:fontFamily="@font/application_font_family"
 							android:text="@string/text_sample_email"
 							android:textColor="@color/color_text_secondary"
+							android:textFontWeight="400"
 							android:textSize="@dimen/small_text_size"
 							tools:ignore="TouchTargetSizeCheck" />
 					</LinearLayout>
 				</LinearLayout>
-
+				
 				<LinearLayout
 					android:layout_width="match_parent"
 					android:layout_height="wrap_content"
 					android:orientation="vertical">
-
+					
 					<TextView
 						android:id="@+id/txt_suggest_for_sign_up"
 						android:layout_width="match_parent"
@@ -110,8 +111,9 @@
 						android:gravity="center"
 						android:text="@string/text_connect_with_aio_cloud"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/message_text_size" />
-
+					
 					<RelativeLayout
 						android:id="@+id/btn_login_register_to_cloud"
 						android:layout_width="match_parent"
@@ -124,7 +126,7 @@
 						android:clickable="true"
 						android:elevation="@dimen/_2"
 						tools:ignore="TouchTargetSizeCheck">
-
+						
 						<TextView
 							android:id="@+id/txt_connect_to_cloud"
 							android:layout_width="wrap_content"
@@ -144,7 +146,7 @@
 				</LinearLayout>
 			</LinearLayout>
 		</androidx.cardview.widget.CardView>
-
+		
 		<androidx.cardview.widget.CardView
 			android:id="@+id/container_application_settings"
 			android:layout_width="match_parent"
@@ -156,18 +158,18 @@
 			android:orientation="vertical"
 			app:cardBackgroundColor="@color/color_cardview_bg"
 			app:cardCornerRadius="@dimen/_10">
-
+			
 			<LinearLayout
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
 				android:orientation="vertical">
-
+				
 				<LinearLayout
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
 					android:background="@color/color_cardview_title_bg"
 					android:orientation="vertical">
-
+					
 					<TextView
 						android:id="@+id/txt_application_settings"
 						android:layout_width="match_parent"
@@ -182,7 +184,7 @@
 						android:textFontWeight="600"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<LinearLayout
 					android:id="@+id/btn_default_download_location"
 					android:layout_width="match_parent"
@@ -195,7 +197,7 @@
 					android:clickable="true"
 					android:orientation="vertical"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_default_download_location"
 						android:layout_width="match_parent"
@@ -208,9 +210,10 @@
 						android:fontFamily="@font/application_font_family"
 						android:text="@string/title_download_location"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<LinearLayout
 					android:id="@+id/btn_language_picker"
 					android:layout_width="match_parent"
@@ -223,7 +226,7 @@
 					android:clickable="true"
 					android:orientation="vertical"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_language_picker"
 						android:layout_width="match_parent"
@@ -236,9 +239,10 @@
 						android:fontFamily="@font/application_font_family"
 						android:text="@string/title_application_language"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<LinearLayout
 					android:id="@+id/btn_dark_mode_ui"
 					android:layout_width="match_parent"
@@ -246,12 +250,12 @@
 					android:layout_marginStart="@dimen/_10"
 					android:layout_marginTop="@dimen/_0"
 					android:layout_marginEnd="@dimen/_10"
-					android:layout_marginBottom="@dimen/_10"
+					android:layout_marginBottom="@dimen/_0"
 					android:background="@drawable/ic_button_negative_selector"
 					android:clickable="true"
 					android:orientation="vertical"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_dark_mode_ui"
 						android:layout_width="match_parent"
@@ -264,9 +268,10 @@
 						android:fontFamily="@font/application_font_family"
 						android:text="@string/title_enable_dark_mode"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<View
 					android:layout_width="match_parent"
 					android:layout_height="@dimen/_1"
@@ -275,8 +280,8 @@
 					android:layout_marginEnd="@dimen/_5"
 					android:layout_marginBottom="@dimen/_5"
 					android:background="@color/transparent_dark"
-					android:visibility="gone" />
-
+					android:visibility="visible" />
+				
 				<LinearLayout
 					android:id="@+id/btn_content_location"
 					android:layout_width="match_parent"
@@ -288,9 +293,9 @@
 					android:background="@drawable/ic_button_negative_selector"
 					android:clickable="true"
 					android:orientation="vertical"
-					android:visibility="gone"
+					android:visibility="visible"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_content_location"
 						android:layout_width="match_parent"
@@ -303,9 +308,10 @@
 						android:fontFamily="@font/application_font_family"
 						android:text="@string/title_preferred_content_region"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<LinearLayout
 					android:id="@+id/btn_daily_suggestions"
 					android:layout_width="match_parent"
@@ -317,9 +323,9 @@
 					android:background="@drawable/ic_button_negative_selector"
 					android:clickable="true"
 					android:orientation="vertical"
-					android:visibility="gone"
+					android:visibility="visible"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_daily_suggestions"
 						android:layout_width="match_parent"
@@ -332,11 +338,12 @@
 						android:fontFamily="@font/application_font_family"
 						android:text="@string/title_enable_daily_suggestions"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 			</LinearLayout>
 		</androidx.cardview.widget.CardView>
-
+		
 		<androidx.cardview.widget.CardView
 			android:id="@+id/container_download_settings"
 			android:layout_width="match_parent"
@@ -348,18 +355,18 @@
 			android:orientation="vertical"
 			app:cardBackgroundColor="@color/color_cardview_bg"
 			app:cardCornerRadius="@dimen/_10">
-
+			
 			<LinearLayout
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
 				android:orientation="vertical">
-
+				
 				<LinearLayout
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
 					android:background="@color/color_cardview_title_bg"
 					android:orientation="vertical">
-
+					
 					<TextView
 						android:id="@+id/txt_download_settings"
 						android:layout_width="match_parent"
@@ -374,7 +381,7 @@
 						android:textFontWeight="600"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<LinearLayout
 					android:id="@+id/btn_default_download_folder"
 					android:layout_width="match_parent"
@@ -388,7 +395,7 @@
 					android:orientation="vertical"
 					android:visibility="visible"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_default_download_folder"
 						android:layout_width="match_parent"
@@ -403,9 +410,10 @@
 						android:maxLines="1"
 						android:text="@string/title_default_download_folder"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<LinearLayout
 					android:id="@+id/btn_hide_task_notifications"
 					android:layout_width="match_parent"
@@ -418,7 +426,7 @@
 					android:clickable="true"
 					android:orientation="vertical"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_hide_task_notifications"
 						android:layout_width="match_parent"
@@ -433,9 +441,10 @@
 						android:maxLines="1"
 						android:text="@string/title_hide_task_notifications"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<LinearLayout
 					android:id="@+id/btn_wifi_only_downloads"
 					android:layout_width="match_parent"
@@ -448,7 +457,7 @@
 					android:clickable="true"
 					android:orientation="vertical"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_wifi_only_downloads"
 						android:layout_width="match_parent"
@@ -463,9 +472,10 @@
 						android:maxLines="1"
 						android:text="@string/title_wifi_only_download"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<LinearLayout
 					android:id="@+id/btn_single_click_open"
 					android:layout_width="match_parent"
@@ -478,7 +488,7 @@
 					android:clickable="true"
 					android:orientation="vertical"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_single_click_open"
 						android:layout_width="match_parent"
@@ -493,9 +503,10 @@
 						android:maxLines="1"
 						android:text="@string/title_single_click_open"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<LinearLayout
 					android:id="@+id/btn_play_notification_sound"
 					android:layout_width="match_parent"
@@ -508,7 +519,7 @@
 					android:clickable="true"
 					android:orientation="vertical"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_play_notification_sound"
 						android:layout_width="match_parent"
@@ -523,10 +534,11 @@
 						android:maxLines="1"
 						android:text="@string/title_play_notification_sound"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size"
 						tools:ignore="TextContrastCheck" />
 				</LinearLayout>
-
+				
 				<View
 					android:layout_width="match_parent"
 					android:layout_height="@dimen/_1"
@@ -535,7 +547,7 @@
 					android:layout_marginEnd="@dimen/_5"
 					android:layout_marginBottom="@dimen/_5"
 					android:background="@color/transparent_dark" />
-
+				
 				<LinearLayout
 					android:id="@+id/btn_adv_downloads_settings"
 					android:layout_width="match_parent"
@@ -548,7 +560,7 @@
 					android:clickable="true"
 					android:orientation="vertical"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_adv_downloads_settings"
 						android:layout_width="match_parent"
@@ -563,11 +575,12 @@
 						android:maxLines="1"
 						android:text="@string/title_other_advance_settings"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="500"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 			</LinearLayout>
 		</androidx.cardview.widget.CardView>
-
+		
 		<androidx.cardview.widget.CardView
 			android:id="@+id/container_browser_settings"
 			android:layout_width="match_parent"
@@ -579,18 +592,18 @@
 			android:orientation="vertical"
 			app:cardBackgroundColor="@color/color_cardview_bg"
 			app:cardCornerRadius="@dimen/_10">
-
+			
 			<LinearLayout
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
 				android:orientation="vertical">
-
+				
 				<LinearLayout
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
 					android:background="@color/color_cardview_title_bg"
 					android:orientation="vertical">
-
+					
 					<TextView
 						android:id="@+id/txt_browser_settings"
 						android:layout_width="match_parent"
@@ -605,7 +618,7 @@
 						android:textFontWeight="600"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<LinearLayout
 					android:id="@+id/btn_browser_homepage"
 					android:layout_width="match_parent"
@@ -618,7 +631,7 @@
 					android:clickable="true"
 					android:orientation="vertical"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_browser_homepage"
 						android:layout_width="match_parent"
@@ -633,9 +646,10 @@
 						android:maxLines="1"
 						android:text="@string/title_browser_homepage"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<LinearLayout
 					android:id="@+id/btn_enable_adblock"
 					android:layout_width="match_parent"
@@ -648,7 +662,7 @@
 					android:clickable="true"
 					android:orientation="vertical"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_enable_adblock"
 						android:layout_width="match_parent"
@@ -663,9 +677,10 @@
 						android:maxLines="1"
 						android:text="@string/title_enable_browser_adblock"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<LinearLayout
 					android:id="@+id/btn_enable_popup_blocker"
 					android:layout_width="match_parent"
@@ -678,7 +693,7 @@
 					android:clickable="true"
 					android:orientation="vertical"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_enable_popup_blocker"
 						android:layout_width="match_parent"
@@ -693,9 +708,10 @@
 						android:maxLines="1"
 						android:text="@string/title_block_popup_ads"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<View
 					android:layout_width="match_parent"
 					android:layout_height="@dimen/_1"
@@ -704,7 +720,7 @@
 					android:layout_marginEnd="@dimen/_10"
 					android:layout_marginBottom="@dimen/_5"
 					android:background="@color/transparent_dark" />
-
+				
 				<LinearLayout
 					android:id="@+id/btn_show_image_on_web"
 					android:layout_width="match_parent"
@@ -717,7 +733,7 @@
 					android:clickable="true"
 					android:orientation="vertical"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_show_image_on_web"
 						android:layout_width="match_parent"
@@ -732,9 +748,10 @@
 						android:maxLines="1"
 						android:text="@string/title_show_image_on_webpage"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<LinearLayout
 					android:id="@+id/btn_enable_video_grabber"
 					android:layout_width="match_parent"
@@ -747,7 +764,7 @@
 					android:clickable="true"
 					android:orientation="vertical"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_enable_video_grabber"
 						android:layout_width="match_parent"
@@ -762,9 +779,10 @@
 						android:maxLines="1"
 						android:text="@string/title_show_video_grabber"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<View
 					android:layout_width="match_parent"
 					android:layout_height="@dimen/_1"
@@ -773,7 +791,7 @@
 					android:layout_marginEnd="@dimen/_10"
 					android:layout_marginBottom="@dimen/_5"
 					android:background="@color/transparent_dark" />
-
+				
 				<LinearLayout
 					android:id="@+id/btn_adv_browser_settings"
 					android:layout_width="match_parent"
@@ -786,7 +804,7 @@
 					android:clickable="true"
 					android:orientation="vertical"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_adv_browser_settings"
 						android:layout_width="match_parent"
@@ -801,11 +819,12 @@
 						android:maxLines="1"
 						android:text="@string/title_other_advance_settings"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="500"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 			</LinearLayout>
 		</androidx.cardview.widget.CardView>
-
+		
 		<androidx.cardview.widget.CardView
 			android:id="@+id/container_customer_service"
 			android:layout_width="match_parent"
@@ -817,18 +836,18 @@
 			android:orientation="vertical"
 			app:cardBackgroundColor="@color/color_cardview_bg"
 			app:cardCornerRadius="@dimen/_10">
-
+			
 			<LinearLayout
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
 				android:orientation="vertical">
-
+				
 				<LinearLayout
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
 					android:background="@color/color_cardview_title_bg"
 					android:orientation="vertical">
-
+					
 					<TextView
 						android:id="@+id/txt_content_policy"
 						android:layout_width="match_parent"
@@ -843,7 +862,7 @@
 						android:textFontWeight="600"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<LinearLayout
 					android:id="@+id/btn_open_feedback"
 					android:layout_width="match_parent"
@@ -856,7 +875,7 @@
 					android:clickable="true"
 					android:orientation="vertical"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_open_feedback"
 						android:layout_width="match_parent"
@@ -871,9 +890,10 @@
 						android:maxLines="1"
 						android:text="@string/title_your_send_feedback"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<LinearLayout
 					android:id="@+id/btn_share_with_friends"
 					android:layout_width="match_parent"
@@ -886,7 +906,7 @@
 					android:clickable="true"
 					android:orientation="vertical"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_share_with_friends"
 						android:layout_width="match_parent"
@@ -901,9 +921,10 @@
 						android:maxLines="1"
 						android:text="@string/title_share_with_friends"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<LinearLayout
 					android:id="@+id/btn_open_about_info"
 					android:layout_width="match_parent"
@@ -916,7 +937,7 @@
 					android:clickable="true"
 					android:orientation="vertical"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_open_about_info"
 						android:layout_width="match_parent"
@@ -931,9 +952,10 @@
 						android:maxLines="1"
 						android:text="@string/title_open_application_info"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<View
 					android:layout_width="match_parent"
 					android:layout_height="@dimen/_1"
@@ -942,7 +964,7 @@
 					android:layout_marginEnd="@dimen/_10"
 					android:layout_marginBottom="@dimen/_5"
 					android:background="@color/transparent_dark" />
-
+				
 				<LinearLayout
 					android:id="@+id/btn_open_privacy_policy"
 					android:layout_width="match_parent"
@@ -955,7 +977,7 @@
 					android:clickable="true"
 					android:orientation="vertical"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_open_privacy_policy"
 						android:layout_width="match_parent"
@@ -970,9 +992,10 @@
 						android:maxLines="1"
 						android:text="@string/title_privacy_policy"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<LinearLayout
 					android:id="@+id/btn_open_terms_condition"
 					android:layout_width="match_parent"
@@ -985,7 +1008,7 @@
 					android:clickable="true"
 					android:orientation="vertical"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_open_terms_condition"
 						android:layout_width="match_parent"
@@ -1000,11 +1023,12 @@
 						android:maxLines="1"
 						android:text="@string/title_terms_conditions"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
 			</LinearLayout>
 		</androidx.cardview.widget.CardView>
-
+		
 		<androidx.cardview.widget.CardView
 			android:id="@+id/container_application_version"
 			android:layout_width="match_parent"
@@ -1016,18 +1040,18 @@
 			android:orientation="vertical"
 			app:cardBackgroundColor="@color/color_cardview_bg"
 			app:cardCornerRadius="@dimen/_10">
-
+			
 			<LinearLayout
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
 				android:orientation="vertical">
-
+				
 				<LinearLayout
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
 					android:background="@color/color_cardview_title_bg"
 					android:orientation="vertical">
-
+					
 					<TextView
 						android:id="@+id/txt_application_version"
 						android:layout_width="match_parent"
@@ -1042,7 +1066,7 @@
 						android:textFontWeight="600"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<LinearLayout
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
@@ -1051,7 +1075,7 @@
 					android:layout_marginEnd="@dimen/_10"
 					android:layout_marginBottom="@dimen/_0"
 					android:orientation="vertical">
-
+					
 					<TextView
 						android:id="@+id/txt_version_info"
 						android:layout_width="match_parent"
@@ -1061,9 +1085,10 @@
 						android:gravity="center"
 						android:text="@string/title__"
 						android:textColor="@color/color_text_primary"
+						android:textFontWeight="500"
 						android:textSize="@dimen/normal_text_size_small" />
 				</LinearLayout>
-
+				
 				<RelativeLayout
 					android:id="@+id/btn_check_new_update"
 					android:layout_width="match_parent"
@@ -1076,7 +1101,7 @@
 					android:clickable="true"
 					android:elevation="@dimen/_2"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:id="@+id/txt_check_new_update"
 						android:layout_width="wrap_content"
@@ -1093,7 +1118,7 @@
 						android:textFontWeight="600"
 						android:textSize="@dimen/normal_text_size" />
 				</RelativeLayout>
-
+				
 				<TextView
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
@@ -1105,8 +1130,9 @@
 					android:gravity="center"
 					android:text="@string/text_restart_if_somethings_off"
 					android:textColor="@color/color_text_primary"
+					android:textFontWeight="400"
 					android:textSize="@dimen/message_text_size" />
-
+				
 				<TextView
 					android:id="@+id/btn_restart_application"
 					android:layout_width="match_parent"
@@ -1129,7 +1155,7 @@
 					tools:ignore="TouchTargetSizeCheck" />
 			</LinearLayout>
 		</androidx.cardview.widget.CardView>
-
+		
 		<androidx.cardview.widget.CardView
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
@@ -1140,19 +1166,19 @@
 			android:orientation="vertical"
 			app:cardBackgroundColor="@color/color_cardview_bg"
 			app:cardCornerRadius="@dimen/_10">
-
+			
 			<LinearLayout
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
 				android:orientation="vertical">
-
+				
 				<LinearLayout
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
 					android:background="@color/color_cardview_title_bg"
 					android:orientation="vertical"
 					tools:ignore="TooManyViews">
-
+					
 					<TextView
 						android:id="@+id/txt_acknowledgement"
 						android:layout_width="match_parent"
@@ -1167,7 +1193,7 @@
 						android:textFontWeight="600"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
+				
 				<TextView
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
@@ -1179,8 +1205,9 @@
 					android:gravity="center"
 					android:text="@string/text_special_support_thank_you"
 					android:textColor="@color/color_text_primary"
+					android:textFontWeight="400"
 					android:textSize="@dimen/message_text_size" />
-
+				
 				<TextView
 					android:id="@+id/btn_follow_shibafoss"
 					android:layout_width="match_parent"
@@ -1198,6 +1225,7 @@
 					android:maxLines="1"
 					android:text="@string/text_follow_shibafoss"
 					android:textColor="@color/color_secondary"
+					android:textFontWeight="600"
 					android:textSize="@dimen/message_text_size"
 					android:textStyle="normal"
 					tools:ignore="TouchTargetSizeCheck" />

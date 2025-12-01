@@ -9,8 +9,6 @@ import app.core.bases.BaseActivity
 import app.ui.main.MotherActivity
 import com.aio.R
 import com.airbnb.lottie.LottieAnimationView
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import lib.device.AppVersionUtility
@@ -19,49 +17,52 @@ import lib.ui.ActivityAnimator.animActivityFade
 import lib.ui.ViewUtility.hideView
 
 class OpeningActivity : BaseActivity() {
-
+	
 	private val logger = LogHelperUtils.from(javaClass)
-	private val safeOpenActivityRef: OpeningActivity?
-		get() = getActivity() as? OpeningActivity
-
+	
 	override fun onRenderingLayout(): Int = R.layout.activity_opening_1
-
+	
 	override fun onAfterLayoutRender() {
 		showApkVersionInfo()
-		CoroutineScope(Dispatchers.Main).launch {
-			delay(2000)
+		getAttachedCoroutineScope().launch {
+			delay(1200)
 			stopLoadingLottieAnimation()
 			launchMotherActivity()
 		}
 	}
-
+	
 	override fun onBackPressActivity() {
 		exitActivityOnDoubleBackPress()
 	}
-
+	
 	private fun showApkVersionInfo() {
 		val versionName = AppVersionUtility.versionName
 		"${getString(R.string.title_version)} : $versionName".apply {
 			findViewById<TextView>(R.id.txt_version_info).text = this
 		}
 	}
-
+	
 	private fun stopLoadingLottieAnimation() {
-		safeOpenActivityRef?.let {
+		getActivity()?.let { activity ->
 			val viewId = R.id.img_loading_lottie_anim
-			with(it.findViewById<LottieAnimationView>(viewId)) {
-				hideView(targetView = this,
+			with(activity.findViewById<LottieAnimationView>(viewId)) {
+				hideView(
+					targetView = this,
 					visibility = INVISIBLE,
 					shouldAnimate = true,
-					animTimeout = 300)
+					animTimeout = 300
+				)
 				pauseAnimation()
 			}
 		}
 	}
-
+	
 	private fun launchMotherActivity() {
-		safeOpenActivityRef?.let { context ->
-			Intent(context, MotherActivity::class.java).apply {
+		getActivity()?.let { activity ->
+			Intent(
+				activity,
+				MotherActivity::class.java
+			).apply {
 				flags = FLAG_ACTIVITY_CLEAR_TOP or FLAG_ACTIVITY_SINGLE_TOP
 				startActivity(this)
 				animActivityFade(getActivity())
