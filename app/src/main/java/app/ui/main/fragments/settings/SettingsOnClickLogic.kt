@@ -15,7 +15,7 @@ import app.ui.main.fragments.settings.activities.browser.AdvBrowserSettingsActiv
 import app.ui.main.fragments.settings.dialogs.ContentRegionSelector
 import app.ui.main.fragments.settings.dialogs.DownloadLocationSelector
 import app.ui.others.information.UserFeedbackActivity
-import app.ui.others.startup.LanguagePickerDialog
+import app.ui.main.fragments.settings.dialogs.LanguagePickerDialog
 import com.aio.R
 import kotlinx.coroutines.delay
 import lib.device.ShareUtility
