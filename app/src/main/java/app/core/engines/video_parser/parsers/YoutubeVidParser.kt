@@ -1,9 +1,9 @@
 package app.core.engines.video_parser.parsers
 
-import lib.process.LogHelperUtils
-import org.schabi.newpipe.extractor.NewPipe
-import org.schabi.newpipe.extractor.ServiceList
-import org.schabi.newpipe.extractor.stream.StreamInfo
+import android.content.*
+import lib.process.*
+import org.schabi.newpipe.extractor.*
+import org.schabi.newpipe.extractor.stream.*
 
 /**
  * A YouTube video parser that extracts metadata, thumbnails, and stream details
@@ -19,10 +19,10 @@ import org.schabi.newpipe.extractor.stream.StreamInfo
  * Each function logs its progress and potential errors for easier debugging.
  */
 class YoutubeVidParser {
-
+	
 	/** Logger instance for structured debug and error messages */
 	private val logger = LogHelperUtils.from(javaClass)
-
+	
 	/**
 	 * Initializes the NewPipe Extractor system with a custom downloader.
 	 * This should be called before invoking any extraction methods.
@@ -41,7 +41,7 @@ class YoutubeVidParser {
 		NewPipe.init(YTDownloaderImpl())
 		logger.d("NewPipe initialized successfully with YTDownloaderImpl.")
 	}
-
+	
 	/**
 	 * Extracts the thumbnail URL of a YouTube video.
 	 *
@@ -65,7 +65,7 @@ class YoutubeVidParser {
 			null
 		}
 	}
-
+	
 	/**
 	 * Retrieves the title of a YouTube video.
 	 *
@@ -86,7 +86,7 @@ class YoutubeVidParser {
 			null
 		}
 	}
-
+	
 	/**
 	 * Retrieves complete stream metadata for a YouTube video, including:
 	 * - Available resolutions and formats

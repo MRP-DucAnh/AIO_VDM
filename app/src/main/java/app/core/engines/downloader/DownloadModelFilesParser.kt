@@ -5,20 +5,12 @@ import app.core.AIOApp.Companion.downloadSystem
 import app.core.engines.downloader.DownloadDataModel.Companion.DOWNLOAD_MODEL_FILE_JSON_EXTENSION
 import app.core.engines.downloader.DownloadDataModel.Companion.convertJSONStringToClass
 import app.core.engines.downloader.DownloadModelsDBManager.getAllDownloadsWithRelationsOptimized
-import com.aio.R
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
-import kotlinx.coroutines.withContext
-import lib.process.AsyncJobUtils
-import lib.process.LogHelperUtils
-import java.io.File
-import java.util.concurrent.ConcurrentHashMap
+import com.aio.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.*
+import lib.process.*
+import java.io.*
+import java.util.concurrent.*
 
 /**
  * DownloadModelParser – Robust Model Cache and Recovery System
@@ -68,28 +60,28 @@ import java.util.concurrent.ConcurrentHashMap
  * for downloads — even under storage corruption, app crashes, or interrupted I/O operations.
  */
 object DownloadModelFilesParser {
-
+	
 	/** Logger instance for tracking parsing operations, cache hits, and recovery events */
 	private val logger = LogHelperUtils.from(javaClass)
-
+	
 	/** Concurrent hash map storing parsed download models with filename as key for fast retrieval */
 	private val downloadModelsCache = ConcurrentHashMap<String, DownloadDataModel>()
-
+	
 	/**
 	 * Dedicated coroutine scope using IO dispatcher for file operations
 	 * SupervisorJob ensures failure in one coroutine doesn't cancel others
 	 */
 	private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
+	
 	/**
 	 * Thread-safe map tracking files that failed to parse and their failure timestamps
 	 * Used to implement retry delay and prevent excessive retry attempts
 	 */
 	private val failedDownloadModelFiles = ConcurrentHashMap<String, Long>()
-
+	
 	/** Delay period before retrying failed file parsing (30 seconds) */
 	private const val FAILURE_RETRY_DELAY_MS = 30000L // 30 seconds
-
+	
 	/**
 	 * Retrieves all download data models with intelligent caching and recovery mechanisms.
 	 * This method implements a multi-layered approach to model retrieval:
@@ -124,7 +116,7 @@ object DownloadModelFilesParser {
 			}
 		}
 	}
-
+	
 	/**
 	 * Retrieves a specific download data model by ID with failure recovery and caching.
 	 * This method implements a robust retrieval strategy with multiple layers:
@@ -146,7 +138,7 @@ object DownloadModelFilesParser {
 					return@withContext null
 				}
 			}
-
+			
 			// Return cached model if available, otherwise attempt recovery load
 			downloadModelsCache[id] ?: run {
 				logger.d("Model $id not in cache, attempting load with recovery.")
@@ -155,7 +147,7 @@ object DownloadModelFilesParser {
 			}
 		}
 	}
-
+	
 	/**
 	 * Loads all download model files with comprehensive recovery mechanisms and progress tracking.
 	 * This method processes multiple model files concurrently with controlled parallelism,
@@ -174,25 +166,25 @@ object DownloadModelFilesParser {
 		// List all model files available for processing
 		val files = listModelFiles(INSTANCE.filesDir)
 		logger.d("Found ${files.size} model files to process.")
-
+		
 		// Resource IDs for UI progress updates
 		val progressResId = R.string.title_loading_of_downloads
 		val startingResId = R.string.title_attempt_to_load_download_models
-
+		
 		// Limit parallelism to prevent resource exhaustion
 		val maxConcurrency = 50
 		val semaphore = Semaphore(maxConcurrency)
-
+		
 		// Track processing progress for UI updates
 		var processedCount = 0
-
+		
 		// Initialize UI with starting message and total file count
 		AsyncJobUtils.executeOnMainThread {
 			downloadSystem.downloadsUIManager.loadingDownloadModelTextview?.let {
 				it.text = it.context.getString(startingResId, files.size)
 			}
 		}
-
+		
 		// Process all files concurrently with controlled parallelism
 		val deferredResults = files.map { file ->
 			coroutineScope.async {
@@ -204,7 +196,7 @@ object DownloadModelFilesParser {
 							tv.text = tv.context.getString(progressResId, processedCount, files.size)
 						}
 					}
-
+					
 					// Process file only if not recently failed, otherwise skip
 					if (shouldAttemptLoad(file.nameWithoutExtension)) {
 						processModelFileWithRecovery(file)
@@ -215,11 +207,11 @@ object DownloadModelFilesParser {
 				}
 			}
 		}
-
+		
 		// Wait for all concurrent processing to complete
 		deferredResults.awaitAll()
 	}
-
+	
 	/**
 	 * Attempts to load a single download model by ID with built-in failure recovery checks.
 	 * This method provides targeted loading of individual model files while respecting
@@ -239,7 +231,7 @@ object DownloadModelFilesParser {
 			logger.d("Skipping load for $id due to failure history.")
 			return
 		}
-
+		
 		// Construct filename and verify file existence
 		val fileName = "$id$DOWNLOAD_MODEL_FILE_JSON_EXTENSION"
 		val file = File(INSTANCE.filesDir, fileName)
@@ -250,7 +242,7 @@ object DownloadModelFilesParser {
 			logger.d("Model file not found for id=$id")
 		}
 	}
-
+	
 	/**
 	 * Determines whether a file should be attempted for loading based on failure history.
 	 * This method implements a retry delay mechanism to prevent excessive attempts
@@ -264,11 +256,11 @@ object DownloadModelFilesParser {
 			// Only attempt load if FAILURE_RETRY_DELAY_MS has elapsed since last failure
 			System.currentTimeMillis() - failureTimestamp > FAILURE_RETRY_DELAY_MS
 		} ?: true // Default to true if no failure history exists
-
+		
 		logger.d("shouldAttemptLoad($fileId) -> $should")
 		return should
 	}
-
+	
 	/**
 	 * Processes a single model file with comprehensive error recovery and caching.
 	 * This method attempts to parse a download model file and handles both success
@@ -292,7 +284,7 @@ object DownloadModelFilesParser {
 		return try {
 			// Attempt to parse the JSON file into a DownloadDataModel object
 			val model = convertJSONStringToClass(file)
-
+			
 			if (model != null) {
 				// Success case: Cache model and clear failure history
 				logger.d("Successfully parsed model: ${file.nameWithoutExtension}")
@@ -313,7 +305,7 @@ object DownloadModelFilesParser {
 			false
 		}
 	}
-
+	
 	/**
 	 * Handles the cleanup and removal of corrupted model files.
 	 * This method is called when a file is determined to be corrupted and unrecoverable.
@@ -335,7 +327,7 @@ object DownloadModelFilesParser {
 			error.printStackTrace()
 		}
 	}
-
+	
 	/**
 	 * Handles processing errors with intelligent failure management and selective cleanup.
 	 * This method categorizes errors and applies appropriate recovery strategies:
@@ -348,10 +340,10 @@ object DownloadModelFilesParser {
 	 */
 	private fun handleProcessingError(file: File, error: Exception) {
 		logger.e("Handling error for file ${file.name}: ${error.javaClass.simpleName}", error)
-
+		
 		// Record failure timestamp to implement retry delay mechanism
 		failedDownloadModelFiles[file.nameWithoutExtension] = System.currentTimeMillis()
-
+		
 		// Only delete files that are causing specific, unrecoverable problems
 		if (error is IllegalStateException || error is NumberFormatException) {
 			try {
@@ -362,7 +354,7 @@ object DownloadModelFilesParser {
 			}
 		}
 	}
-
+	
 	/**
 	 * Validates the cache against the current filesystem state to ensure consistency.
 	 * This method performs cache maintenance by:
@@ -376,11 +368,11 @@ object DownloadModelFilesParser {
 	 */
 	private fun validateCacheAgainstFiles() {
 		logger.d("Validating cache entries against current files.")
-
+		
 		// Get current model files from filesystem and map by ID (filename without extension)
 		val currentFiles = listModelFiles(INSTANCE.filesDir)
 			.associateBy { it.nameWithoutExtension }
-
+		
 		// Remove cache entries that are no longer valid
 		downloadModelsCache.keys.removeAll { id ->
 			if (!currentFiles.containsKey(id)) {
@@ -392,7 +384,7 @@ object DownloadModelFilesParser {
 				val retryReady = failedDownloadModelFiles[id]?.let { failureTimestamp ->
 					System.currentTimeMillis() - failureTimestamp > FAILURE_RETRY_DELAY_MS
 				} ?: false
-
+				
 				if (retryReady) {
 					logger.d("Marking $id for retry after failure delay.")
 				}
@@ -401,7 +393,7 @@ object DownloadModelFilesParser {
 			}
 		}
 	}
-
+	
 	/**
 	 * Lists all valid model files in the specified directory, excluding temporary files.
 	 * This method scans the directory for JSON model files with the correct extension
@@ -417,14 +409,14 @@ object DownloadModelFilesParser {
 			?.listFiles { file ->
 				// Filter for JSON model files while excluding temporary files
 				file.isFile && file.name.endsWith(suffix) &&
-						!file.name.contains("temp")
+					!file.name.contains("temp")
 			}
 			?.toList() ?: emptyList()
-
+		
 		logger.d("listModelFiles() -> Found ${files.size} files.")
 		return files
 	}
-
+	
 	/**
 	 * Performs a complete reset of the parser's internal state.
 	 * This method clears both the model cache and failure tracking records,
@@ -440,7 +432,7 @@ object DownloadModelFilesParser {
 		downloadModelsCache.clear()
 		failedDownloadModelFiles.clear()
 	}
-
+	
 	/**
 	 * Invalidates the model cache while preserving failure tracking.
 	 * This method clears all cached models but maintains the failure history,
@@ -455,7 +447,7 @@ object DownloadModelFilesParser {
 		logger.d("Invalidating model cache.")
 		downloadModelsCache.clear()
 	}
-
+	
 	/**
 	 * Performs cleanup of parser resources and internal state.
 	 * This method cancels ongoing coroutine operations and clears failure tracking,

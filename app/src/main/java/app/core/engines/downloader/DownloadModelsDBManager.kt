@@ -1,19 +1,14 @@
 package app.core.engines.downloader
 
-import app.core.AIOApp
+import app.core.*
 import app.core.engines.downloader.DownloadModelsDBManager.assembleDownloadFromCache
 import app.core.engines.downloader.DownloadModelsDBManager.assembleDownloadWithRelations
 import app.core.engines.downloader.DownloadModelsDBManager.getAllDownloadsWithRelations
-import app.core.engines.objectbox.ObjectBoxManager
-import app.core.engines.settings.AIOSettings
-import app.core.engines.settings.AIOSettings_
-import app.core.engines.video_parser.parsers.VideoFormat
-import app.core.engines.video_parser.parsers.VideoFormat_
-import app.core.engines.video_parser.parsers.VideoInfo
-import app.core.engines.video_parser.parsers.VideoInfo_
-import io.objectbox.Box
-import io.objectbox.BoxStore
-import lib.process.LogHelperUtils
+import app.core.engines.objectbox.*
+import app.core.engines.settings.*
+import app.core.engines.video_parser.parsers.*
+import io.objectbox.*
+import lib.process.*
 
 /**
  * Singleton manager for handling DownloadDataModel and its related entities in ObjectBox database.
@@ -46,13 +41,13 @@ import lib.process.LogHelperUtils
  * @see AIOSettings for download-specific settings entity
  */
 object DownloadModelsDBManager {
-
+	
 	/** Logger instance for tracking database operations and debugging */
 	private val logger = LogHelperUtils.from(javaClass)
-
+	
 	/** ObjectBox database store instance for all database operations */
 	private val boxStore: BoxStore = getBoxStore()
-
+	
 	/**
 	 * Lazy-initialized Box for DownloadDataModel entities.
 	 * Initialized on first access to defer database setup until actually needed.
@@ -62,7 +57,7 @@ object DownloadModelsDBManager {
 			logger.d("DownloadDataModel box initialized")
 		}
 	}
-
+	
 	/**
 	 * Lazy-initialized Box for VideoInfo entities.
 	 * Stores metadata specific to video downloads from yt-dlp and other sources.
@@ -72,7 +67,7 @@ object DownloadModelsDBManager {
 			logger.d("VideoInfo box initialized")
 		}
 	}
-
+	
 	/**
 	 * Lazy-initialized Box for VideoFormat entities.
 	 * Contains video format and codec information for media downloads.
@@ -82,7 +77,7 @@ object DownloadModelsDBManager {
 			logger.d("VideoFormat box initialized")
 		}
 	}
-
+	
 	/**
 	 * Lazy-initialized Box for RemoteFileInfo entities.
 	 * Stores metadata obtained from remote servers during download initialization.
@@ -92,7 +87,7 @@ object DownloadModelsDBManager {
 			logger.d("RemoteFileInfo box initialized")
 		}
 	}
-
+	
 	/**
 	 * Lazy-initialized Box for AIOSettings entities.
 	 * Manages application settings and configuration snapshots.
@@ -102,7 +97,7 @@ object DownloadModelsDBManager {
 			logger.d("AIOSettings box initialized")
 		}
 	}
-
+	
 	/**
 	 * Retrieves the initialized BoxStore instance from ObjectBoxManager.
 	 *
@@ -116,7 +111,7 @@ object DownloadModelsDBManager {
 		logger.d("Retrieving BoxStore instance")
 		return ObjectBoxManager.getBoxStore()
 	}
-
+	
 	/**
 	 * Saves a DownloadDataModel with all its related entities to the database in a single transaction.
 	 *
@@ -143,33 +138,33 @@ object DownloadModelsDBManager {
 				// Save main entity first to get ID
 				val downloadId = downloadBox.put(downloadDataModel)
 				logger.d("Saved main DownloadDataModel with ID: $downloadId")
-
+				
 				// Save related entities with foreign key
 				downloadDataModel.videoInfo?.let { videoInfo ->
 					videoInfo.downloadDataModelDBId = downloadId
 					videoInfoBox.put(videoInfo)
 					logger.d("Saved related VideoInfo for download ID: $downloadId")
 				} ?: logger.d("No VideoInfo found for download: ${downloadDataModel.fileName}")
-
+				
 				downloadDataModel.videoFormat?.let { videoFormat ->
 					videoFormat.downloadDataModelDBId = downloadId
 					videoFormatBox.put(videoFormat)
 					logger.d("Saved related VideoFormat for download ID: $downloadId")
 				}
-
+				
 				downloadDataModel.remoteFileInfo?.let { remoteFileInfo ->
 					remoteFileInfo.downloadDataModelDBId = downloadId
 					remoteFileInfoBox.put(remoteFileInfo)
 					logger.d("Saved related RemoteFileInfo for download ID: $downloadId")
 				} ?: logger.d("No RemoteFileInfo found for download: ${downloadDataModel.fileName}")
-
+				
 				downloadDataModel.globalSettings.let { settings ->
 					settings.downloadDataModelDBId = downloadId
 					settingsBox.put(settings)
 					logger.d("Saved GlobalSettings for download ID: $downloadId")
 				}
 			}
-
+			
 			logger.d("Successfully completed saveDownloadWithRelationsInDB for download: ${downloadDataModel.fileName}")
 			return downloadDataModel.id
 		} catch (error: Exception) {
@@ -177,7 +172,7 @@ object DownloadModelsDBManager {
 			return -1
 		}
 	}
-
+	
 	/**
 	 * Retrieves all DownloadDataModel instances from the database with all their related entities assembled
 	 * using an optimized bulk loading approach.
@@ -213,7 +208,7 @@ object DownloadModelsDBManager {
 				logger.d("No downloads found in DB")
 				return emptyList()
 			}
-
+			
 			// Load all related entities in single queries
 			val allVideoInfos = videoInfoBox.all.associateBy { it.downloadDataModelDBId }
 			val allVideoFormats = videoFormatBox.all.associateBy { it.downloadDataModelDBId }
@@ -232,7 +227,7 @@ object DownloadModelsDBManager {
 					settings = allSettings
 				)
 			}.toList()
-
+			
 			val totalTime = System.currentTimeMillis() - startTime
 			logger.d("Successfully assembled ${assembledDownloads.size} downloads (optimized) in ${totalTime}ms")
 			assembledDownloads
@@ -242,7 +237,7 @@ object DownloadModelsDBManager {
 			emptyList()
 		}
 	}
-
+	
 	/**
 	 * Assembles a DownloadDataModel using pre-loaded entity maps for optimal performance.
 	 *
@@ -286,7 +281,7 @@ object DownloadModelsDBManager {
 		}
 		return downloadDataModel
 	}
-
+	
 	/**
 	 * Retrieves all DownloadDataModel instances from the database with all their related entities assembled.
 	 *
@@ -304,21 +299,21 @@ object DownloadModelsDBManager {
 	@JvmStatic
 	fun getAllDownloadsWithRelations(): List<DownloadDataModel> {
 		logger.d("Retrieving all downloads with relations from database")
-
+		
 		return try {
 			val downloadDataModels = downloadBox.all
 			logger.d("Found ${downloadDataModels.size} download models in database")
-
+			
 			val assembledDownloads = downloadDataModels.map { assembleDownloadWithRelations(it) }
 			logger.d("Successfully assembled ${assembledDownloads.size} downloads with relations")
-
+			
 			assembledDownloads
 		} catch (error: Exception) {
 			logger.e("Failed to retrieve all downloads with relations from database", error)
 			emptyList()
 		}
 	}
-
+	
 	/**
 	 * Assembles a DownloadDataModel by querying and attaching all its related entities.
 	 *
@@ -335,7 +330,7 @@ object DownloadModelsDBManager {
 	private fun assembleDownloadWithRelations(downloadDataModel: DownloadDataModel): DownloadDataModel {
 		val downloadId = downloadDataModel.id
 		logger.d("Assembling relations for download ID: $downloadId")
-
+		
 		try {
 			// Query VideoInfo by downloadId
 			val videoInfoQuery = videoInfoBox.query()
@@ -387,10 +382,10 @@ object DownloadModelsDBManager {
 			// Ensure we at least have global settings as fallback
 			downloadDataModel.globalSettings = AIOApp.aioSettings
 		}
-
+		
 		return downloadDataModel
 	}
-
+	
 	/**
 	 * Deletes a DownloadDataModel and all its related entities from the database in a single transaction.
 	 *
@@ -406,11 +401,11 @@ object DownloadModelsDBManager {
 	fun deleteDownloadWithRelations(downloadDataModel: DownloadDataModel) {
 		val downloadModelDBID = downloadDataModel.id
 		logger.d("Starting deletion of download with ID: $downloadModelDBID and all its relations")
-
+		
 		try {
 			boxStore.runInTx {
 				logger.d("Transaction started for deleting download ID: $downloadModelDBID")
-
+				
 				// Delete related entities first
 				val videoInfoQuery = videoInfoBox.query()
 					.equal(VideoInfo_.downloadDataModelDBId, downloadModelDBID)
@@ -419,7 +414,7 @@ object DownloadModelsDBManager {
 				videoInfoIds.forEach { videoInfoBox.remove(it) }
 				videoInfoQuery.close()
 				logger.d("Deleted ${videoInfoIds.size} VideoInfo records for download ID: $downloadModelDBID")
-
+				
 				val videoFormatQuery = videoFormatBox.query()
 					.equal(VideoFormat_.downloadDataModelDBId, downloadModelDBID)
 					.build()
@@ -427,7 +422,7 @@ object DownloadModelsDBManager {
 				videoFormatIds.forEach { videoFormatBox.remove(it) }
 				videoFormatQuery.close()
 				logger.d("Deleted ${videoFormatIds.size} VideoFormat records for download ID: $downloadModelDBID")
-
+				
 				val remoteFileInfoQuery = remoteFileInfoBox.query()
 					.equal(RemoteFileInfo_.downloadDataModelDBId, downloadModelDBID)
 					.build()
@@ -435,7 +430,7 @@ object DownloadModelsDBManager {
 				remoteFileInfoIds.forEach { remoteFileInfoBox.remove(it) }
 				remoteFileInfoQuery.close()
 				logger.d("Deleted ${remoteFileInfoIds.size} RemoteFileInfo records for download ID: $downloadModelDBID")
-
+				
 				val settingsQuery = settingsBox.query()
 					.equal(AIOSettings_.downloadDataModelDBId, downloadModelDBID)
 					.build()
@@ -443,11 +438,11 @@ object DownloadModelsDBManager {
 				settingsIds.forEach { settingsBox.remove(it) }
 				settingsQuery.close()
 				logger.d("Deleted ${settingsIds.size} AIOSettings records for download ID: $downloadModelDBID")
-
+				
 				// Delete main entity last
 				downloadBox.remove(downloadModelDBID)
 				logger.d("Successfully deleted main DownloadDataModel with ID: $downloadModelDBID")
-
+				
 				logger.d("Completed deletion of download ID: $downloadModelDBID with all relations")
 			}
 		} catch (error: Exception) {

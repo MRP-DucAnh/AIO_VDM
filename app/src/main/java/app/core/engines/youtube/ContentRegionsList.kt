@@ -1,4 +1,4 @@
-package app.ui.main.fragments.settings.dialogs
+package app.core.engines.youtube
 
 /**
  * Provides a predefined list of regions (countries) represented as ISO country codes
