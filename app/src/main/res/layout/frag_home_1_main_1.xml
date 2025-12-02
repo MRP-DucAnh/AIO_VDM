@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?><!-- Home fragment layout with URL input, favorites, history, and download sections -->
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
 	xmlns:tools="http://schemas.android.com/tools"
 	android:layout_width="match_parent"
@@ -7,13 +7,12 @@
 	android:background="@color/transparent"
 	android:orientation="vertical"
 	tools:ignore="UseCompatTextViewDrawableXml,UseAppTint">
-
+	
 	<LinearLayout
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
 		android:orientation="vertical">
-
-		<!-- URL input section card -->
+		
 		<androidx.cardview.widget.CardView
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
@@ -24,14 +23,13 @@
 			android:orientation="vertical"
 			app:cardBackgroundColor="@color/color_cardview_bg"
 			app:cardCornerRadius="@dimen/_10">
-
+			
 			<RelativeLayout
 				android:id="@+id/edit_url_section"
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
 				android:orientation="vertical">
-
-				<!-- URL input container with rounded background -->
+				
 				<LinearLayout
 					android:id="@+id/edit_url_container"
 					android:layout_width="match_parent"
@@ -46,10 +44,9 @@
 					android:clickable="true"
 					android:orientation="vertical"
 					tools:ignore="TouchTargetSizeCheck">
-
-					<!-- URL input field -->
+					
 					<EditText
-						android:id="@+id/edit_url"
+						android:id="@+id/edit_file_url"
 						style="@style/style_dialog.message"
 						android:layout_margin="@dimen/_8"
 						android:background="@color/transparent"
@@ -66,11 +63,11 @@
 						android:singleLine="true"
 						android:textColor="@color/color_on_surface"
 						android:textColorHint="@color/color_text_hint"
+						android:textFontWeight="400"
 						android:textSize="@dimen/normal_text_size"
 						tools:ignore="VisualLintTextFieldSize,TextContrastCheck,TouchTargetSizeCheck" />
 				</LinearLayout>
-
-				<!-- Add download button -->
+				
 				<RelativeLayout
 					android:id="@+id/btn_add_download"
 					android:layout_width="@dimen/_50"
@@ -81,7 +78,7 @@
 					android:background="@drawable/ic_button_negative_selector"
 					android:clickable="true"
 					tools:ignore="SpeakableTextPresentCheck,TouchTargetSizeCheck">
-
+					
 					<ImageView
 						android:layout_width="@dimen/_30"
 						android:layout_height="match_parent"
@@ -94,8 +91,7 @@
 				</RelativeLayout>
 			</RelativeLayout>
 		</androidx.cardview.widget.CardView>
-
-		<!-- Favorite sites section card -->
+		
 		<androidx.cardview.widget.CardView
 			android:id="@+id/container_favorite_sites"
 			android:layout_width="match_parent"
@@ -107,7 +103,7 @@
 			android:orientation="vertical"
 			app:cardBackgroundColor="@color/color_cardview_bg"
 			app:cardCornerRadius="@dimen/_10">
-
+			
 			<LinearLayout
 				android:id="@+id/favorite_site_bookmark_section"
 				android:layout_width="match_parent"
@@ -118,8 +114,7 @@
 				android:layout_marginBottom="@dimen/_5"
 				android:baselineAligned="false"
 				android:orientation="horizontal">
-
-				<!-- RecyclerView for favorite site favicons -->
+				
 				<androidx.recyclerview.widget.RecyclerView
 					android:id="@+id/favicons_recycler_list"
 					android:layout_width="match_parent"
@@ -130,8 +125,7 @@
 					tools:listitem="@layout/frag_home_1_main_1_fav_item_1" />
 			</LinearLayout>
 		</androidx.cardview.widget.CardView>
-
-		<!-- History and Bookmarks section card -->
+		
 		<androidx.cardview.widget.CardView
 			android:id="@+id/container_history_bookmark"
 			android:layout_width="match_parent"
@@ -143,7 +137,7 @@
 			android:orientation="vertical"
 			app:cardBackgroundColor="@color/color_cardview_bg"
 			app:cardCornerRadius="@dimen/_10">
-
+			
 			<LinearLayout
 				android:id="@+id/history_bookmark_section"
 				android:layout_width="match_parent"
@@ -154,8 +148,7 @@
 				android:layout_marginBottom="@dimen/_5"
 				android:baselineAligned="false"
 				android:orientation="horizontal">
-
-				<!-- History button -->
+				
 				<RelativeLayout
 					android:id="@+id/btn_open_history"
 					android:layout_width="0dp"
@@ -166,7 +159,7 @@
 					android:background="@drawable/ic_button_negative_selector"
 					android:clickable="true"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:layout_width="wrap_content"
 						android:layout_height="wrap_content"
@@ -178,20 +171,18 @@
 						android:fontFamily="@font/application_font_family"
 						android:gravity="center_vertical"
 						android:text="@string/title_history"
-						android:textFontWeight="500"
+						android:textFontWeight="600"
 						android:textSize="@dimen/normal_text_size" />
 				</RelativeLayout>
-
+				
 				<View
 					android:layout_width="@dimen/_2"
 					android:layout_height="match_parent"
 					android:layout_marginHorizontal="@dimen/_5"
 					android:layout_marginVertical="@dimen/_2"
 					android:alpha=".5"
-					android:background="@drawable/rounded_border_color"
-					/>
-
-				<!-- Bookmarks button -->
+					android:background="@drawable/rounded_border_color" />
+				
 				<RelativeLayout
 					android:id="@+id/btn_open_bookmark"
 					android:layout_width="0dp"
@@ -202,7 +193,7 @@
 					android:background="@drawable/ic_button_negative_selector"
 					android:clickable="true"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:layout_width="wrap_content"
 						android:layout_height="wrap_content"
@@ -214,13 +205,12 @@
 						android:fontFamily="@font/application_font_family"
 						android:gravity="center_vertical"
 						android:text="@string/title_bookmarks"
-						android:textFontWeight="500"
+						android:textFontWeight="600"
 						android:textSize="@dimen/normal_text_size" />
 				</RelativeLayout>
 			</LinearLayout>
 		</androidx.cardview.widget.CardView>
-
-		<!-- Active downloads section card (initially hidden) -->
+		
 		<androidx.cardview.widget.CardView
 			android:id="@+id/container_active_downloads"
 			android:layout_width="match_parent"
@@ -233,7 +223,7 @@
 			android:visibility="gone"
 			app:cardBackgroundColor="@color/color_cardview_bg"
 			app:cardCornerRadius="@dimen/_10">
-
+			
 			<RelativeLayout
 				android:layout_width="wrap_content"
 				android:layout_height="41dp"
@@ -243,8 +233,7 @@
 				android:layout_marginEnd="@dimen/_8"
 				android:layout_marginBottom="@dimen/_5"
 				android:baselineAligned="false">
-
-				<!-- Active downloads info text -->
+				
 				<TextView
 					android:id="@+id/txt_active_downloads_info"
 					android:layout_width="match_parent"
@@ -260,9 +249,9 @@
 					android:gravity="left|center_vertical"
 					android:maxLines="1"
 					android:text="@string/title__"
+					android:textFontWeight="600"
 					android:textSize="@dimen/normal_text_size" />
-
-				<!-- Open active downloads button -->
+				
 				<RelativeLayout
 					android:id="@+id/btn_open_active_downloads"
 					android:layout_width="@dimen/_50"
@@ -272,21 +261,104 @@
 					android:background="@drawable/ic_button_negative_selector"
 					android:clickable="true"
 					tools:ignore="SpeakableTextPresentCheck,TouchTargetSizeCheck">
-
+					
 					<ImageView
 						android:layout_width="@dimen/_30"
 						android:layout_height="match_parent"
 						android:layout_centerInParent="true"
 						android:adjustViewBounds="true"
 						android:importantForAccessibility="no"
-						android:src="@drawable/ic_button_open_v2"
+						android:src="@drawable/ic_button_arrow_next"
 						android:tint="@color/color_secondary"
 						tools:ignore="ImageContrastCheck" />
 				</RelativeLayout>
 			</RelativeLayout>
 		</androidx.cardview.widget.CardView>
-
-		<!-- Recent downloads section card (initially hidden) -->
+		
+		<androidx.cardview.widget.CardView
+			android:id="@+id/container_featured_videos"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="@dimen/_10"
+			android:layout_marginTop="@dimen/_0"
+			android:layout_marginEnd="@dimen/_10"
+			android:layout_marginBottom="@dimen/_10"
+			android:orientation="vertical"
+			android:visibility="visible"
+			app:cardBackgroundColor="@color/color_cardview_bg"
+			app:cardCornerRadius="@dimen/_10">
+			
+			<LinearLayout
+				android:layout_width="match_parent"
+				android:layout_height="match_parent"
+				android:orientation="vertical">
+				
+				<LinearLayout
+					android:layout_width="match_parent"
+					android:layout_height="match_parent"
+					android:background="@color/color_cardview_title_bg"
+					android:orientation="vertical">
+					
+					<TextView
+						android:layout_width="match_parent"
+						android:layout_height="match_parent"
+						android:layout_margin="@dimen/_10"
+						android:fontFamily="@font/application_font_family"
+						android:gravity="center"
+						android:text="@string/title_featured_videos"
+						android:textColor="@color/color_text_primary"
+						android:textFontWeight="900"
+						android:textSize="@dimen/normal_text_size" />
+				</LinearLayout>
+				
+				<androidx.recyclerview.widget.RecyclerView
+					android:id="@+id/featured_videos_recycle_list"
+					android:layout_width="match_parent"
+					android:layout_height="match_parent"
+					android:layout_gravity="center_horizontal"
+					android:layout_marginStart="@dimen/_3"
+					android:layout_marginTop="@dimen/_3"
+					android:layout_marginEnd="@dimen/_3"
+					android:layout_marginBottom="@dimen/_0"
+					android:clipToPadding="true"
+					android:visibility="visible"
+					app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+					app:spanCount="1"
+					tools:listitem="@layout/frag_home_1_main_1_feat_vid_item_1" />
+				
+				<RelativeLayout
+					android:id="@+id/btn_open_trending_videos"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content"
+					android:layout_marginStart="@dimen/_25"
+					android:layout_marginTop="@dimen/_5"
+					android:layout_marginEnd="@dimen/_25"
+					android:layout_marginBottom="@dimen/_8"
+					android:background="@drawable/ic_button_selector_secondary"
+					android:clickable="true"
+					android:elevation="@dimen/_2"
+					tools:ignore="TouchTargetSizeCheck">
+					
+					<TextView
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:layout_centerInParent="true"
+						android:layout_margin="@dimen/_7"
+						android:drawableStart="@drawable/ic_button_videos"
+						android:drawableEnd="@drawable/ic_button_arrow_next"
+						android:drawablePadding="@dimen/_5"
+						android:drawableTint="@color/color_on_secondary"
+						android:fontFamily="@font/application_font_family"
+						android:gravity="center"
+						android:text="@string/title_trending_videos"
+						android:textColor="@color/color_on_secondary"
+						android:textFontWeight="900"
+						android:textSize="@dimen/normal_text_size"
+						tools:ignore="UseCompatTextViewDrawableXml" />
+				</RelativeLayout>
+			</LinearLayout>
+		</androidx.cardview.widget.CardView>
+		
 		<androidx.cardview.widget.CardView
 			android:id="@+id/container_recent_downloads"
 			android:layout_width="match_parent"
@@ -299,19 +371,18 @@
 			android:visibility="gone"
 			app:cardBackgroundColor="@color/color_cardview_bg"
 			app:cardCornerRadius="@dimen/_10">
-
+			
 			<LinearLayout
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
 				android:orientation="vertical">
-
-				<!-- Recent downloads header -->
+				
 				<LinearLayout
 					android:layout_width="match_parent"
 					android:layout_height="match_parent"
 					android:background="@color/color_cardview_title_bg"
 					android:orientation="vertical">
-
+					
 					<TextView
 						android:layout_width="match_parent"
 						android:layout_height="match_parent"
@@ -320,15 +391,14 @@
 						android:gravity="center"
 						android:text="@string/title_recent_downloads"
 						android:textColor="@color/color_text_primary"
-						android:textFontWeight="600"
+						android:textFontWeight="900"
 						android:textSize="@dimen/normal_text_size" />
 				</LinearLayout>
-
-				<!-- RecyclerView for recent downloads -->
+				
 				<androidx.recyclerview.widget.RecyclerView
 					android:id="@+id/recent_downloads_recycle_list"
 					android:layout_width="match_parent"
-					android:layout_height="match_parent"
+					android:layout_height="wrap_content"
 					android:layout_gravity="center_horizontal"
 					android:layout_marginStart="@dimen/_3"
 					android:layout_marginTop="@dimen/_3"
@@ -339,8 +409,7 @@
 					app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
 					app:spanCount="3"
 					tools:listitem="@layout/frag_home_1_main_1_recent_item_1" />
-
-				<!-- Open downloads tab link -->
+				
 				<RelativeLayout
 					android:id="@+id/open_downloads_tab"
 					android:layout_width="match_parent"
@@ -353,8 +422,7 @@
 					android:clickable="true"
 					android:elevation="@dimen/_2"
 					tools:ignore="TouchTargetSizeCheck">
-
-					<!-- How to go back button with arrow icon -->
+					
 					<TextView
 						android:layout_width="wrap_content"
 						android:layout_height="wrap_content"
@@ -367,15 +435,14 @@
 						android:gravity="center"
 						android:text="@string/title_all_downloads"
 						android:textColor="@color/color_on_secondary"
-						android:textFontWeight="600"
+						android:textFontWeight="900"
 						android:textSize="@dimen/normal_text_size"
 						tools:ignore="UseCompatTextViewDrawableXml" />
 				</RelativeLayout>
-
+			
 			</LinearLayout>
 		</androidx.cardview.widget.CardView>
-
-		<!-- Loading state card (initially hidden) -->
+		
 		<androidx.cardview.widget.CardView
 			android:id="@+id/container_loading_downloads"
 			android:layout_width="match_parent"
@@ -388,13 +455,12 @@
 			android:visibility="visible"
 			app:cardBackgroundColor="@color/color_cardview_bg"
 			app:cardCornerRadius="@dimen/_10">
-
+			
 			<LinearLayout
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
 				android:orientation="vertical">
-
-				<!-- Loading animation -->
+				
 				<com.airbnb.lottie.LottieAnimationView
 					android:id="@+id/img_progress_circle"
 					android:layout_width="@dimen/_120"
@@ -412,8 +478,7 @@
 					app:lottie_loop="true"
 					app:lottie_rawRes="@raw/animation_circle_loading"
 					tools:ignore="ImageContrastCheck,VisualLintBounds" />
-
-				<!-- Loading text -->
+				
 				<TextView
 					android:id="@+id/txt_progress_info"
 					style="@style/style_dialog.message"
@@ -428,8 +493,7 @@
 					android:textSize="@dimen/message_text_size" />
 			</LinearLayout>
 		</androidx.cardview.widget.CardView>
-
-		<!-- Empty state card (initially hidden) -->
+		
 		<androidx.cardview.widget.CardView
 			android:id="@+id/container_empty_downloads"
 			android:layout_width="match_parent"
@@ -442,13 +506,12 @@
 			android:visibility="gone"
 			app:cardBackgroundColor="@color/color_cardview_bg"
 			app:cardCornerRadius="@dimen/_10">
-
+			
 			<LinearLayout
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
 				android:orientation="vertical">
-
-				<!-- Empty box illustration -->
+				
 				<ImageView
 					android:id="@+id/img_empty_downloads"
 					android:layout_width="wrap_content"
@@ -459,8 +522,7 @@
 					android:hardwareAccelerated="true"
 					android:importantForAccessibility="no"
 					android:src="@drawable/image_empty_box" />
-
-				<!-- Empty state text -->
+				
 				<TextView
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content"
@@ -474,8 +536,7 @@
 					android:text="@string/title_you_dont_have_any_downloads"
 					android:textColor="@color/color_text_primary"
 					android:textSize="@dimen/message_text_size" />
-
-				<!-- How to download button -->
+				
 				<RelativeLayout
 					android:id="@+id/btn_how_to_download"
 					android:layout_width="match_parent"
@@ -488,7 +549,7 @@
 					android:clickable="true"
 					android:elevation="@dimen/_2"
 					tools:ignore="TouchTargetSizeCheck">
-
+					
 					<TextView
 						android:layout_width="wrap_content"
 						android:layout_height="wrap_content"
@@ -501,10 +562,10 @@
 						android:gravity="center"
 						android:text="@string/title_how_to_download"
 						android:textColor="@color/color_on_secondary"
-						android:textFontWeight="600"
+						android:textFontWeight="900"
 						android:textSize="@dimen/normal_text_size" />
 				</RelativeLayout>
 			</LinearLayout>
 		</androidx.cardview.widget.CardView>
 	</LinearLayout>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>

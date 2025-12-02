@@ -373,7 +373,7 @@ class HomeFragment : BaseFragment(), AIOTimer.AIOTimerListener {
 		safeMotherActivityRef?.let { safeMotherActivity ->
 			with(layoutView) {
 				val editFiledUrlContainer = findViewById<View>(R.id.edit_url_container)
-				val editFiledUrl = findViewById<EditText>(R.id.edit_url)
+				val editFiledUrl = findViewById<EditText>(R.id.edit_file_url)
 				val buttonDownload = findViewById<View>(R.id.btn_add_download)
 
 				setupUrlEditor(editFiledUrlContainer, editFiledUrl, safeMotherActivity)

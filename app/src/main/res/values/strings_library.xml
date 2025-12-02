@@ -631,5 +631,10 @@
 	<string name="title_play_sound">Play Sound</string>
 	<string name="title_user_agent">User Agent</string>
 	<string name="title_thumbnail">Thumbnail</string>
+	<string name="title_tasks">Tasks</string>
+	<string name="title_featured_videos">Featured Videos</string>
+	<string name="title_trending_videos">Trending Videos</string>
+	<string name="title_sample_views_count">4.1M Views</string>
+	<string name="title_sample_featured_vid_metainfo">AIO Films / 8 Months Ago</string>
 
 </resources>

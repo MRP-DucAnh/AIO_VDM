@@ -64,7 +64,7 @@ class VideoLinkPasteEditor(
 				builder.view.apply {
 					buttonDownload = findViewById(R.id.btn_dialog_positive_container)
 					editFieldContainer = findViewById(R.id.edit_url_container)
-					editFieldFileURL = findViewById(R.id.edit_url)
+					editFieldFileURL = findViewById(R.id.edit_file_url)
 					passOnUrl?.let { url ->
 						editFieldFileURL.setText(url)
 						logger.d("Pre-filled URL in editor: $url")

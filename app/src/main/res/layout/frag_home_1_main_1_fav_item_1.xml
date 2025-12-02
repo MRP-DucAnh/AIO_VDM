@@ -32,7 +32,7 @@
 		android:maxLines="1"
 		android:text="@string/title_google"
 		android:textColor="@color/color_text_primary"
-		android:textFontWeight="500"
-		android:textSize="@dimen/small_text_size" />
+		android:textFontWeight="600"
+		android:textSize="@dimen/small_text_size_x2" />
 
 </LinearLayout>
