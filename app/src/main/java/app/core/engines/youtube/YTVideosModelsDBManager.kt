@@ -3,6 +3,7 @@ package app.core.engines.youtube
 import app.core.engines.objectbox.*
 import io.objectbox.*
 import lib.process.*
+import java.util.concurrent.*
 
 /**
  * YouTube Videos Models Database Manager
@@ -30,14 +31,14 @@ object YTVideosModelsDBManager {
 	 * ObjectBox BoxStore instance.
 	 * This central access point to the database is initialized lazily upon first use.
 	 */
-	private val boxStore: BoxStore by lazy { getBoxStore() }
+	private val globalObjectBoxStore: BoxStore by lazy { getGlobalObjectBoxStore() }
 	
 	/**
 	 * Lazy-initialized Box (Data Access Object) for [YouTubeVideoDataModel] entities.
 	 * This Box provides the direct CRUD methods for the specific video entity type.
 	 */
-	private val ytVideosBox: Box<YouTubeVideoDataModel> by lazy {
-		boxStore.boxFor(YouTubeVideoDataModel::class.java).also {
+	private val ytVideoModelsBox: Box<YouTubeVideoDataModel> by lazy {
+		globalObjectBoxStore.boxFor(YouTubeVideoDataModel::class.java).also {
 			logger.d("YTVideos box initialized - Ready for YouTube video data operations.")
 		}
 	}
@@ -50,7 +51,7 @@ object YTVideosModelsDBManager {
 	 * @throws IllegalStateException if the BoxStore has not been initialized via [ObjectBoxManager].
 	 */
 	@JvmStatic
-	fun getBoxStore(): BoxStore {
+	fun getGlobalObjectBoxStore(): BoxStore {
 		logger.d("Retrieving BoxStore instance for YouTube videos database.")
 		return ObjectBoxManager.getBoxStore()
 	}
@@ -86,13 +87,13 @@ object YTVideosModelsDBManager {
 	 */
 	@JvmStatic
 	@Synchronized
-	fun saveYouTubeVideoDataModelInDB(
+	fun saveYouTubeVideoModelsInDB(
 		youTubeVideoModel: YouTubeVideoDataModel,
 		listener: OnSaveResultListener
 	) {
 		try {
 			// Execute within a database transaction for atomicity (all-or-nothing)
-			boxStore.runInTx { ytVideosBox.put(youTubeVideoModel) }
+			globalObjectBoxStore.runInTx { ytVideoModelsBox.put(youTubeVideoModel) }
 			
 			logger.d(
 				"YouTube video saved successfully - ID: ${youTubeVideoModel.id}, " +
@@ -121,7 +122,7 @@ object YTVideosModelsDBManager {
 	@Synchronized
 	fun getAllYouTubeVideoDataModels(): List<YouTubeVideoDataModel> {
 		return try {
-			val ytVidModels = ytVideosBox.all
+			val ytVidModels = ytVideoModelsBox.all
 			
 			if (ytVidModels.isEmpty()) {
 				logger.d("No youtube videos found in database.")
@@ -146,7 +147,7 @@ object YTVideosModelsDBManager {
 	@JvmStatic
 	fun getYouTubeVideoById(ytVideoModelID: Long): YouTubeVideoDataModel? {
 		return try {
-			ytVideosBox.get(ytVideoModelID)?.also {
+			ytVideoModelsBox.get(ytVideoModelID)?.also {
 				logger.d("Retrieved YouTube video by ID: $ytVideoModelID, Title: ${it.videoTitle}")
 			}
 		} catch (error: Exception) {
@@ -170,7 +171,7 @@ object YTVideosModelsDBManager {
 	@Synchronized
 	fun deleteYouTubeVideoById(ytVideoModelID: Long): Boolean {
 		return try {
-			boxStore.runInTx { ytVideosBox.remove(ytVideoModelID) }
+			globalObjectBoxStore.runInTx { ytVideoModelsBox.remove(ytVideoModelID) }
 			logger.d("Deleted YouTube video with ID: $ytVideoModelID")
 			true
 		} catch (error: Exception) {
@@ -191,7 +192,7 @@ object YTVideosModelsDBManager {
 	@Synchronized
 	fun clearAllYouTubeVideos(): Boolean {
 		return try {
-			boxStore.runInTx { ytVideosBox.removeAll() }
+			globalObjectBoxStore.runInTx { ytVideoModelsBox.removeAll() }
 			logger.d("Cleared all YouTube videos from database.")
 			true
 		} catch (error: Exception) {
@@ -199,11 +200,37 @@ object YTVideosModelsDBManager {
 			false
 		}
 	}
+	
+	@JvmStatic
+	@Synchronized
+	fun clearOldYouTubeVideosModelsFromDB(daysToKeep: Int = 7) {
+		try {
+			val timeToKeepMillis = TimeUnit.DAYS.toMillis(daysToKeep.toLong())
+			val cutoffTime = System.currentTimeMillis() - timeToKeepMillis
+			
+			val listOfModels = getAllYouTubeVideoDataModels()
+			val modelsToDelete = listOfModels.filter { model ->
+				model.lastModifiedTimeDate < cutoffTime
+			}
+			
+			val idsToDelete = modelsToDelete.map { it.id }
+			getGlobalObjectBoxStore().runInTx { ytVideoModelsBox.removeByIds(idsToDelete) }
+			
+			logger.i(
+				"Successfully cleared ${idsToDelete.size} " +
+					"old YouTube video models (older than $daysToKeep days)."
+			)
+		} catch (error: Exception) {
+			logger.e("Error clearing old YouTube video models: ${error.message}", error)
+		}
+	}
+	
 	/**
 	 * Interface definition for a callback to be invoked when a database save operation finishes.
 	 * This decouples the database logic from the UI/Business logic, allowing for better error handling.
 	 */
 	interface OnSaveResultListener {
+		
 		/**
 		 * Called when the database save operation is successful.
 		 * @param savedId The unique ID of the entity that was saved (newly generated or existing).
