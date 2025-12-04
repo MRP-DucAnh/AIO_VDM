@@ -1,23 +1,27 @@
 package app.core
 
-import lib.process.LogHelperUtils
+import lib.process.*
 
 /**
- * [AIOKeyStrings] holds constant keys and action strings used across the application.
+ * A central repository for constant keys and action strings used throughout the application.
  *
- * These keys are primarily used for inter-component communication, such as:
- * - Passing data via [Intent] extras or `Bundle`s.
- * - Handling activity results.
- * - Controlling URL parsing behavior.
- * - Managing download-related events like retries.
+ * This object consolidates string constants to prevent typos and improve maintainability.
+ * These constants are essential for inter-component communication, including:
+ * - Passing data in `Intent` extras or `Bundle`s.
+ * - Identifying actions in `BroadcastReceiver`s.
+ * - Handling results between `Activity` or `Fragment` instances.
+ * - Controlling application flow, such as URL parsing or download retries.
  *
- * Each key or action is documented to describe its purpose and how it should be used.
+ * Each constant is documented to clarify its specific purpose and context of use.
  *
- * Logging is included for better traceability when keys are accessed,
- * helping debug potential mismatches or incorrect usage.
+ * @see android.content.Intent
+ * @see android.os.Bundle
  */
 object AIOKeyStrings {
 
+    /**
+     * Logger for this class. Used for debugging purposes related to key usage.
+     */
     private val logger = LogHelperUtils.from(javaClass)
 
     /**
