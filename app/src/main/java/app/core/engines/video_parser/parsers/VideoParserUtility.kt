@@ -292,6 +292,7 @@ object VideoParserUtility {
 	 * to remove a wider range of special characters. Defaults to `false`.
 	 * @return A [CharSequence] representing the cleaned, sanitized, and trimmed title.
 	 */
+	@JvmStatic
 	fun getSanitizedTitle(
 		videoInfo: VideoInfo,
 		videoFormat: VideoFormat,

@@ -108,6 +108,7 @@ open class AIOTimer(
 		 * This value is used to calculate [GC_INTERVAL_MILLIS].
 		 */
 		private const val GC_INTERVAL_SECONDS = 30
+		
 		/**
 		 * The interval, in milliseconds, at which a garbage collection (`System.gc()`)
 		 * is suggested to the JVM. This is used to periodically clean up expired
@@ -258,6 +259,10 @@ open class AIOTimer(
 	 * To stop the timer and clear all associated resources including the coroutine scope,
 	 * use the [stop] method instead.
 	 */
+	@Deprecated(
+		message = "This method is redundant. The stop() function already provides this " +
+			"functionality and is the recommended way to clear resources."
+	)
 	fun clearResources() {
 		if (hasTimerActive) {
 			logger.d("Timer is active. Stopping and clearing resources.")
