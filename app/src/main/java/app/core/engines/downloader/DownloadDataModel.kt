@@ -8,7 +8,7 @@ import app.core.AIOApp
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioDSLJsonInstance
 import app.core.AIOApp.Companion.aioSettings
-import app.core.FSTBuilder.fstConfig
+import app.core.engines.fst_serializer.FSTBuilder.fstConfig
 import app.core.engines.downloader.DownloadModelBinaryMerger.Companion.MERGRED_DATA_MODEL_BINARY_FILENAME
 import app.core.engines.settings.AIOSettings
 import app.core.engines.settings.AIOSettings.Companion.PRIVATE_FOLDER

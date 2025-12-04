@@ -1,13 +1,13 @@
-package app.core
+package app.core.engines.fst_serializer
 
-import app.core.FSTBuilder.fstConfig
 import app.core.engines.downloader.*
+import app.core.engines.fst_serializer.FSTBuilder.fstConfig
 import app.core.engines.settings.*
 import app.core.engines.video_parser.parsers.*
 import org.nustaq.serialization.*
 
 /**
- * Singleton object responsible for managing the global [FSTConfiguration] instance.
+ * Singleton object responsible for managing the global [org.nustaq.serialization.FSTConfiguration] instance.
  *
  * This ensures a single, shared configuration of the **FST (Fast-Serialization)**
  * library is used across the entire application. Using a single instance avoids
@@ -18,10 +18,10 @@ import org.nustaq.serialization.*
  * using `FSTConfiguration.createAndroidDefaultConfiguration()`.
  *
  * ### Registered Classes:
- * - [AIOSettings]
- * - [DownloadDataModel]
- * - [VideoFormat]
- * - [VideoInfo]
+ * - [app.core.engines.settings.AIOSettings]
+ * - [app.core.engines.downloader.DownloadDataModel]
+ * - [app.core.engines.video_parser.parsers.VideoFormat]
+ * - [app.core.engines.video_parser.parsers.VideoInfo]
  *
  * ### Usage
  * Access the configuration directly to serialize or deserialize objects:
@@ -36,16 +36,17 @@ import org.nustaq.serialization.*
  * @see fstConfig for the global instance.
  */
 object FSTBuilder {
-
+	
 	/**
 	 * Global FST configuration instance shared across the application.
 	 *
 	 * This instance provides high-performance serialization and deserialization of
 	 * objects to and from a binary format. It is initialized using
-	 * [FSTConfiguration.createAndroidDefaultConfiguration] and is optimized for speed
+	 * [org.nustaq.serialization.FSTConfiguration.createAndroidDefaultConfiguration] and is optimized for speed
 	 * (`isPreferSpeed = true`).
 	 *
-	 * Key classes like [AIOSettings], [DownloadDataModel], [VideoFormat], and [VideoInfo]
+	 * Key classes like [app.core.engines.settings.AIOSettings], [app.core.engines.downloader.DownloadDataModel],
+	 * [app.core.engines.video_parser.parsers.VideoFormat], and [app.core.engines.video_parser.parsers.VideoInfo]
 	 * are pre-registered to improve serialization performance and reduce overhead.
 	 *
 	 * ### Usage
@@ -59,9 +60,11 @@ object FSTBuilder {
 	 */
 	@JvmStatic
 	val fstConfig: FSTConfiguration = FSTConfiguration.createAndroidDefaultConfiguration().apply {
-		registerClass(AIOSettings::class.java, DownloadDataModel::class.java,
-			VideoFormat::class.java, VideoInfo::class.java)
+		registerClass(
+			AIOSettings::class.java, DownloadDataModel::class.java,
+			VideoFormat::class.java, VideoInfo::class.java
+		)
 		isPreferSpeed = true
 	}
-
+	
 }

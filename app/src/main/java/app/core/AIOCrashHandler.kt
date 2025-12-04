@@ -26,7 +26,7 @@ import java.util.*
  * By centralizing crash reporting, it improves the app's robustness and simplifies
  * post-mortem diagnostics.
  */
-class CrashHandler : Thread.UncaughtExceptionHandler {
+class AIOCrashHandler : Thread.UncaughtExceptionHandler {
 
 	/** Logger for this class, used for structured logging. */
 	private val logger = LogHelperUtils.from(javaClass)

@@ -5,7 +5,7 @@ import app.core.AIOApp
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioBookmark
 import app.core.AIOApp.Companion.aioGSONInstance
-import app.core.FSTBuilder.fstConfig
+import app.core.engines.fst_serializer.FSTBuilder.fstConfig
 import com.anggrayudi.storage.file.getAbsolutePath
 import com.google.gson.annotations.SerializedName
 import com.google.gson.reflect.TypeToken

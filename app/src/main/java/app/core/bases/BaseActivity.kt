@@ -53,7 +53,7 @@ import app.core.AIOApp.Companion.aioAdblocker
 import app.core.AIOApp.Companion.aioLanguage
 import app.core.AIOApp.Companion.aioSettings
 import app.core.AIOApp.Companion.downloadSystem
-import app.core.CrashHandler
+import app.core.AIOCrashHandler
 import app.core.bases.dialogs.UpdaterDialog
 import app.core.bases.interfaces.BaseActivityInf
 import app.core.bases.interfaces.PermissionsResult
@@ -298,7 +298,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 			// Set global crash handler to capture uncaught exceptions and prevent app crashes
 			// This provides better error reporting and user experience during failures
 			logger.d("Setting default uncaught exception handler for crash prevention")
-			val weakReferenceOfCrashHandler = WeakReference(CrashHandler())
+			val weakReferenceOfCrashHandler = WeakReference(AIOCrashHandler())
 			setDefaultUncaughtExceptionHandler(weakReferenceOfCrashHandler.get())
 
 			// Configure theme appearance based on user preferences or system settings

@@ -2,7 +2,7 @@ package app.core.engines.downloader
 
 import app.core.AIOApp
 import app.core.AIOApp.Companion.INSTANCE
-import app.core.FSTBuilder.fstConfig
+import app.core.engines.fst_serializer.FSTBuilder.fstConfig
 import app.core.engines.downloader.DownloadDataModel.Companion.DOWNLOAD_MODEL_FILE_JSON_EXTENSION
 import lib.process.LogHelperUtils
 import java.io.File

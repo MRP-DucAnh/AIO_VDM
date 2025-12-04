@@ -7,7 +7,7 @@ import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioDSLJsonInstance
 import app.core.AIOApp.Companion.aioSettings
 import app.core.AIOLanguage.Companion.ENGLISH
-import app.core.FSTBuilder.fstConfig
+import app.core.engines.fst_serializer.FSTBuilder.fstConfig
 import app.core.engines.settings.AIOSettings.Companion.PRIVATE_FOLDER
 import app.core.engines.settings.AIOSettings.Companion.SYSTEM_GALLERY
 import com.aio.R.string
