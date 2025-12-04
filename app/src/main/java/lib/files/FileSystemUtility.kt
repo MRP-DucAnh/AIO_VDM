@@ -2,24 +2,21 @@
 
 package lib.files
 
-import android.content.ContentResolver
-import android.content.Context
-import android.content.Context.MODE_PRIVATE
-import android.content.Intent
-import android.content.Intent.ACTION_MEDIA_SCANNER_SCAN_FILE
-import android.net.Uri
-import android.os.Build
-import android.os.Environment
-import android.provider.OpenableColumns.DISPLAY_NAME
-import android.provider.Settings
-import android.webkit.MimeTypeMap
-import androidx.core.net.toUri
-import androidx.documentfile.provider.DocumentFile
+import android.content.*
+import android.content.Context.*
+import android.content.Intent.*
+import android.net.*
+import android.os.*
+import android.provider.*
+import android.provider.OpenableColumns.*
+import android.webkit.*
+import androidx.core.net.*
+import androidx.documentfile.provider.*
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.downloadSystem
 import app.core.AIOApp.Companion.internalDataFolder
-import com.aio.R
-import com.anggrayudi.storage.file.getAbsolutePath
+import com.aio.*
+import com.anggrayudi.storage.file.*
 import lib.files.FileExtensions.ARCHIVE_EXTENSIONS
 import lib.files.FileExtensions.DOCUMENT_EXTENSIONS
 import lib.files.FileExtensions.IMAGE_EXTENSIONS
@@ -33,14 +30,11 @@ import lib.files.FileSystemUtility.isAudioByName
 import lib.files.FileSystemUtility.isVideoByName
 import lib.files.FileSystemUtility.sanitizeFileNameExtreme
 import lib.texts.CommonTextUtils.getText
-import java.io.File
-import java.io.FileInputStream
-import java.io.IOException
-import java.io.OutputStream
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets.UTF_8
+import java.io.*
+import java.net.*
+import java.nio.charset.StandardCharsets.*
 import java.security.MessageDigest
-import java.util.Locale
+import java.util.*
 
 /**
  * Utility functions for file operations, such as extracting file information, saving data,
@@ -349,18 +343,21 @@ object FileSystemUtility {
 	 *
 	 * @param fileName The name of the file (within internal storage).
 	 * @param data The string data to write into the file.
+	 * @return `true` if the file was saved successfully, `false` otherwise.
 	 *
 	 * @see android.content.Context.openFileOutput
 	 */
 	@JvmStatic
-	fun saveStringToInternalStorage(fileName: String, data: String) {
-		val context = INSTANCE
-		try {
+	fun saveStringToInternalStorage(fileName: String, data: String): Boolean {
+		return try {
+			val context = INSTANCE
 			val fileOutputStream = context.openFileOutput(fileName, MODE_PRIVATE)
 			fileOutputStream.write(data.toByteArray())
 			fileOutputStream.close()
+			true
 		} catch (error: Exception) {
 			error.printStackTrace()
+			false
 		}
 	}
 

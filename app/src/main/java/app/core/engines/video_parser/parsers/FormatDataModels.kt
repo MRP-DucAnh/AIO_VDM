@@ -1,26 +1,37 @@
 package app.core.engines.video_parser.parsers
 
-import com.dslplatform.json.CompiledJson
-import com.dslplatform.json.JsonAttribute
-import io.objectbox.annotation.Entity
-import io.objectbox.annotation.Id
-import java.io.Serializable
+import com.dslplatform.json.*
+import io.objectbox.annotation.*
+import java.io.*
 
 /**
- * Data class representing a video format with all its metadata.
+ * Represents a specific format or quality of a video.
  *
- * @property id Unique database identifier
- * @property downloadDataModelDBId Unique identifier for the associated download model in the system
- * @property isFromSocialMedia Indicates if the format is from a social media platform
- * @property formatId Unique identifier for the format
- * @property formatExtension File extension (mp4, webm, etc.)
- * @property formatResolution Video resolution (1080p, 720p, etc.)
- * @property formatFileSize Size of the format file as string representation
- * @property formatVcodec Video codec information
- * @property formatAcodec Audio codec information
- * @property formatTBR Total bitrate
- * @property formatProtocol Protocol used for streaming (http, https, etc.)
- * @property formatStreamingUrl Direct streaming URL if available
+ * This data class holds all the metadata related to a single video stream, such as its
+ * resolution, codecs, file size, and the direct URL for streaming or downloading. It is used to
+ * represent one of the multiple formats that a single video might be available in.
+ *
+ * This class is designed to be serialized to JSON and stored in an ObjectBox database.
+ *
+ * @property id The unique identifier for this format entry in the local database.
+ * @property downloadDataModelDBId A foreign key linking this format to a parent download
+ * model.
+ * @property isFromSocialMedia A flag indicating if the video source is a social media
+ * platform.
+ * @property formatId A unique identifier for the format, often provided by the source (e.g.,
+ * "137", "22").
+ * @property formatExtension The file extension of the video format (e.g., "mp4", "webm").
+ * @property formatResolution The resolution of the video (e.g., "1920x1080", "720p").
+ * @property formatFileSize The size of the file, typically as a human-readable string (e.g.,
+ * "15.7MiB").
+ * @property formatVcodec The video codec used for encoding (e.g., "avc1.640028", "vp9").
+ * @property formatAcodec The audio codec used for encoding (e.g., "mp4a.40.2", "opus"). Can be
+ * "none" for video-only streams.
+ * @property formatTBR The total bitrate of the stream, often in KBit/s.
+ * @property formatProtocol The network protocol used to access the stream (e.g., "https",
+ * "http").
+ * @property formatStreamingUrl The direct URL to stream or download this specific video
+ * format.
  */
 @CompiledJson
 @Entity
@@ -62,21 +73,32 @@ data class VideoFormat(
 	var formatStreamingUrl: String = ""
 ) : Serializable
 
+
 /**
  * Data class representing complete video information and metadata.
  *
- * @property id Unique database identifier
- * @property downloadDataModelDBId Unique identifier for the associated download model in the system
- * @property videoTitle Title of the video
- * @property videoThumbnailUrl URL of the video thumbnail image
- * @property videoThumbnailByReferer Whether thumbnail requires referer header for access
- * @property videoDescription Video description text
- * @property videoUrlReferer Referer URL required for video access
- * @property videoUrl Original source video URL
- * @property videoFormats List of available video formats and qualities
- * @property videoCookie Cookie string for authenticated requests
- * @property videoDuration Media playback duration in milliseconds/long format
- * @property videoCookieTempPath Temporary file path for cookie storage
+ * This class is designed to be persistable in an ObjectBox database (`@Entity`) and serializable
+ * to/from JSON (`@CompiledJson`). It encapsulates all details parsed about a video, including its
+ * title, description, thumbnails, available formats, and necessary network-related data like
+ * cookies and referrers.
+ *
+ * @property id Unique database identifier for the VideoInfo entity.
+ * @property downloadDataModelDBId Foreign key linking to an associated download model in the system.
+ * @property videoTitle The main title of the video.
+ * @property videoThumbnailUrl URL for the video's thumbnail image.
+ * @property videoThumbnailByReferer Flag indicating if the `videoUrlReferer` is required to fetch
+ * the thumbnail.
+ * @property videoDescription The description or summary of the video content.
+ * @property videoUrlReferer The referer URL that might be required in HTTP headers to access the
+ * video stream.
+ * @property videoUrl The original URL from which the video information was extracted.
+ * @property videoFormats A list of [VideoFormat] objects, each representing an available quality,
+ * resolution, or container format for the video.
+ * @property videoCookie A string containing cookies required for authenticated access to the video
+ * or its metadata.
+ * @property videoDuration The total duration of the video in milliseconds.
+ * @property videoCookieTempPath A temporary file system path where cookie data might be stored, for
+ * instance, by external tools like yt-dlp.
  */
 @CompiledJson
 @Entity

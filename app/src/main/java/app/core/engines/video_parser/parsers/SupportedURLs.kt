@@ -1,29 +1,49 @@
 package app.core.engines.video_parser.parsers
 
-import androidx.core.net.toUri
+import androidx.core.net.*
+import app.core.engines.video_parser.parsers.SupportedURLs.isYouTubeUrl
 import app.core.engines.video_parser.parsers.SupportedURLs.isYtdlpSupportedUrl
+import app.core.engines.video_parser.parsers.SupportedURLs.isYtdlpSupportedUrlPattern
 import lib.networks.URLUtilityKT.getBaseDomain
-import lib.process.LogHelperUtils
-import java.net.URL
-import kotlin.text.RegexOption.IGNORE_CASE
+import lib.process.*
+import java.net.*
+import kotlin.text.RegexOption.*
 
 /**
- * Utility object for identifying and filtering supported video URLs for parsing.
+ * A utility object that provides functions for identifying, normalizing, and filtering
+ * video URLs from various online platforms.
  *
- * Responsibilities:
- * - Detect URLs from major social media and media-sharing platforms.
- * - Normalize YouTube URLs for consistent parsing.
- * - Validate whether a URL is supported by yt-dlp or internal logic.
- * - Detect HLS streams (.m3u8).
+ * This object is responsible for:
+ * - Detecting URLs from major social media and media-sharing platforms like YouTube, Instagram,
+ *   Facebook, Twitter/X, TikTok, and more.
+ * - Normalizing specific URL formats, such as converting `youtu.be` links to a standard
+ *   `youtube.com` format and removing playlist parameters.
+ * - Validating whether a URL is supported for parsing by either `yt-dlp` or internal logic,
+ *   based on its domain or by matching specific URL patterns.
+ * - Identifying HLS stream URLs (`.m3u8`), which are common in web video players.
  */
 object SupportedURLs {
 
-	// Logger instance for debugging
+	/**
+	 * Logger instance for debugging and logging errors within the [SupportedURLs] object.
+	 * Helps in tracing URL normalization, validation, and parsing steps.
+	 */
 	private val logger = LogHelperUtils.from(javaClass)
 
 	/**
-	 * Set of base domains supported for video parsing via yt-dlp or custom logic.
-	 * This includes popular video, music, and media platforms.
+	 * A curated set of base domains that are known to be supported for video parsing,
+	 * either through yt-dlp or custom extraction logic within the app.
+	 *
+	 * This list is used for a quick, preliminary check to determine if a given URL
+	 * is likely to contain a downloadable video. It includes major video hosting sites,
+	 * social media platforms, and music services. This check is broader than the
+	 * more specific regex patterns in [isYtdlpSupportedUrlPattern] and serves as a
+	 * first-pass filter.
+	 *
+	 * The domains are stored without TLDs (e.g., "youtube" instead of "youtube.com")
+	 * to simplify matching against the output of `URLUtilityKT.getBaseDomain`.
+	 *
+	 * @see isYtdlpSupportedUrl
 	 */
 	private val supportedBaseDomains = setOf(
 		"youtube", "youtu", "facebook", "instagram", "twitter", "x",
@@ -35,13 +55,23 @@ object SupportedURLs {
 	)
 
 	/**
-	 * Normalizes YouTube URLs by ensuring a consistent format:
-	 * - Converts short `youtu.be` links into standard `youtube.com/watch?v=...` format.
-	 * - Removes playlist parameters to avoid fetching unwanted videos.
+	 * Normalizes a YouTube URL to a standard `youtube.com/watch?v=<VIDEO_ID>` format.
 	 *
-	 * @param url The original YouTube URL (short or full).
-	 * @return A normalized YouTube watch URL, or the original URL if not YouTube or parsing fails.
+	 * This function handles various YouTube URL formats:
+	 * - Standard watch URLs (`youtube.com/watch?v=...`)
+	 * - Shortened URLs (`youtu.be/...`)
+	 * - Mobile URLs (`m.youtube.com/...`)
+	 * - Music URLs (`music.youtube.com/watch?v=...`)
+	 *
+	 * It extracts the video ID and rebuilds the URL, removing any extra query parameters
+	 * like `list`, `index`, `t`, `si`, or `feature`. This ensures that only the intended
+	 * video is processed, preventing unintended playlist downloads.
+	 *
+	 * @param url The original YouTube URL, which can be in any common format.
+	 * @return A clean, normalized YouTube watch URL. If the input is not a valid YouTube URL
+	 *         or if the video ID cannot be extracted, the original URL is returned.
 	 */
+	@JvmStatic
 	fun filterYoutubeUrlWithoutPlaylist(url: String): String {
 		return try {
 			// Ensure only YouTube links are processed
@@ -79,11 +109,16 @@ object SupportedURLs {
 	}
 
 	/**
-	 * Checks whether the given URL belongs to YouTube (youtube.com or youtu.be).
+	 * Checks if the given URL belongs to YouTube.
 	 *
-	 * @param url The URL to check.
-	 * @return True if the host ends with YouTube domains; false otherwise.
+	 * This method verifies the URL against standard YouTube domains (`youtube.com`, `youtu.be`)
+	 * as well as the YouTube Music subdomain (`music.youtube.com`). It handles potential
+	 * URL parsing errors gracefully.
+	 *
+	 * @param url The URL string to validate.
+	 * @return `true` if the URL is identified as a YouTube link, `false` otherwise or if an error occurs.
 	 */
+	@JvmStatic
 	fun isYouTubeUrl(url: String): Boolean {
 		return try {
 			val parsedUrl = URL(url)
@@ -99,10 +134,18 @@ object SupportedURLs {
 	}
 
 	/**
-	 * Determines if the given URL belongs to Instagram.
-	 * Supports common Instagram short links like `instagr.am`, `ig.me`, and `ig.com`.
-	 * These short domains are often used for shared posts, reels, or profiles.
+	 * Checks if the given URL belongs to Instagram by validating its host.
+	 *
+	 * This function supports the primary domain and common short domains used for sharing:
+	 * - `instagram.com`: The main website.
+	 * - `instagr.am`: Official short link.
+	 * - `ig.me`: Short link often used in direct messages.
+	 * - `ig.com`: A redirect domain.
+	 *
+	 * @param url The URL to check.
+	 * @return `true` if the URL is from a recognized Instagram domain, `false` otherwise.
 	 */
+	@JvmStatic
 	fun isInstagramUrl(url: String): Boolean {
 		return try {
 			val host = URL(url).host.lowercase()
@@ -117,10 +160,18 @@ object SupportedURLs {
 	}
 
 	/**
-	 * Determines if the given URL belongs to Facebook.
-	 * Includes short and alternative domains like `fb.me`, `fb.watch`, and `m.facebook.com`
-	 * that Facebook uses for links to posts, videos, or mobile pages.
+	 * Determines if the given URL belongs to Facebook by checking its host.
+	 *
+	 * This function handles various Facebook domains, including:
+	 * - `facebook.com`: The primary domain.
+	 * - `m.facebook.com`: The mobile version of the site.
+	 * - `fb.me`: Official short links used for sharing.
+	 * - `fb.watch`: A dedicated domain for Facebook Watch videos.
+	 *
+	 * @param url The URL to check.
+	 * @return `true` if the URL is from a recognized Facebook domain, `false` otherwise.
 	 */
+	@JvmStatic
 	fun isFacebookUrl(url: String): Boolean {
 		return try {
 			val host = URL(url).host.lowercase()
@@ -135,9 +186,15 @@ object SupportedURLs {
 	}
 
 	/**
-	 * Determines if the given URL belongs to TikTok.
-	 * Supports the official short URL format `vm.tiktok.com` often used for shared videos.
+	 * Checks if the given URL belongs to TikTok.
+	 *
+	 * This function recognizes both standard `tiktok.com` domains and the official
+	 * short URL format `vm.tiktok.com`, which is commonly used when sharing videos.
+	 *
+	 * @param url The URL to check.
+	 * @return `true` if the URL's host is a known TikTok domain, `false` otherwise.
 	 */
+	@JvmStatic
 	fun isTiktokUrl(url: String): Boolean {
 		return try {
 			val host = URL(url).host.lowercase()
@@ -150,9 +207,15 @@ object SupportedURLs {
 	}
 
 	/**
-	 * Determines if the given URL belongs to Pinterest.
-	 * Recognizes standard Pinterest domain as well as `pin.it` used for compact sharing links.
+	 * Determines if a URL belongs to Pinterest.
+	 *
+	 * This function checks for the standard `pinterest.com` domain and the official `pin.it`
+	 * shortener URL, which is commonly used for sharing pins.
+	 *
+	 * @param url The URL to check.
+	 * @return `true` if the URL is from a recognized Pinterest domain, `false` otherwise.
 	 */
+	@JvmStatic
 	fun isPinterestUrl(url: String): Boolean {
 		return try {
 			val host = URL(url).host.lowercase()
@@ -165,9 +228,17 @@ object SupportedURLs {
 	}
 
 	/**
-	 * Determines if the given URL belongs to Twitter or X.
-	 * Handles `twitter.com`, `x.com`, and `t.co`, the official shortener Twitter/X uses for shared links.
+	 * Determines if the given URL belongs to Twitter or its successor, X.
+	 *
+	 * This function checks for the following domains:
+	 * - `twitter.com`: The legacy domain for Twitter.
+	 * - `x.com`: The current official domain for X.
+	 * - `t.co`: The official URL shortener used by the platform for all shared links.
+	 *
+	 * @param url The URL to check.
+	 * @return True if the URL's host matches any of the known Twitter/X domains, false otherwise.
 	 */
+	@JvmStatic
 	fun isTwitterOrXUrl(url: String): Boolean {
 		return try {
 			val host = URL(url).host.lowercase()
@@ -182,9 +253,16 @@ object SupportedURLs {
 
 	/**
 	 * Determines if the given URL belongs to Snapchat.
-	 * Supports standard domain and short links like `snp.ac` and `snap.link`
-	 * often used for quick sharing of stories or spotlight content.
+	 *
+	 * This check supports the standard `snapchat.com` domain as well as common short
+	 * link domains used for sharing content:
+	 * - `snp.ac`: Official short link for sharing profiles, Stories, or Spotlights.
+	 * - `snap.link`: Often used for promotional content or direct links to Spotlights.
+	 *
+	 * @param url The URL string to validate.
+	 * @return `true` if the URL is identified as a Snapchat link, `false` otherwise.
 	 */
+	@JvmStatic
 	fun isSnapchatUrl(url: String): Boolean {
 		return try {
 			val host = URL(url).host.lowercase()
@@ -197,6 +275,14 @@ object SupportedURLs {
 		}
 	}
 
+	/**
+	 * Determines if the given URL belongs to Vimeo.
+	 * Checks for the main `vimeo.com` domain and the `player.vimeo.com` domain used for embeds.
+	 *
+	 * @param url The URL to check.
+	 * @return True if the host matches a known Vimeo domain, false otherwise.
+	 */
+	@JvmStatic
 	fun isVimeoUrl(url: String): Boolean {
 		return try {
 			val host = URL(url).host.lowercase()
@@ -213,12 +299,16 @@ object SupportedURLs {
 
 
 	/**
-	 * Checks whether the given URL is from a supported social media platform
-	 * (Facebook, Instagram, TikTok, YouTube).
+	 * Checks whether the given URL is from a popular social media platform.
+	 *
+	 * This is a high-level check that aggregates several platform-specific checks.
+	 * Supported platforms: Instagram, Facebook, TikTok, Pinterest, Twitter/X, and Snapchat.
+	 * Note: YouTube is handled separately in functions like [isYouTubeUrl] and is not included here.
 	 *
 	 * @param url The URL to test.
-	 * @return True if the URL matches any known social media domain.
+	 * @return True if the URL's domain belongs to any of the supported social media platforms.
 	 */
+	@JvmStatic
 	fun isSocialMediaUrl(url: String): Boolean {
 		return isInstagramUrl(url) ||
 				isFacebookUrl(url) ||
@@ -229,13 +319,23 @@ object SupportedURLs {
 	}
 
 	/**
-	 * Determines if the given URL is supported by yt-dlp or internal parsing logic.
-	 * - Uses the base domain for quick matching against a known set of supported sites.
-	 * - Also detects HLS stream URLs (.m3u8).
+	 * Determines if a URL is likely supported for video parsing.
+	 *
+	 * This function performs a broad check using two primary methods:
+	 * 1.  **Domain Matching:** It extracts the base domain (e.g., "youtube" from "youtube.com")
+	 *     and checks it against a predefined set of known supported platforms.
+	 * 2.  **Stream Detection:** It checks if the URL is an HLS stream by looking for the `.m3u8`
+	 *     extension.
+	 *
+	 * This method is designed for quick, initial filtering. For a stricter validation based on
+	 * specific URL patterns (e.g., ensuring a path like `/watch?v=`), see
+	 * [isYtdlpSupportedUrlPattern].
 	 *
 	 * @param url The URL to check.
-	 * @return True if the URL matches supported platforms or stream formats.
+	 * @return `true` if the URL's domain is in the supported list or if it's an M3U8 stream,
+	 *         `false` otherwise.
 	 */
+	@JvmStatic
 	fun isYtdlpSupportedUrl(url: String): Boolean {
 		val baseDomain = getBaseDomain(url)
 		val isSupportedUrl = supportedBaseDomains.contains(baseDomain) || isM3U8Url(url)
@@ -243,12 +343,16 @@ object SupportedURLs {
 	}
 
 	/**
-	 * Detects whether the URL points to an M3U8 (HLS) playlist.
-	 * These indicate streamable video resources.
+	 * Detects if a URL likely points to an M3U8 (HLS) playlist, a common format for streaming video.
 	 *
-	 * @param url The URL string.
-	 * @return True if the URL contains a known m3u8 pattern.
+	 * It performs a case-insensitive search for common M3U8 file names or extensions within the URL string,
+	 * such as `.m3u8`, `playlist.m3u8`, or `index.m3u8`. This is a heuristic check and may produce
+	 * false positives for URLs that coincidentally contain "m3u8".
+	 *
+	 * @param url The URL string to inspect.
+	 * @return `true` if the URL contains a recognized M3U8 pattern, `false` otherwise.
 	 */
+	@JvmStatic
 	fun isM3U8Url(url: String): Boolean {
 		return url.contains("/playlist.m3u8", ignoreCase = true) ||
 				url.contains("/index.m3u8", ignoreCase = true) ||
@@ -257,16 +361,21 @@ object SupportedURLs {
 	}
 
 	/**
-	 * Regex-based pattern matching for supported video URLs.
+	 * Performs strict, regex-based pattern matching to validate if a URL points to a specific,
+	 * parsable video or media page on supported platforms.
 	 *
-	 * This is stricter than [isYtdlpSupportedUrl], since it enforces exact path structures
-	 * (e.g., Instagram reels, YouTube watch/shorts/music links, TikTok videos, Twitter statuses).
+	 * This method is more precise than [isYtdlpSupportedUrl] because it checks for exact URL
+	 * structures (e.g., a YouTube "watch" page, an Instagram "reel", or a Twitter "status")
+	 * rather than just matching the base domain. It is used to quickly identify URLs that are
+	 * known to be directly downloadable video pages, filtering out links to profiles, channels,
+	 * or other unsupported content.
 	 *
-	 * Extend this list as needed when adding new platforms.
+	 * The list of patterns should be updated as new, specific URL formats are supported.
 	 *
-	 * @param webpageUrl The full webpage URL.
-	 * @return True if the URL matches any known regex pattern.
+	 * @param webpageUrl The full URL of the webpage to validate.
+	 * @return `true` if the URL matches a known video page pattern, `false` otherwise.
 	 */
+	@JvmStatic
 	fun isYtdlpSupportedUrlPattern(webpageUrl: String): Boolean {
 		val patterns = listOf(
 			// Instagram Reel
