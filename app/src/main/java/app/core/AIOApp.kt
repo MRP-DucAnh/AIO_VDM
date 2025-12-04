@@ -14,7 +14,7 @@ import app.core.engines.downloader.*
 import app.core.engines.objectbox.*
 import app.core.engines.objectbox.ObjectBoxManager.initializeObjectBoxDB
 import app.core.engines.settings.*
-import app.core.engines.video_parser.parsers.*
+import app.core.engines.youtube.*
 import com.anggrayudi.storage.file.DocumentFileCompat.fromPublicFolder
 import com.anggrayudi.storage.file.PublicDirectory.*
 import com.dslplatform.json.*
@@ -220,12 +220,6 @@ class AIOApp : LanguageAwareApplication(), LifecycleObserver {
 		 */
 		val downloadModelBinaryMerger: DownloadModelBinaryMerger by lazy { DownloadModelBinaryMerger() }
 		
-		/**
-		 * YouTube-specific video parsing and metadata extraction engine.
-		 * Specialized in processing YouTube video URLs and extracting relevant information.
-		 */
-		val youtubeVidParser: YoutubeVidParser by lazy { YoutubeVidParser() }
-		
 		// =============================================
 		// TIMING AND USAGE TRACKING SYSTEMS
 		// =============================================
@@ -278,7 +272,9 @@ class AIOApp : LanguageAwareApplication(), LifecycleObserver {
 		initializeObjectBoxDB(INSTANCE)
 		
 		// Step 2-4: Configure and execute multi-stage startup sequence
-		startupManager.apply {			// CRITICAL TASKS: Essential systems that must complete immediately
+		startupManager.apply {
+			
+			// CRITICAL TASKS: Essential systems that must complete immediately
 			addCriticalTask {
 				logger.d("[Startup] Phase 1: Initializing critical path systems...")
 				
@@ -295,7 +291,7 @@ class AIOApp : LanguageAwareApplication(), LifecycleObserver {
 				} catch (error: Exception) {
 					logger.e(
 						"[Startup] Failed to initialize settings database: ${error.message}", error
-					)					// Fallback to legacy file-based storage
+					)          // Fallback to legacy file-based storage
 					aioSettings = AIOSettings().apply(AIOSettings::readObjectFromStorage)
 					logger.d("[Startup] Using legacy settings storage as fallback")
 				}
@@ -313,7 +309,7 @@ class AIOApp : LanguageAwareApplication(), LifecycleObserver {
 				} catch (error: Exception) {
 					logger.e(
 						"[Startup] Failed to initialize download system: ${error.message}", error
-					)					// Continue with empty download system to allow app to function
+					)          // Continue with empty download system to allow app to function
 					logger.d("[Startup] Continuing with empty download system")
 				}
 				
@@ -329,7 +325,8 @@ class AIOApp : LanguageAwareApplication(), LifecycleObserver {
 				// Video Parser Initialization
 				logger.d("[Startup] Initializing YouTube video parsing system...")
 				try {
-					youtubeVidParser.initSystem()
+					NewPipeExtractorLib.initSystem()
+					YouTubeVideoAPIService.runFetching()
 					logger.d("[Startup] YouTube video parser initialized successfully")
 				} catch (error: Exception) {
 					logger.e("[Startup] Failed to initialize YouTube parser: ${error.message}", error)
@@ -351,7 +348,7 @@ class AIOApp : LanguageAwareApplication(), LifecycleObserver {
 				} catch (error: Exception) {
 					logger.e(
 						"[Startup] Failed to initialize bookmarks database: ${error.message}", error
-					)					// Fallback to legacy storage
+					)          // Fallback to legacy storage
 					aioBookmark = AIOBookmarks().apply(AIOBookmarks::readObjectFromStorage)
 					logger.d("[Startup] Using legacy bookmarks storage as fallback")
 				}
@@ -365,7 +362,7 @@ class AIOApp : LanguageAwareApplication(), LifecycleObserver {
 				} catch (error: Exception) {
 					logger.e(
 						"[Startup] Failed to load browsing history: ${error.message}", error
-					)					// Fallback to legacy storage
+					)          // Fallback to legacy storage
 					aioHistory = AIOHistory().apply(AIOHistory::readObjectFromStorage)
 					logger.d("[Startup] Using legacy history storage as fallback")
 				}
@@ -466,21 +463,19 @@ class AIOApp : LanguageAwareApplication(), LifecycleObserver {
 	 */
 	fun initializeYtDLP() {
 		logger.d("Initializing YouTube-DL and FFmpeg libraries")
-		executeInBackground(codeBlock = {
-			try {				// Initialize core libraries
+		executeInBackground(timeOutInMilli = 12000, codeBlock = {
+			try {        // Initialize core libraries
 				getInstance().init(this)
 				FFmpeg.getInstance().init(this)
 				logger.d("YouTube-DL and FFmpeg libraries initialized successfully")
 				
 				// Conditional binary updates based on network availability
-				executeInBackground(codeBlock = {
-					if (isInternetConnected()) {
-						logger.d("Internet connection available, updating YouTube-DL binaries")
-						getInstance().updateYoutubeDL(INSTANCE)
-					} else {
-						logger.d("No internet connection, skipping YouTube-DL update")
-					}
-				})
+				if (isInternetConnected()) {
+					logger.d("Internet connection available, updating YouTube-DL binaries")
+					getInstance().updateYoutubeDL(INSTANCE)
+				} else {
+					logger.d("No internet connection, skipping YouTube-DL update")
+				}
 			} catch (error: Exception) {
 				logger.e("Error initializing YouTube-DL/FFmpeg: ${error.message}", error)
 			}
@@ -509,13 +504,14 @@ class AIOApp : LanguageAwareApplication(), LifecycleObserver {
 	override fun onTerminate() {
 		logger.d("AIOApp.onTerminate() - Application shutdown sequence initiated")
 		
-		executeInBackground(codeBlock = {
+		executeInBackground(timeOutInMilli = 1500, codeBlock = {
 			logger.d("Termination: Pausing active downloads and performing cleanup")
 			downloadSystem.pauseAllDownloads()
 			downloadSystem.cleanUp()
 			
 			logger.d("Termination: Stopping application timers")
-			aioTimer.cancel()
+			aioTimer.stop()
+			aioTimer.clearResources()
 			
 			logger.d("Termination: Closing database connections")
 			ObjectBoxManager.closeObjectBoxDB()
