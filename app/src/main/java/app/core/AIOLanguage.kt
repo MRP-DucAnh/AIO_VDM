@@ -2,12 +2,12 @@ package app.core
 
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioSettings
-import app.core.bases.interfaces.BaseActivityInf
-import app.core.bases.language.LocaleAwareManager
+import app.core.bases.interfaces.*
+import app.core.bases.language.*
+import lib.process.*
 import lib.process.CommonTimeUtils.OnTaskFinishListener
 import lib.process.CommonTimeUtils.delay
-import lib.process.LogHelperUtils
-import java.util.Locale
+import java.util.*
 
 /**
  * [AIOLanguage] serves as the central coordinator for application-wide language management.
@@ -29,6 +29,13 @@ import java.util.Locale
  */
 open class AIOLanguage {
 
+	/**
+	 * Logger for this class, used for debugging and tracing the language change lifecycle.
+	 *
+	 * Provides detailed logs for events like language application initiation,
+	 * activity restarts, and application quit commands, which is crucial for
+	 * diagnosing issues in the complex language switching flow.
+	 */
 	private val logger = LogHelperUtils.from(javaClass)
 
 	companion object {
