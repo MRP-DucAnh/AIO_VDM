@@ -386,6 +386,7 @@ class AIOApp : LanguageAwareApplication(), LifecycleObserver {
 		
 		INSTANCE = this
 		initializeObjectBoxDB(INSTANCE)
+		aioBackend.initParseBackend()
 		
 		startupManager.apply {
 			initializeCriticalServices()
@@ -902,7 +903,6 @@ class AIOApp : LanguageAwareApplication(), LifecycleObserver {
 			
 			logger.d("Shutdown: Stopping timers")
 			aioTimer.stop()
-			aioTimer.clearResources()
 			
 			logger.d("Shutdown: Closing database")
 			ObjectBoxManager.closeObjectBoxDB()
