@@ -17,6 +17,8 @@ coreKtx = "1.17.0"
 appcompat = "1.7.1"
 # AndroidX Biometric for authentication
 biometric = "1.1.0"
+# Localization library for supporting multiple languages
+localization = "2.1.2"
 # NewPipeExtractor for extracting video stream data
 new_pipe_extractor = "v0.24.8"
 # ObjectBox database for Android
@@ -94,6 +96,9 @@ jsonbind_api = { module = "javax.json.bind:javax.json.bind-api", version.ref = "
 kotlin_coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutine" }
 # Core Kotlin Coroutines library
 kotlin_coroutines_core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutine" }
+
+# Localization library for supporting multiple languages
+localization = { module = "com.github.prongbang:localization", version.ref = "localization" }
 
 # Lottie for rendering complex animations
 lottie = { module = "com.airbnb.android:lottie", version.ref = "lottie" }
