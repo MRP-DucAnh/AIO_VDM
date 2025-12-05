@@ -171,17 +171,20 @@ dependencies {
 	implementation libs.media3.ui
 	implementation libs.media3.session
 
+	// Localization library for supporting multiple languages
+	implementation libs.localization
+
 	// ObjectBox for high-performance object-oriented database
 	implementation libs.objectbox.android
 	implementation libs.objectbox.kotlin
 
 	// JSON and serialization libraries
-	implementation libs.fst
-	implementation libs.jsoup
-	implementation libs.gson
-	implementation(libs.dsljson) // DSL Json for fast JSON processing
-	kapt(libs.dsljson) // Annotation processor for DSL Json
-	compileOnly(libs.jsonbind.api) // API for JSON binding
+	implementation libs.fst // Fast serialization
+	implementation libs.jsoup // HTML parsing
+	implementation libs.gson // JSON parsing and serialization
+	implementation(libs.dsljson) // Fast JSON processing
+	kapt(libs.dsljson) // DSL Json annotation processor
+	compileOnly(libs.jsonbind.api) // JSON binding API
 
 	// Networking libraries
 	implementation libs.retrofit
@@ -189,14 +192,14 @@ dependencies {
 	implementation libs.okhttp
 
 	// UI enhancement libraries
-	implementation libs.lottie
-	implementation libs.glide
-	implementation libs.circleimageview
-	implementation libs.permissionx
+	implementation libs.lottie // After Effects animations
+	implementation libs.glide // Image loading and caching
+	implementation libs.circleimageview // Circular ImageView
+	implementation libs.permissionx // Runtime permissions
 
 	// Storage and data parsing
-	implementation libs.saf.storage
-	implementation libs.parse
+	implementation libs.saf.storage // Storage Access Framework helper
+	implementation libs.parse // Data parsing
 
 	// Video downloading and extraction libraries
 	implementation libs.ytdlp.library
