@@ -1,18 +1,28 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+/**
+ * The `buildscript` block configures the repositories and dependencies for Gradle itself.
+ * This is where we define dependencies required for the build process, such as the ObjectBox plugin.
+ */
 buildscript {
+	// Defines a project-wide property for the ObjectBox version to ensure consistency.
 	ext.objectboxVersion = "5.0.1"
 	
+	// Repositories where Gradle should look for build script dependencies.
 	repositories {
-		google()
-		mavenCentral()
-		gradlePluginPortal()
+		google() // Google's Maven repository.
+		mavenCentral() // The primary repository for Java and other JVM language libraries.
+		gradlePluginPortal() // The official repository for Gradle plugins.
 	}
 	
 	dependencies {
+		// Adds the ObjectBox Gradle plugin as a classpath dependency, making it available to the build script.
 		classpath "io.objectbox:objectbox-gradle-plugin:$objectboxVersion"
 	}
 }
 
 plugins {
+	// Declares plugins that are applied to sub-projects, but not to the root project itself.
 	alias(libs.plugins.android.application) apply false
 	alias(libs.plugins.kotlin.android) apply false
 }

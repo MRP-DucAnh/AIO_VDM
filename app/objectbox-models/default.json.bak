@@ -803,7 +803,7 @@
     },
     {
       "id": "9:4808231721176100847",
-      "lastPropertyId": "69:5719833993768012258",
+      "lastPropertyId": "70:682849658308711800",
       "name": "DownloadDataModel",
       "properties": [
         {
@@ -1151,12 +1151,76 @@
           "id": "69:5719833993768012258",
           "name": "isSyncToCloudBackup",
           "type": 1
+        },
+        {
+          "id": "70:682849658308711800",
+          "name": "hasUserOpenedTheFile",
+          "type": 1
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "10:6838358189535358868",
+      "lastPropertyId": "10:5204249818957308379",
+      "name": "YouTubeVideoDataModel",
+      "properties": [
+        {
+          "id": "1:8375853071423476050",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:3517757545138201308",
+          "name": "lastModifiedTimeDate",
+          "type": 6
+        },
+        {
+          "id": "3:5638802806325626976",
+          "name": "videoUrl",
+          "type": 9
+        },
+        {
+          "id": "4:4170941643236412871",
+          "name": "videoTitle",
+          "type": 9
+        },
+        {
+          "id": "5:6321446307543515651",
+          "name": "videoThumbnailUrl",
+          "type": 9
+        },
+        {
+          "id": "6:4779388278817929234",
+          "name": "videoDescription",
+          "type": 9
+        },
+        {
+          "id": "7:2950712118188484874",
+          "name": "videoDuration",
+          "type": 9
+        },
+        {
+          "id": "8:7393874060737283409",
+          "name": "videoViewsCount",
+          "type": 9
+        },
+        {
+          "id": "9:9019781913617655866",
+          "name": "videoLikesCount",
+          "type": 9
+        },
+        {
+          "id": "10:5204249818957308379",
+          "name": "videoChannelName",
+          "type": 9
         }
       ],
       "relations": []
     }
   ],
-  "lastEntityId": "9:4808231721176100847",
+  "lastEntityId": "10:6838358189535358868",
   "lastIndexId": "0:0",
   "lastRelationId": "1:8496475234812365537",
   "lastSequenceId": "0:0",
