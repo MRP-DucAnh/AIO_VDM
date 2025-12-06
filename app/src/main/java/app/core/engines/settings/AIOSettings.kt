@@ -1,8 +1,8 @@
 package app.core.engines.settings
 
-import android.content.Context.MODE_PRIVATE
-import androidx.documentfile.provider.DocumentFile
-import app.core.AIOApp
+import android.content.Context.*
+import androidx.documentfile.provider.*
+import app.core.*
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioDSLJsonInstance
 import app.core.AIOApp.Companion.aioSettings
@@ -10,23 +10,19 @@ import app.core.AIOLanguage.Companion.ENGLISH
 import app.core.engines.fst_serializer.FSTBuilder.fstConfig
 import app.core.engines.settings.AIOSettings.Companion.PRIVATE_FOLDER
 import app.core.engines.settings.AIOSettings.Companion.SYSTEM_GALLERY
-import com.aio.R.string
+import app.core.engines.settings.AIOSettings.Companion.logger
+import com.aio.R.*
+import com.anggrayudi.storage.file.*
 import com.anggrayudi.storage.file.DocumentFileCompat.fromFullPath
-import com.anggrayudi.storage.file.getAbsolutePath
-import com.dslplatform.json.CompiledJson
-import com.dslplatform.json.JsonAttribute
-import io.objectbox.annotation.Entity
-import io.objectbox.annotation.Id
+import com.dslplatform.json.*
+import io.objectbox.annotation.*
 import lib.files.FileSystemUtility.isWritableFile
 import lib.files.FileSystemUtility.readStringFromInternalStorage
 import lib.files.FileSystemUtility.saveStringToInternalStorage
-import lib.process.LogHelperUtils
-import lib.process.ThreadsUtility
+import lib.process.*
 import lib.texts.CommonTextUtils.getText
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.Serializable
+import java.io.*
+import kotlin.jvm.Transient
 
 /**
  * Class representing persistent user settings for the AIO application using ObjectBox for storage.
@@ -57,83 +53,94 @@ import java.io.Serializable
 @CompiledJson
 @Entity
 class AIOSettings : Serializable {
-
+	
 	@Transient
 	private val logger = LogHelperUtils.from(javaClass)
-
+	
 	/**
 	 * Unique identifier for the settings record in ObjectBox database.
 	 * Fixed to 1 since there's only one settings instance per application.
 	 *
 	 * @see io.objectbox.annotation.Id for primary key configuration
 	 */
-	@Id @JvmField @JsonAttribute(name = "id")
+	@Id
+	@JvmField
+	@JsonAttribute(name = "id")
 	var id: Long = 0L
 
 	// =============================================
 	// BASIC USER STATE & APPLICATION IDENTIFICATION
 	// =============================================
-
+	
 	/** Unique identifier for the associate download model */
-	@JvmField @JsonAttribute(name = "downloadDataModelId")
+	@JvmField
+	@JsonAttribute(name = "downloadDataModelId")
 	var downloadDataModelDBId: Long = AIOSettingsDBManager.APP_SETTINGS_DB_ID
-
+	
 	/**
 	 * Unique installation identifier for analytics and user tracking.
 	 * Generated once during first app launch and persisted across sessions.
 	 */
-	@JvmField @JsonAttribute(name = "userInstallationId")
+	@JvmField
+	@JsonAttribute(name = "userInstallationId")
 	var userInstallationId: String = ""
-
+	
 	/**
 	 * Flag indicating whether the user has completed the initial language selection flow.
 	 * Used to determine if the language selection screen should be shown on app start.
 	 */
-	@JvmField @JsonAttribute(name = "isFirstTimeLanguageSelectionComplete")
+	@JvmField
+	@JsonAttribute(name = "isFirstTimeLanguageSelectionComplete")
 	var isFirstTimeLanguageSelectionComplete: Boolean = false
-
+	
 	/**
 	 * Tracks if the user has rated the application in the play store.
 	 * Used to control rating prompt frequency and user engagement flows.
 	 */
-	@JvmField @JsonAttribute(name = "hasUserRatedTheApplication")
+	@JvmField
+	@JsonAttribute(name = "hasUserRatedTheApplication")
 	var hasUserRatedTheApplication: Boolean = false
-
-	@JvmField @JsonAttribute(name = "hasUserSkipBatteryOptimization")
+	
+	@JvmField
+	@JsonAttribute(name = "hasUserSkipBatteryOptimization")
 	var hasUserSkipBatteryOptimization: Boolean = false
-
+	
 	/**
 	 * Counter for total successful download operations completed by the user.
 	 * Used for analytics, user engagement metrics, and feature unlocking.
 	 */
-	@JvmField @JsonAttribute(name = "totalNumberOfSuccessfulDownloads")
+	@JvmField
+	@JsonAttribute(name = "totalNumberOfSuccessfulDownloads")
 	var totalNumberOfSuccessfulDownloads: Int = 0
-
+	
 	/**
 	 * Cumulative time spent in the application measured in milliseconds.
 	 * Tracked for user engagement analytics and session management.
 	 */
-	@JvmField @JsonAttribute(name = "totalUsageTimeInMs")
+	@JvmField
+	@JsonAttribute(name = "totalUsageTimeInMs")
 	var totalUsageTimeInMs: Float = 0.0f
-
+	
 	/**
 	 * Formatted representation of total usage time for display purposes.
 	 * Automatically updated from totalUsageTimeInMs for UI presentation.
 	 */
-	@JvmField @JsonAttribute(name = "totalUsageTimeInFormat")
+	@JvmField
+	@JsonAttribute(name = "totalUsageTimeInFormat")
 	var totalUsageTimeInFormat: String = ""
-
+	
 	/**
 	 * Last clipboard text processed by the application for URL detection.
 	 * Used to prevent duplicate processing of the same clipboard content.
 	 */
-	@JvmField @JsonAttribute(name = "lastProcessedClipboardText")
+	@JvmField
+	@JsonAttribute(name = "lastProcessedClipboardText")
 	var lastProcessedClipboardText: String = ""
-
+	
 	// =============================================
 	// STORAGE & DOWNLOAD CONFIGURATION
 	// =============================================
-
+	
 	/**
 	 * Preferred download location setting.
 	 *
@@ -144,34 +151,37 @@ class AIOSettings : Serializable {
 	 * @see PRIVATE_FOLDER
 	 * @see SYSTEM_GALLERY
 	 */
-	@JvmField @JsonAttribute(name = "defaultDownloadLocation")
+	@JvmField
+	@JsonAttribute(name = "defaultDownloadLocation")
 	var defaultDownloadLocation: Int = PRIVATE_FOLDER
-
+	
 	// =============================================
 	// LANGUAGE & REGIONAL SETTINGS
 	// =============================================
-
+	
 	/**
 	 * User-selected UI language for the application.
 	 * Defaults to English. Affects all text and interface elements.
 	 *
 	 * @see app.core.AIOLanguage for available language options
 	 */
-	@JvmField @JsonAttribute(name = "userSelectedUILanguage")
+	@JvmField
+	@JsonAttribute(name = "userSelectedUILanguage")
 	var userSelectedUILanguage: String = ENGLISH
-
+	
 	/**
 	 * User-selected content region for localized content and services.
 	 * Uses ISO country codes (e.g., "IN", "US", "GB").
 	 * Affects content recommendations and regional services.
 	 */
-	@JvmField @JsonAttribute(name = "userSelectedContentRegion")
+	@JvmField
+	@JsonAttribute(name = "userSelectedContentRegion")
 	var userSelectedContentRegion: String = "IN"
-
+	
 	// =============================================
 	// APPEARANCE & UI PREFERENCES
 	// =============================================
-
+	
 	/**
 	 * Application theme appearance setting.
 	 *
@@ -180,254 +190,306 @@ class AIOSettings : Serializable {
 	 * - 1: Dark mode
 	 * - 2: Light mode
 	 */
-	@JvmField @JsonAttribute(name = "themeAppearance")
+	@JvmField
+	@JsonAttribute(name = "themeAppearance")
 	var themeAppearance: Int = -1
-
+	
 	/**
 	 * Enables or disables daily content suggestions in the application.
 	 * When enabled, users receive personalized content recommendations.
 	 */
-	@JvmField @JsonAttribute(name = "enableDailyContentSuggestion")
+	@JvmField
+	@JsonAttribute(name = "enableDailyContentSuggestion")
 	var enableDailyContentSuggestion: Boolean = true
-
+	
 	// =============================================
 	// ANALYTICS & USER INTERACTION TRACKING
 	// =============================================
-
+	
 	/** Counter for language change button clicks */
-	@JvmField @JsonAttribute(name = "totalClickCountOnLanguageChange")
+	@JvmField
+	@JsonAttribute(name = "totalClickCountOnLanguageChange")
 	var totalClickCountOnLanguageChange: Int = 0
-
+	
 	/** Counter for media playback interactions */
-	@JvmField @JsonAttribute(name = "totalClickCountOnMediaPlayback")
+	@JvmField
+	@JsonAttribute(name = "totalClickCountOnMediaPlayback")
 	var totalClickCountOnMediaPlayback: Int = 0
-
+	
 	/** Counter for how-to guide accesses */
-	@JvmField @JsonAttribute(name = "totalClickCountOnHowToGuide")
+	@JvmField
+	@JsonAttribute(name = "totalClickCountOnHowToGuide")
 	var totalClickCountOnHowToGuide: Int = 0
-
+	
 	/** Counter for video URL editor usages */
-	@JvmField @JsonAttribute(name = "totalClickCountOnVideoUrlEditor")
+	@JvmField
+	@JsonAttribute(name = "totalClickCountOnVideoUrlEditor")
 	var totalClickCountOnVideoUrlEditor: Int = 0
-
+	
 	/** Counter for home history section accesses */
-	@JvmField @JsonAttribute(name = "totalClickCountOnHomeHistory")
+	@JvmField
+	@JsonAttribute(name = "totalClickCountOnHomeHistory")
 	var totalClickCountOnHomeHistory: Int = 0
-
+	
 	/** Counter for bookmark management interactions */
-	@JvmField @JsonAttribute(name = "totalClickCountOnHomeBookmarks")
+	@JvmField
+	@JsonAttribute(name = "totalClickCountOnHomeBookmarks")
 	var totalClickCountOnHomeBookmarks: Int = 0
-
+	
 	/** Counter for recent downloads section accesses */
-	@JvmField @JsonAttribute(name = "totalClickCountOnRecentDownloads")
+	@JvmField
+	@JsonAttribute(name = "totalClickCountOnRecentDownloads")
 	var totalClickCountOnRecentDownloads: Int = 0
-
+	
 	/** Counter for home screen favicon interactions */
-	@JvmField @JsonAttribute(name = "totalClickCountOnHomeFavicon")
+	@JvmField
+	@JsonAttribute(name = "totalClickCountOnHomeFavicon")
 	var totalClickCountOnHomeFavicon: Int = 0
-
+	
 	/** Counter for version check operations */
-	@JvmField @JsonAttribute(name = "totalClickCountOnVersionCheck")
+	@JvmField
+	@JsonAttribute(name = "totalClickCountOnVersionCheck")
 	var totalClickCountOnVersionCheck: Int = 0
-
+	
 	/** Tracks interstitial advertisement click interactions */
-	@JvmField @JsonAttribute(name = "totalInterstitialAdClick")
+	@JvmField
+	@JsonAttribute(name = "totalInterstitialAdClick")
 	var totalInterstitialAdClick: Int = 0
-
+	
 	/** Tracks interstitial advertisement impression counts */
-	@JvmField @JsonAttribute(name = "totalInterstitialImpression")
+	@JvmField
+	@JsonAttribute(name = "totalInterstitialImpression")
 	var totalInterstitialImpression: Int = 0
-
+	
 	/** Tracks rewarded advertisement click interactions */
-	@JvmField @JsonAttribute(name = "totalRewardedAdClick")
+	@JvmField
+	@JsonAttribute(name = "totalRewardedAdClick")
 	var totalRewardedAdClick: Int = 0
-
+	
 	/** Tracks rewarded advertisement impression counts */
-	@JvmField @JsonAttribute(name = "totalRewardedImpression")
+	@JvmField
+	@JsonAttribute(name = "totalRewardedImpression")
 	var totalRewardedImpression: Int = 0
-
+	
 	// =============================================
 	// PATH CONFIGURATIONS
 	// =============================================
-
+	
 	/**
 	 * Full folder path for WhatsApp status storage.
 	 * Read-only value initialized from string resources.
 	 */
-	@JvmField @JsonAttribute(name = "whatsAppStatusFullFolderPath")
+	@JvmField
+	@JsonAttribute(name = "whatsAppStatusFullFolderPath")
 	var whatsAppStatusFullFolderPath: String = getText(string.text_whatsapp_status_file_dir)
-
+	
 	// =============================================
 	// DOWNLOAD PREFERENCES & BEHAVIOR
 	// =============================================
-
+	
 	/** Enables single progress UI for download operations */
-	@JvmField @JsonAttribute(name = "downloadSingleUIProgress")
+	@JvmField
+	@JsonAttribute(name = "downloadSingleUIProgress")
 	var downloadSingleUIProgress: Boolean = true
-
+	
 	/** Hides video thumbnails in download lists for privacy */
-	@JvmField @JsonAttribute(name = "downloadHideVideoThumbnail")
+	@JvmField
+	@JsonAttribute(name = "downloadHideVideoThumbnail")
 	var downloadHideVideoThumbnail: Boolean = false
-
+	
 	/** Plays notification sound on download completion */
-	@JvmField @JsonAttribute(name = "downloadPlayNotificationSound")
+	@JvmField
+	@JsonAttribute(name = "downloadPlayNotificationSound")
 	var downloadPlayNotificationSound: Boolean = true
-
+	
 	/** Hides system notifications for download operations */
-	@JvmField @JsonAttribute(name = "downloadHideNotification")
+	@JvmField
+	@JsonAttribute(name = "downloadHideNotification")
 	var downloadHideNotification: Boolean = false
-
+	
 	/** Hides download progress from main UI elements */
-	@JvmField @JsonAttribute(name = "hideDownloadProgressFromUI")
+	@JvmField
+	@JsonAttribute(name = "hideDownloadProgressFromUI")
 	var hideDownloadProgressFromUI: Boolean = false
-
+	
 	/** Enables automatic removal of completed download tasks */
-	@JvmField @JsonAttribute(name = "downloadAutoRemoveTasks")
+	@JvmField
+	@JsonAttribute(name = "downloadAutoRemoveTasks")
 	var downloadAutoRemoveTasks: Boolean = false
-
+	
 	/** Number of days after which completed tasks are automatically removed */
-	@JvmField @JsonAttribute(name = "downloadAutoRemoveTaskAfterNDays")
+	@JvmField
+	@JsonAttribute(name = "downloadAutoRemoveTaskAfterNDays")
 	var downloadAutoRemoveTaskAfterNDays: Int = 0
-
+	
 	/** Opens downloaded files on single click instead of long press */
-	@JvmField @JsonAttribute(name = "openDownloadedFileOnSingleClick")
+	@JvmField
+	@JsonAttribute(name = "openDownloadedFileOnSingleClick")
 	var openDownloadedFileOnSingleClick: Boolean = true
-
+	
 	// =============================================
 	// ADVANCED DOWNLOAD FEATURES
 	// =============================================
-
+	
 	/** Enables automatic resumption of interrupted downloads */
-	@JvmField @JsonAttribute(name = "downloadAutoResume")
+	@JvmField
+	@JsonAttribute(name = "downloadAutoResume")
 	var downloadAutoResume: Boolean = true
-
+	
 	/** Maximum number of errors before stopping auto-resume attempts */
-	@JvmField @JsonAttribute(name = "downloadAutoResumeMaxErrors")
+	@JvmField
+	@JsonAttribute(name = "downloadAutoResumeMaxErrors")
 	var downloadAutoResumeMaxErrors: Int = 35
-
+	
 	/** Enables automatic handling of URL redirections during downloads */
-	@JvmField @JsonAttribute(name = "downloadAutoLinkRedirection")
+	@JvmField
+	@JsonAttribute(name = "downloadAutoLinkRedirection")
 	var downloadAutoLinkRedirection: Boolean = true
-
+	
 	/** Enables automatic cataloging of downloads into folders */
-	@JvmField @JsonAttribute(name = "downloadAutoFolderCatalog")
+	@JvmField
+	@JsonAttribute(name = "downloadAutoFolderCatalog")
 	var downloadAutoFolderCatalog: Boolean = true
-
+	
 	/** Enables automatic thread selection for parallel downloads */
-	@JvmField @JsonAttribute(name = "downloadAutoThreadSelection")
+	@JvmField
+	@JsonAttribute(name = "downloadAutoThreadSelection")
 	var downloadAutoThreadSelection: Boolean = true
-
+	
 	/** Automatically moves downloaded files to private storage */
-	@JvmField @JsonAttribute(name = "downloadAutoFileMoveToPrivate")
+	@JvmField
+	@JsonAttribute(name = "downloadAutoFileMoveToPrivate")
 	var downloadAutoFileMoveToPrivate: Boolean = false
-
+	
 	/** Automatically converts downloaded videos to MP3 format */
-	@JvmField @JsonAttribute(name = "downloadAutoConvertVideosToMp3")
+	@JvmField
+	@JsonAttribute(name = "downloadAutoConvertVideosToMp3")
 	var downloadAutoConvertVideosToMp3: Boolean = false
-
+	
 	// =============================================
 	// DOWNLOAD PERFORMANCE SETTINGS
 	// =============================================
-
+	
 	/** Buffer size in bytes for download operations (default: 8KB) */
-	@JvmField @JsonAttribute(name = "downloadBufferSize")
+	@JvmField
+	@JsonAttribute(name = "downloadBufferSize")
 	var downloadBufferSize: Int = 1024 * 8
-
+	
 	/** Maximum HTTP read timeout in milliseconds (default: 30 seconds) */
-	@JvmField @JsonAttribute(name = "downloadMaxHttpReadingTimeout")
+	@JvmField
+	@JsonAttribute(name = "downloadMaxHttpReadingTimeout")
 	var downloadMaxHttpReadingTimeout: Int = 1000 * 30
-
+	
 	/** Default number of thread connections per download */
-	@JvmField @JsonAttribute(name = "downloadDefaultThreadConnections")
+	@JvmField
+	@JsonAttribute(name = "downloadDefaultThreadConnections")
 	var downloadDefaultThreadConnections: Int = 1
-
+	
 	/** Default number of parallel download connections */
-	@JvmField @JsonAttribute(name = "downloadDefaultParallelConnections")
+	@JvmField
+	@JsonAttribute(name = "downloadDefaultParallelConnections")
 	var downloadDefaultParallelConnections: Int = 10
-
+	
 	/** Enables checksum verification for downloaded files */
-	@JvmField @JsonAttribute(name = "downloadVerifyChecksum")
+	@JvmField
+	@JsonAttribute(name = "downloadVerifyChecksum")
 	var downloadVerifyChecksum: Boolean = false
-
+	
 	/** Maximum network speed in bytes per second (0 = unlimited) */
-	@JvmField @JsonAttribute(name = "downloadMaxNetworkSpeed")
+	@JvmField
+	@JsonAttribute(name = "downloadMaxNetworkSpeed")
 	var downloadMaxNetworkSpeed: Long = 0
-
+	
 	/** Restricts downloads to WiFi connections only */
-	@JvmField @JsonAttribute(name = "downloadWifiOnly")
+	@JvmField
+	@JsonAttribute(name = "downloadWifiOnly")
 	var downloadWifiOnly: Boolean = false
-
+	
 	/** HTTP User-Agent string used for download requests */
-	@JvmField @JsonAttribute(name = "downloadHttpUserAgent")
+	@JvmField
+	@JsonAttribute(name = "downloadHttpUserAgent")
 	var downloadHttpUserAgent: String = getText(string.text_downloads_default_http_user_agent)
-
+	
 	/** HTTP proxy server configuration for downloads */
-	@JvmField @JsonAttribute(name = "downloadHttpProxyServer")
+	@JvmField
+	@JsonAttribute(name = "downloadHttpProxyServer")
 	var downloadHttpProxyServer: String = ""
-
+	
 	// =============================================
 	// APPLICATION STABILITY & CRASH HANDLING
 	// =============================================
-
+	
 	/**
 	 * Flag indicating if the application crashed during the previous session.
 	 * Used for crash recovery and stability monitoring.
 	 */
-	@JvmField @JsonAttribute(name = "hasAppCrashedRecently")
+	@JvmField
+	@JsonAttribute(name = "hasAppCrashedRecently")
 	var hasAppCrashedRecently: Boolean = false
-
+	
 	// =============================================
 	// PRIVACY & SECURITY SETTINGS
 	// =============================================
-
+	
 	/** Password for accessing private folder (encrypted storage) */
-	@JvmField @JsonAttribute(name = "privateFolderPassword")
+	@JvmField
+	@JsonAttribute(name = "privateFolderPassword")
 	var privateFolderPassword: String = ""
-
+	
 	/** Maximum number of downloads allowed (rate limiting) */
-	@JvmField @JsonAttribute(name = "numberOfMaxDownloadThreshold")
+	@JvmField
+	@JsonAttribute(name = "numberOfMaxDownloadThreshold")
 	var numberOfMaxDownloadThreshold: Int = 1
-
+	
 	/** Counter for total downloads performed by user */
-	@JvmField @JsonAttribute(name = "numberOfDownloadsUserDid")
+	@JvmField
+	@JsonAttribute(name = "numberOfDownloadsUserDid")
 	var numberOfDownloadsUserDid: Int = 0
-
+	
 	// =============================================
 	// BROWSER-SPECIFIC SETTINGS
 	// =============================================
-
+	
 	/** Default homepage URL for the in-app browser */
-	@JvmField @JsonAttribute(name = "browserDefaultHomepage")
+	@JvmField
+	@JsonAttribute(name = "browserDefaultHomepage")
 	var browserDefaultHomepage: String = getText(string.text_https_google_com)
-
+	
 	/** Enables desktop-mode browsing instead of mobile view */
-	@JvmField @JsonAttribute(name = "browserDesktopBrowsing")
+	@JvmField
+	@JsonAttribute(name = "browserDesktopBrowsing")
 	var browserDesktopBrowsing: Boolean = false
-
+	
 	/** Enables ad-blocking functionality in the browser */
-	@JvmField @JsonAttribute(name = "browserEnableAdblocker")
+	@JvmField
+	@JsonAttribute(name = "browserEnableAdblocker")
 	var browserEnableAdblocker: Boolean = true
-
+	
 	/** Enables JavaScript execution in the browser */
-	@JvmField @JsonAttribute(name = "browserEnableJavascript")
+	@JvmField
+	@JsonAttribute(name = "browserEnableJavascript")
 	var browserEnableJavascript: Boolean = true
-
+	
 	/** Enables image loading in the browser */
-	@JvmField @JsonAttribute(name = "browserEnableImages")
+	@JvmField
+	@JsonAttribute(name = "browserEnableImages")
 	var browserEnableImages: Boolean = true
-
+	
 	/** Enables popup blocking in the browser */
-	@JvmField @JsonAttribute(name = "browserEnablePopupBlocker")
+	@JvmField
+	@JsonAttribute(name = "browserEnablePopupBlocker")
 	var browserEnablePopupBlocker: Boolean = true
-
+	
 	/** Enables video grabber functionality in the browser */
-	@JvmField @JsonAttribute(name = "browserEnableVideoGrabber")
+	@JvmField
+	@JsonAttribute(name = "browserEnableVideoGrabber")
 	var browserEnableVideoGrabber: Boolean = true
-
+	
 	/** HTTP User-Agent string used for browser requests */
-	@JvmField @JsonAttribute(name = "browserHttpUserAgent")
+	@JvmField
+	@JsonAttribute(name = "browserHttpUserAgent")
 	var browserHttpUserAgent: String = getText(string.text_browser_default_mobile_http_user_agent)
-
+	
 	/**
 	 * Reads settings from internal storage and applies them to the current app instance.
 	 * Attempts to read from binary format first, falls back to JSON if binary is invalid.
@@ -438,7 +500,7 @@ class AIOSettings : Serializable {
 			initializeLegacyDataParser()
 		})
 	}
-
+	
 	/**
 	 * Attempts to restore previously saved AIO settings during app startup.
 	 * Supports both **binary** and **JSON** formats for backward compatibility.
@@ -453,51 +515,51 @@ class AIOSettings : Serializable {
 	private fun initializeLegacyDataParser() {
 		try {
 			var isBinaryFileValid = false
-
+			
 			// Retrieve reference to the internal data folder
 			val internalDir = AIOApp.internalDataFolder
-
+			
 			// Attempt to locate the binary settings file within internal storage
 			val settingsBinaryDataFile = internalDir.findFile(AIO_SETTINGS_FILE_NAME_BINARY)
-
+			
 			// STEP 1: Try to restore from binary settings file
 			if (settingsBinaryDataFile != null && settingsBinaryDataFile.exists()) {
 				logger.d("Found binary settings file, attempting to load")
-
+				
 				// Get absolute path and read binary contents
 				val absolutePath = settingsBinaryDataFile.getAbsolutePath(INSTANCE)
 				val objectInMemory = loadFromBinary(File(absolutePath))
-
+				
 				// Validate and apply loaded settings
 				if (objectInMemory != null) {
 					logger.d("Successfully loaded settings from binary format")
-
+					
 					// Assign loaded data to the global settings instance
 					aioSettings = objectInMemory
-
+					
 					// Update persistent storage and validate directory access
 					aioSettings.updateInStorage()
 					validateUserSelectedFolder()
-
+					
 					isBinaryFileValid = true
 				} else {
 					logger.d("Failed to load settings from binary format")
 				}
 			}
-
+			
 			// STEP 2: Fallback to JSON format if binary load fails
 			if (!isBinaryFileValid) {
 				logger.d("Attempting to load settings from JSON format")
-
+				
 				readStringFromInternalStorage(AIO_SETTINGS_FILE_NAME_JSON).let { jsonString ->
 					if (jsonString.isNotEmpty()) {
 						// Deserialize JSON into AIOSettings object
 						convertJSONStringToClass(jsonString = jsonString).let {
 							logger.d("Successfully loaded settings from JSON format")
-
+							
 							// Assign loaded JSON data to the global instance
 							aioSettings = it
-
+							
 							// Update persistent cache and validate folder access
 							aioSettings.updateInStorage()
 							validateUserSelectedFolder()
@@ -507,12 +569,12 @@ class AIOSettings : Serializable {
 					}
 				}
 			}
-
+			
 		} catch (error: Exception) {
 			logger.e("Error reading settings from storage: ${error.message}", error)
 		}
 	}
-
+	
 	/**
 	 * Saves the current settings object to the app’s internal storage.
 	 *
@@ -532,10 +594,10 @@ class AIOSettings : Serializable {
 		ThreadsUtility.executeInBackground(codeBlock = {
 			try {
 				logger.d("Updating settings in storage")
-
+				
 				// Save optimized binary version
 				saveToBinary(fileName = AIO_SETTINGS_FILE_NAME_BINARY)
-
+				
 				// Save readable JSON version
 				saveStringToInternalStorage(
 					fileName = AIO_SETTINGS_FILE_NAME_JSON,
@@ -548,7 +610,7 @@ class AIOSettings : Serializable {
 			}
 		})
 	}
-
+	
 	/**
 	 * Serializes and writes the current settings object to a binary file.
 	 *
@@ -567,14 +629,14 @@ class AIOSettings : Serializable {
 	private fun saveToBinary(fileName: String) {
 		try {
 			logger.d("Saving settings to binary file: $fileName")
-
+			
 			// Open or create binary file inside app’s internal storage
 			val fileOutputStream = INSTANCE.openFileOutput(fileName, MODE_PRIVATE)
-
+			
 			fileOutputStream.use { fos ->
 				// Serialize current object instance to binary format
 				val bytes = fstConfig.asByteArray(this)
-
+				
 				// Write binary data to file
 				fos.write(bytes)
 				logger.d("Binary settings saved successfully")
@@ -583,7 +645,7 @@ class AIOSettings : Serializable {
 			logger.e("Error saving binary settings: ${error.message}", error)
 		}
 	}
-
+	
 	/**
 	 * Loads and deserializes AIO settings from a binary file.
 	 *
@@ -605,10 +667,10 @@ class AIOSettings : Serializable {
 			logger.d("Binary settings file does not exist")
 			return null
 		}
-
+		
 		return try {
 			logger.d("Loading settings from binary file")
-
+			
 			// Read all bytes and reconstruct the settings object
 			val bytes = settingDataBinaryFile.readBytes()
 			fstConfig.asObject(bytes).apply {
@@ -616,13 +678,13 @@ class AIOSettings : Serializable {
 			} as AIOSettings
 		} catch (error: Exception) {
 			logger.e("Error loading binary settings: ${error.message}", error)
-
+			
 			// Delete corrupted settings file to avoid repeated failures
 			settingDataBinaryFile.delete()
 			null
 		}
 	}
-
+	
 	/**
 	 * Validates whether the folder selected by the user is writable.
 	 *
@@ -638,19 +700,19 @@ class AIOSettings : Serializable {
 	 */
 	fun validateUserSelectedFolder() {
 		logger.d("Validating user selected folder")
-
+		
 		// Check whether the currently configured folder is writable
 		if (!isWritableFile(getUserSelectedDir())) {
 			logger.d("User selected folder not writable, creating default folder")
-
+			
 			// If folder is invalid or inaccessible, revert to default AIO folder
 			createDefaultAIODownloadFolder()
 		}
-
+		
 		// Persist updated folder info in settings (e.g., JSON or binary file)
 		aioSettings.updateInStorage()
 	}
-
+	
 	/**
 	 * Retrieves the user-selected download directory as a [DocumentFile].
 	 *
@@ -669,10 +731,10 @@ class AIOSettings : Serializable {
 		return when (aioSettings.defaultDownloadLocation) {
 			PRIVATE_FOLDER -> {
 				logger.d("Getting private folder directory")
-
+				
 				// Internal app data directory (private to the application)
 				val internalDataFolderPath = INSTANCE.dataDir.absolutePath
-
+				
 				// Convert to DocumentFile for safe file access
 				fromFullPath(
 					context = INSTANCE,
@@ -680,14 +742,14 @@ class AIOSettings : Serializable {
 					requiresWriteAccess = true
 				)
 			}
-
+			
 			SYSTEM_GALLERY -> {
 				logger.d("Getting system gallery directory")
-
+				
 				// Retrieve localized path for system gallery folder
 				val resID = string.text_default_aio_download_folder_path
 				val externalDataFolderPath = getText(resID)
-
+				
 				// Convert to DocumentFile representing the public gallery path
 				fromFullPath(
 					context = INSTANCE,
@@ -695,7 +757,7 @@ class AIOSettings : Serializable {
 					requiresWriteAccess = true
 				)
 			}
-
+			
 			else -> {
 				// Unknown or unsupported download location type
 				logger.d("Unknown download location type")
@@ -703,7 +765,7 @@ class AIOSettings : Serializable {
 			}
 		}
 	}
-
+	
 	/**
 	 * Attempts to create the default AIO folder inside the public download directory.
 	 *
@@ -718,13 +780,13 @@ class AIOSettings : Serializable {
 	private fun createDefaultAIODownloadFolder() {
 		try {
 			logger.d("Creating default AIO download folder")
-
+			
 			// Retrieve default folder name from localized strings (e.g., "AIO Downloads")
 			val defaultFolderName = getText(string.title_default_application_folder)
-
+			
 			// Attempt to create directory inside the public download folder
 			INSTANCE.getPublicDownloadDir()?.createDirectory(defaultFolderName)
-
+			
 			// Log success if no exception occurred
 			logger.d("Default folder created successfully")
 		} catch (error: Exception) {
@@ -732,7 +794,7 @@ class AIOSettings : Serializable {
 			logger.e("Error creating default folder: ${error.message}", error)
 		}
 	}
-
+	
 	/**
 	 * Converts the current AIOSettings instance into a JSON string representation.
 	 *
@@ -747,71 +809,74 @@ class AIOSettings : Serializable {
 	 */
 	fun convertClassToJSON(): String {
 		logger.d("Converting settings to JSON")
-
+		
 		// Create a temporary stream to hold the serialized JSON data
 		val outputStream = ByteArrayOutputStream()
-
+		
 		// Serialize the current object instance into the stream
 		aioDSLJsonInstance.serialize(this, outputStream)
-
+		
 		// Convert the byte stream to a readable UTF-8 string and return
 		return outputStream.toByteArray().decodeToString()
 	}
-
-	/**
-	 * Converts a JSON-formatted string into an AIOSettings object.
-	 *
-	 * This function:
-	 * - Wraps the given JSON string into an input stream.
-	 * - Uses the same DSL-JSON instance to deserialize it into an AIOSettings object.
-	 * - Falls back to a new default instance if deserialization fails (null result).
-	 *
-	 * Commonly used when restoring settings from disk or network.
-	 *
-	 * @param jsonString The JSON string to deserialize.
-	 * @return A fully populated AIOSettings object, or a default one if parsing fails.
-	 */
-	private fun convertJSONStringToClass(jsonString: String): AIOSettings {
-		logger.d("Converting JSON to settings object")
-
-		// Prepare a byte stream from the input JSON string
-		val inputStream = ByteArrayInputStream(jsonString.encodeToByteArray())
-
-		// Deserialize the JSON into an AIOSettings object; fallback to default if null
-		val loadedSettings: AIOSettings = aioDSLJsonInstance
-			.deserialize(AIOSettings::class.java, inputStream) ?: AIOSettings()
-
-		return loadedSettings
-	}
-
+	
 	companion object {
-
+		
+		private val logger = LogHelperUtils.from(javaClass)
+		
 		/**
 		 * Filename used to indicate that dark mode is enabled.
 		 * This file acts as a flag for the app's dark mode state.
 		 */
 		const val AIO_SETTING_DARK_MODE_FILE_NAME: String = "darkmode.on"
-
+		
 		/**
 		 * Filename for storing user or app settings in JSON format.
 		 */
 		const val AIO_SETTINGS_FILE_NAME_JSON: String = "aio_settings.json"
-
+		
 		/**
 		 * Filename for storing user or app settings in binary format.
 		 */
 		const val AIO_SETTINGS_FILE_NAME_BINARY: String = "aio_settings.dat"
-
+		
 		/**
 		 * Constant representing the private download folder.
 		 * Files saved here are accessible only within the app.
 		 */
 		const val PRIVATE_FOLDER = 1
-
+		
 		/**
 		 * Constant representing the system gallery download folder.
 		 * Files saved here are visible to other apps (e.g., Photos, Gallery).
 		 */
 		const val SYSTEM_GALLERY = 2
+		
+		/**
+		 * Converts a JSON-formatted string into an AIOSettings object.
+		 *
+		 * This function:
+		 * - Wraps the given JSON string into an input stream.
+		 * - Uses the same DSL-JSON instance to deserialize it into an AIOSettings object.
+		 * - Falls back to a new default instance if deserialization fails (null result).
+		 *
+		 * Commonly used when restoring settings from disk or network.
+		 *
+		 * @param jsonString The JSON string to deserialize.
+		 * @return A fully populated AIOSettings object, or a default one if parsing fails.
+		 */
+		@JvmStatic
+		fun convertJSONStringToClass(jsonString: String): AIOSettings {
+			logger.d("Converting JSON to settings object")
+			
+			// Prepare a byte stream from the input JSON string
+			val inputStream = ByteArrayInputStream(jsonString.encodeToByteArray())
+			
+			// Deserialize the JSON into an AIOSettings object; fallback to default if null
+			val loadedSettings: AIOSettings = aioDSLJsonInstance
+				.deserialize(AIOSettings::class.java, inputStream) ?: AIOSettings()
+			
+			return loadedSettings
+		}
 	}
 }
