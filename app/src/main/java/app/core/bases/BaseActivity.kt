@@ -2,97 +2,78 @@
 
 package app.core.bases
 
-import android.Manifest.permission.MANAGE_EXTERNAL_STORAGE
-import android.Manifest.permission.POST_NOTIFICATIONS
-import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-import android.annotation.SuppressLint
-import android.content.Intent
-import android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
-import android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP
-import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-import android.content.res.Configuration
-import android.graphics.Rect
-import android.os.Build
-import android.os.Bundle
-import android.os.PowerManager
-import android.os.Process
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
+import android.Manifest.permission.*
+import android.annotation.*
+import android.content.*
+import android.content.Intent.*
+import android.content.pm.ActivityInfo.*
+import android.content.res.*
+import android.graphics.*
+import android.os.*
 import android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
 import android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS
-import android.view.MotionEvent
-import android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
-import android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-import android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-import android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-import android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-import android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-import android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-import android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-import android.view.WindowInsets
-import android.view.WindowInsetsController
-import android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-import android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-import android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-import android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-import android.view.inputmethod.InputMethodManager
-import android.widget.EditText
-import android.widget.TextView
-import androidx.activity.OnBackPressedCallback
-import androidx.annotation.ColorInt
-import androidx.core.content.ContextCompat.getColor
-import androidx.core.content.ContextCompat.getDrawable
-import androidx.core.graphics.drawable.toDrawable
-import androidx.core.net.toUri
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
+import android.view.*
+import android.view.View.*
+import android.view.WindowInsetsController.*
+import android.view.WindowManager.LayoutParams.*
+import android.view.inputmethod.*
+import android.widget.*
+import androidx.activity.*
+import androidx.annotation.*
+import androidx.core.content.ContextCompat.*
+import androidx.core.graphics.drawable.*
+import androidx.core.net.*
+import androidx.core.view.*
+import app.core.*
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioAdblocker
 import app.core.AIOApp.Companion.aioLanguage
 import app.core.AIOApp.Companion.aioSettings
 import app.core.AIOApp.Companion.downloadSystem
-import app.core.AIOCrashHandler
-import app.core.bases.dialogs.UpdaterDialog
-import app.core.bases.interfaces.BaseActivityInf
-import app.core.bases.interfaces.PermissionsResult
-import app.core.bases.language.LanguageAwareActivity
+import app.core.bases.dialogs.*
+import app.core.bases.interfaces.*
+import app.core.bases.language.*
 import app.core.engines.backend.AIOSelfDestruct.shouldSelfDestructApplication
-import app.core.engines.services.AIOForegroundService
-import app.core.engines.updater.AIOUpdater
-import app.ui.main.MotherActivity
-import app.ui.others.startup.OpeningActivity
+import app.core.engines.services.*
+import app.core.engines.updater.*
+import app.ui.main.*
+import app.ui.others.startup.*
 import com.aio.R
-import com.anggrayudi.storage.SimpleStorageHelper
-import com.permissionx.guolindev.PermissionX
-import com.permissionx.guolindev.PermissionX.isGranted
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.anggrayudi.storage.*
+import com.permissionx.guolindev.PermissionX.*
+import kotlinx.coroutines.*
 import lib.files.FileSystemUtility.getFileExtension
 import lib.files.FileSystemUtility.getFileSha256
+import lib.process.*
 import lib.process.CommonTimeUtils.OnTaskFinishListener
 import lib.process.CommonTimeUtils.delay
-import lib.process.LogHelperUtils
-import lib.process.ThreadsUtility
+import lib.ui.*
 import lib.ui.ActivityAnimator.animActivityFade
 import lib.ui.ActivityAnimator.animActivitySwipeRight
-import lib.ui.MsgDialogUtils
 import lib.ui.MsgDialogUtils.showMessageDialog
-import lib.ui.ViewUtility
 import lib.ui.ViewUtility.setLeftSideDrawable
 import lib.ui.builders.ToastView.Companion.showToast
-import java.io.File
-import java.io.IOException
-import java.lang.Thread.setDefaultUncaughtExceptionHandler
-import java.lang.ref.WeakReference
-import java.util.TimeZone
-import kotlin.system.exitProcess
+import java.io.*
+import java.lang.System
+import java.lang.Thread.*
+import java.lang.ref.*
+import java.util.*
+import kotlin.Boolean
+import kotlin.Exception
+import kotlin.Int
+import kotlin.Pair
+import kotlin.String
+import kotlin.Suppress
+import kotlin.Unit
+import kotlin.apply
+import kotlin.collections.ArrayList
+import kotlin.collections.isNotEmpty
+import kotlin.getValue
+import kotlin.lazy
+import kotlin.let
+import kotlin.run
+import kotlin.system.*
+import kotlin.toString
 
 /**
  * Base activity class that provides common functionality and infrastructure for all activities in the application.
@@ -121,7 +102,7 @@ import kotlin.system.exitProcess
  * @see LanguageAwareActivity For localization and language switching capabilities
  * @see BaseActivityInf For the interface defining common activity operations
  */
-abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
+abstract class BaseActivity : LocaleActivityInf(), BaseActivityInf {
 
 	/**
 	 * Logger instance for debugging, tracing lifecycle events, and monitoring application behavior.
@@ -304,7 +285,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 			// Configure theme appearance based on user preferences or system settings
 			// Ensures consistent visual experience across the application
 			logger.d("Applying theme appearance from user preferences")
-			//setThemeAppearance()
+			setThemeAppearance()
 
 			// Initialize scoped storage helper for modern file access on Android 10+
 			// Handles permissions and provides abstraction for storage operations
@@ -314,7 +295,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 			// Apply user-selected language for localization and internationalization
 			// Overrides system language if user has specified a preference
 			logger.d("Applying user-selected language for localization")
-			aioLanguage.applyUserSelectedLanguage()
+			aioLanguage.applyUserSelectedLanguage(getActivity())
 
 			// Lock activity orientation to portrait for consistent user experience
 			// Prevents layout recalculations and provides predictable UI behavior
@@ -454,12 +435,52 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 		} ?: logger.d("safeBaseActivityRef is null — skipping onResume tasks due to invalid context")
 	}
 
+	/**
+	 * Called when the activity is being placed in the background but has not yet been stopped.
+	 *
+	 * This method is the counterpart to `onResume()` and is typically called when the user
+	 * navigates away from the activity, a new activity starts on top of it, or the
+	 * screen is turned off. It marks the activity as no longer running in the foreground
+	 * and provides a hook for subclasses to perform any necessary cleanup or state saving.
+	 *
+	 * Key actions performed:
+	 * - Sets `isActivityRunning` to `false` to indicate the activity is no longer interactive.
+	 * - Calls the `onPauseActivity()` template method, allowing subclasses to implement
+	 *   custom logic for pausing operations, such as stopping animations or saving draft data.
+	 *
+	 * After this method completes, the system may either resume the activity (by calling `onResume()`)
+	 * or stop it completely (by calling `onStop()`).
+	 *
+	 * @see onResume
+	 * @see onPauseActivity
+	 */
 	override fun onPause() {
 		super.onPause()
 		isActivityRunning = false
 		onPauseActivity()
 	}
 
+	/**
+	 * Performs final cleanup when the activity is being destroyed.
+	 *
+	 * This method is called by the system when the activity is permanently removed from memory,
+	 * either due to the user finishing it, a configuration change, or the system reclaiming
+	 * resources. It is crucial for releasing all resources and references to prevent memory leaks
+	 * and ensure a clean shutdown.
+	 *
+	 * Cleanup actions performed:
+	 * - Marks the activity as not running.
+	 * - Nullifies references to helpers and listeners (`scopedStorageHelper`, `permissionCheckListener`)
+	 *   to allow garbage collection.
+	 * - Cancels the background coroutine scope (`activityJob`) to stop all associated jobs.
+	 * - Cancels any ongoing update checks to prevent orphaned background tasks.
+	 * - Releases the `vibrator` service if it was initialized.
+	 * - Unregisters the activity from the download UI manager to prevent callbacks to a destroyed
+	 *   context.
+	 *
+	 * This ensures that no long-lived references or background tasks tied to the activity
+	 * persist after its destruction.
+	 */
 	override fun onDestroy() {
 		isActivityRunning = false
 		scopedStorageHelper = null
@@ -479,48 +500,118 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 		super.onDestroy()
 	}
 
+	/**
+	 * Template method called during the `onPause` lifecycle event of the activity.
+	 *
+	 * Subclasses can override this method to perform specific actions when the activity
+	 * is about to enter a paused state, such as saving transient UI state, stopping
+	 * animations, or releasing resources that are not needed while the activity is
+	 * not in the foreground.
+	 *
+	 * This method is called after the base `onPause` logic completes, ensuring that
+	 * the activity's `isActivityRunning` flag has already been set to false.
+	 *
+	 * The default implementation is empty, providing an optional hook for subclasses.
+	 */
 	override fun onPauseActivity() = Unit
 
+	/**
+	 * A template method called from [onResume] to allow subclasses to perform custom
+	 * initialization when the activity becomes interactive.
+	 *
+	 * Subclasses can override this method to execute specific logic after the core
+	 * onResume tasks (like permission checks, service updates, and UI state restoration)
+	 * have been completed in the base class. This provides a clean extension point
+	 * for child activities to perform their own on-resume actions without overriding
+	 * the entire `onResume` method and risking an incorrect implementation.
+	 *
+	 * The default implementation is empty.
+	 *
+	 * Example Usage:
+	 * ```kotlin
+	 * override fun onResumeActivity() {
+	 *     // Refresh UI components with the latest data
+	 *     viewModel.loadData()
+	 * }
+	 * ```
+	 */
 	override fun onResumeActivity() = Unit
 
+	/**
+	 * Customizes the colors and icon themes of the system bars (status bar and navigation bar).
+	 *
+	 * This method provides a unified API to theme the system bars across different Android
+	 * versions, handling the complexities of modern `WindowInsetsController` (Android 11+) and
+	 * legacy `systemUiVisibility` flags. It allows setting the background color and toggling
+	 * the icon theme (light or dark) for both the status bar and the navigation bar.
+	 *
+	 * On Android 11 (API 30) and newer, it uses the `WindowInsetsController` API for a more
+	 * reliable and modern approach to controlling system bar appearance. On older versions,
+	 * it manipulates the `systemUiVisibility` bit-flags to achieve the same effect.
+	 *
+	 * @param statusBarColorResId The color resource ID (e.g., `R.color.my_color`) to set as the
+	 *        status bar's background color.
+	 * @param navigationBarColorResId The color resource ID for the navigation bar's background
+	 *        color.
+	 * @param isLightStatusBar If `true`, the status bar icons (like clock, battery, and
+	 *        notifications) will be dark, suitable for a light-colored status bar background.
+	 *        If `false`, they will be light.
+	 * @param isLightNavigationBar If `true`, the navigation bar icons (like back, home, and
+	 *        recents) will be dark, suitable for a light-colored navigation bar background.
+	 *        If `false`, they will be light.
+	 */
 	override fun setSystemBarsColors(
 		statusBarColorResId: Int,
 		navigationBarColorResId: Int,
 		isLightStatusBar: Boolean,
 		isLightNavigationBar: Boolean,
 	) {
+		// Get the current window of the activity to modify system UI elements.
 		val activityWindow = window
+		// Set the background color of the status bar and navigation bar.
 		activityWindow.statusBarColor = getColor(this, statusBarColorResId)
 		activityWindow.navigationBarColor = getColor(this, navigationBarColorResId)
 
+		// Get the DecorView, which is the root view of the window, to manipulate system UI flags.
 		val decorView = activityWindow.decorView
 
+		// For Android 11 (API 30) and above, use the modern WindowInsetsController API.
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
 			val insetsController = activityWindow.insetsController
+			// Configure the appearance of the status bar icons (e.g., clock, battery).
+			// If isLightStatusBar is true, icons become dark for light backgrounds.
 			insetsController?.setSystemBarsAppearance(
 				if (isLightStatusBar) APPEARANCE_LIGHT_STATUS_BARS else 0,
 				APPEARANCE_LIGHT_STATUS_BARS
 			)
+			// Configure the appearance of the navigation bar icons (e.g., back, home).
+			// If isLightNavigationBar is true, icons become dark for light backgrounds.
 			insetsController?.setSystemBarsAppearance(
 				if (isLightNavigationBar) APPEARANCE_LIGHT_NAVIGATION_BARS else 0,
 				APPEARANCE_LIGHT_NAVIGATION_BARS
 			)
 		} else {
+			// For older versions (below Android 11), use the legacy systemUiVisibility flags.
+			// This is deprecated but necessary for backward compatibility.
 			if (isLightStatusBar) {
+				// Add the flag to make status bar icons dark.
 				decorView.systemUiVisibility =
 					decorView.systemUiVisibility or
 						SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
 			} else {
+				// Remove the flag to make status bar icons light (default).
 				decorView.systemUiVisibility =
 					decorView.systemUiVisibility and
 						SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
 			}
 
 			if (isLightNavigationBar) {
+				// Add the flag to make navigation bar icons dark.
 				decorView.systemUiVisibility =
 					decorView.systemUiVisibility or
 						SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
 			} else {
+				// Remove the flag to make navigation bar icons light (default).
 				decorView.systemUiVisibility =
 					decorView.systemUiVisibility and
 						SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
@@ -528,22 +619,64 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 		}
 	}
 
+	/**
+	 * Handles configuration changes, such as screen rotation, keyboard availability, or locale changes.
+	 *
+	 * This method is called by the system when a device configuration changes while the activity is running.
+	 * The primary responsibility of this override is to ensure that the application's localization is
+	 * reapplied correctly after such a change. It calls `openPrepareLocalize()` to reload language-specific
+	 * resources and update the UI accordingly.
+	 *
+	 * After handling localization, it calls the superclass implementation to allow the default system
+	 * behavior for configuration changes to proceed.
+	 *
+	 * @param newConfiguration The new device configuration.
+	 */
+	override fun onConfigurationChanged(newConfiguration: Configuration) {
+		openPrepareLocalize()
+		super.onConfigurationChanged(newConfiguration)
+	}
+
+	/**
+	 * Hides the soft keyboard when a touch event occurs outside of a focused `EditText`.
+	 *
+	 * This override intercepts all touch events at the activity level. When a user taps
+	 * the screen (`ACTION_DOWN`), it checks if the currently focused view is an `EditText`.
+	 * If it is, the method determines if the tap occurred outside the visible bounds of that
+	 * `EditText`. If the tap is outside, it clears the focus from the `EditText` and
+	 * explicitly hides the soft keyboard.
+	 *
+	 * This provides a common and intuitive user experience, allowing users to dismiss the
+	 * keyboard by simply tapping anywhere else on the screen.
+	 *
+	 * @param motionEvent The motion event being dispatched.
+	 * @return `true` to consume the event, or the result of the superclass implementation
+	 *         to allow normal event propagation.
+	 */
 	override fun dispatchTouchEvent(motionEvent: MotionEvent): Boolean {
+		// Check if the user has just tapped the screen.
 		if (motionEvent.action == MotionEvent.ACTION_DOWN) {
+			// Get the view that currently has focus.
 			val focusedView = currentFocus
 
+			// If the focused view is an EditText, check if the tap was outside of it.
 			if (focusedView is EditText) {
 				val outRect = Rect()
+				// Get the visible screen coordinates of the EditText.
 				focusedView.getGlobalVisibleRect(outRect)
 
+				// Check if the tap's coordinates are outside the bounds of the EditText.
 				if (!outRect.contains(motionEvent.rawX.toInt(), motionEvent.rawY.toInt())) {
+					// If the tap was outside, clear the EditText's focus.
 					focusedView.clearFocus()
+					// And hide the soft keyboard.
 					val service = getSystemService(INPUT_METHOD_SERVICE)
 					val imm = service as InputMethodManager
 					imm.hideSoftInputFromWindow(focusedView.windowToken, 0)
 				}
 			}
 		}
+		// Call the superclass implementation to ensure normal touch event processing.
 		return super.dispatchTouchEvent(motionEvent)
 	}
 
@@ -569,7 +702,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 		getActivity()?.let { activity ->
 			logger.d("Starting permission request flow with ${permissions.size} permission(s)")
 
-			PermissionX.init(activity)
+			init(activity)
 				.permissions(permissions)
 
 				// Show explanation dialog when permissions are initially denied
@@ -846,7 +979,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 			logger.d("Opening official site URL: $uri")
 
 			// Use ACTION_VIEW intent to open in user's preferred browser or Play Store
-			startActivity(Intent(Intent.ACTION_VIEW, uri.toUri()))
+			startActivity(Intent(ACTION_VIEW, uri.toUri()))
 			logger.d("Official site opened successfully in browser or Play Store")
 		} catch (error: Exception) {
 			logger.d("Failed to open official site: ${error.message}")
@@ -1339,7 +1472,7 @@ abstract class BaseActivity : LanguageAwareActivity(), BaseActivityInf {
 				it.show(WindowInsets.Type.systemBars())
 				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
 					// Reset to default behavior (system bars hide when user swipes)
-					it.systemBarsBehavior = WindowInsetsController.BEHAVIOR_DEFAULT
+					it.systemBarsBehavior = BEHAVIOR_DEFAULT
 				}
 				logger.d("InsetsController used to show system bars and reset behavior")
 			}
