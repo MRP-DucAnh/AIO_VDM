@@ -171,9 +171,6 @@ dependencies {
 	implementation libs.media3.ui
 	implementation libs.media3.session
 
-	// Localization library for supporting multiple languages
-	implementation libs.localization
-
 	// ObjectBox for high-performance object-oriented database
 	implementation libs.objectbox.android
 	implementation libs.objectbox.kotlin
