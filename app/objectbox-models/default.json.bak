@@ -5,7 +5,7 @@
   "entities": [
     {
       "id": "1:5859520049495032366",
-      "lastPropertyId": "67:1368932844357110787",
+      "lastPropertyId": "68:178972667968884868",
       "name": "AIOSettings",
       "properties": [
         {
@@ -333,6 +333,11 @@
           "id": "67:1368932844357110787",
           "name": "hasUserSkipBatteryOptimization",
           "type": 1
+        },
+        {
+          "id": "68:178972667968884868",
+          "name": "demoDATA",
+          "type": 9
         }
       ],
       "relations": []
@@ -1162,7 +1167,7 @@
     },
     {
       "id": "10:6838358189535358868",
-      "lastPropertyId": "10:5204249818957308379",
+      "lastPropertyId": "11:8672041066779567174",
       "name": "YouTubeVideoDataModel",
       "properties": [
         {
@@ -1207,13 +1212,13 @@
           "type": 9
         },
         {
-          "id": "9:9019781913617655866",
-          "name": "videoLikesCount",
+          "id": "10:5204249818957308379",
+          "name": "videoChannelName",
           "type": 9
         },
         {
-          "id": "10:5204249818957308379",
-          "name": "videoChannelName",
+          "id": "11:8672041066779567174",
+          "name": "videoChannelThumbnail",
           "type": 9
         }
       ],
@@ -1233,7 +1238,8 @@
     2995981621749460171,
     720351275970656264,
     2728132546519396816,
-    2878173129867797327
+    2878173129867797327,
+    9019781913617655866
   ],
   "retiredRelationUids": [],
   "version": 1
