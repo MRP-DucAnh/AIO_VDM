@@ -1,6 +1,5 @@
 package app.core
 
-import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioSettings
 import app.core.bases.interfaces.*
 import app.core.bases.language.*
@@ -10,35 +9,47 @@ import lib.process.CommonTimeUtils.delay
 import java.util.*
 
 /**
- * [AIOLanguage] serves as the central coordinator for application-wide language management.
+ * Serves as the central coordinator for application-wide language management.
  *
  * This class bridges user language preferences with the technical implementation of
- * runtime language switching, providing a seamless multi-language experience while
+ * runtime language switching. It ensures a seamless multi-language experience by
  * handling the complex activity lifecycle transitions required for language changes.
  *
  * ## Core Responsibilities:
- * - **Language Application**: Applies user-selected languages to both current activity
- *   and application context through [LocaleAwareManager]
- * - **Lifecycle Management**: Handles activity restarts and application quitting when
- *   language changes require complete UI refresh
- * - **Language Catalog**: Maintains the list of supported languages with proper display names
- * - **State Coordination**: Manages flags and commands that control the language change flow
+ * - **Language Application**: Applies user-selected languages to the application context.
+ * - **Lifecycle Management**: Coordinates activity restarts and application-level refresh
+ *   to ensure UI consistency after a language change.
+ * - **Language Catalog**: Maintains a list of supported languages with user-friendly display names.
+ * - **State Coordination**: Manages flags and commands that orchestrate the language change flow,
+ *   preventing race conditions and ensuring a clean UI transition.
  *
- * The class works in concert with [LocaleAwareManager] for technical locale application
- * and [aioSettings] for persistence of user preferences.
+ * This class works in concert with a locale management system (like `LocaleAwareManager`) for
+ * the technical application of locales and `aioSettings` for persisting user preferences.
  */
 open class AIOLanguage {
-
+	
 	/**
 	 * Logger for this class, used for debugging and tracing the language change lifecycle.
-	 *
-	 * Provides detailed logs for events like language application initiation,
-	 * activity restarts, and application quit commands, which is crucial for
-	 * diagnosing issues in the complex language switching flow.
 	 */
 	private val logger = LogHelperUtils.from(javaClass)
-
+	
+	/**
+	 * Provides static constants for supported language codes.
+	 *
+	 * This companion object holds the ISO 639-1 language codes as constants,
+	 * ensuring type-safe and consistent referencing of languages throughout the application.
+	 * Using these constants prevents typos and makes the code more readable when
+	 * setting or checking language preferences.
+	 *
+	 * ## Example Usage:
+	 * ```kotlin
+	 * if (aioSettings.userSelectedUILanguage == AIOLanguage.ENGLISH) {
+	 *     // Handle English-specific logic
+	 * }
+	 * ```
+	 */
 	companion object {
+		
 		/** ISO 639-1 language codes for supported languages */
 		const val ENGLISH = "en"
 		const val BENGALI = "bn"
@@ -48,19 +59,26 @@ open class AIOLanguage {
 		const val DANISH = "da"
 		const val GERMAN = "de"
 	}
-
+	
 	/**
-	 * Catalog of supported languages with user-friendly display names.
+	 * Provides a catalog of supported languages for the application's UI.
 	 *
-	 * **Format**: Each entry is a Pair of (languageCode, displayName) where:
-	 * - languageCode: ISO 639-1 code used for system locale configuration
-	 * - displayName: User-visible name with native script representation
+	 * This list is used to populate language selection menus, allowing users to choose their
+	 * preferred language. Each entry combines a system-level language code with a human-readable
+	 * display name.
 	 *
-	 * **Why Include Native Script**: Shows users how their language will appear
-	 * in the interface, helping them identify their preferred language even if
-	 * they can't read the English language name.
+	 * ### Structure
+	 * Each element is a `Pair<String, String>`:
+	 * - **`first` (Language Code):** The ISO 639-1 code for the language (e.g., "en", "hi").
+	 *   This code is used to configure the application's `Locale`.
+	 * - **`second` (Display Name):** A user-friendly string that includes both the English name
+	 *   and the native script representation (e.g., "Hindi (हिंदी)").
+	 *
+	 * ### Rationale for Native Script
+	 * Including the language's name in its own script is crucial for usability. It helps users
+	 * who may not be fluent in English to easily identify and select their native language.
 	 */
-	val languagesList: List<Pair<String, String>> = listOf(
+	open val languagesList: List<Pair<String, String>> = listOf(
 		ENGLISH to "English (Default)",
 		HINDI to "Hindi (हिंदी)",
 		TELUGU to "Telugu (తెలుగు)",
@@ -69,94 +87,120 @@ open class AIOLanguage {
 		DANISH to "Danish (Dansk)",
 		GERMAN to "German (Deutsch)"
 	)
-
+	
 	/**
-	 * Controls whether the current activity should finish when resumed.
+	 * Controls whether the current activity should be finished when it is next resumed.
 	 *
-	 * **Usage Scenario**: Set to true after applying a language change that
-	 * requires the activity to restart. When the activity resumes, it checks
-	 * this flag and finishes itself if needed, triggering the app restart flow.
+	 * This flag is a key part of the language change lifecycle. It is set to `true`
+	 * immediately after a new language is applied. When the activity's `onResume()`
+	 * is called, it checks this flag. If `true`, the activity finishes itself to allow
+	 * the application to restart and redraw the UI with the new locale.
 	 *
-	 * **Lifecycle Coordination**: This flag bridges the gap between language
-	 * application and activity destruction, ensuring clean state transitions.
+	 * This mechanism ensures that the language change, which happens at a low level,
+	 * is correctly synchronized with the user-facing UI and activity lifecycle,
+	 * providing a clean and predictable restart flow.
+	 *
+	 * @see closeActivityIfLanguageChanged
+	 * @see applyUserSelectedLanguage
 	 */
 	open var finishActivityOnResume = false
-
+	
 	/**
-	 * Signals that the application should completely quit.
+	 * A command flag that signals the application should quit to complete a language change.
 	 *
-	 * **Why Quit Entire App**: Some language changes require restarting all
-	 * activities to ensure consistent language across the entire app state.
-	 * This flag triggers a complete application shutdown and restart.
+	 * When a language is updated, a full application restart is often necessary to ensure
+	 * all components, including those in the back stack, adopt the new locale. This flag
+	 * triggers the final step of that process.
 	 *
-	 * **Safety Mechanism**: The flag is reset after being processed to prevent
-	 * accidental multiple quit commands.
+	 * It is set to `true` when a language change is initiated and reset to `false` after
+	 * the quit command has been executed to prevent accidental repeated shutdowns.
 	 */
 	private var quitApplicationCommand = false
-
+	
 	/**
-	 * Applies the user's language selection to both activity and application context.
+	 * Applies the user's selected language, preparing the application for a UI refresh.
 	 *
-	 * ## Complete Language Application Process:
-	 * 1. Retrieves the stored language preference from [aioSettings]
-	 * 2. Applies the locale through [LocaleAwareManager] for technical configuration
-	 * 3. Sets up activity finishing flags for proper UI refresh
-	 * 4. Invokes completion callback when the process is finished
+	 * This function initiates the language change process by:
+	 * 1. Retrieving the user's selected language code from [aioSettings].
+	 * 2. Setting a flag (`finishActivityOnResume`) that signals the current activity to
+	 *    restart itself during the next `onResume` lifecycle event. This ensures a
+	 *    clean UI refresh to display the new language.
 	 *
-	 * **Why Two-Step Process**: The language is applied immediately for technical
-	 * correctness, but activity restart is deferred to avoid interrupting user flow
-	 * and to handle the complex activity stack transitions properly.
+	 * The actual locale change is handled separately by components observing the settings change,
+	 * but this function coordinates the necessary activity restart.
 	 *
-	 * @param onComplete Callback invoked after successful language application,
-	 *                   useful for updating UI state or showing confirmation
+	 * @param afterApplyingLanguage An optional callback invoked immediately after setting up the
+	 *                   restart flag. It can be used for tasks that don't depend on the
+	 *                   UI being fully refreshed, like showing a temporary "Restarting..." message.
 	 */
-	fun applyUserSelectedLanguage(onComplete: () -> Unit = {}) {
+	fun applyUserSelectedLanguage(
+		baseActivityInf: BaseActivityInf?,
+		afterApplyingLanguage: () -> Unit = {},
+		onLanguageChangeFailed: (String) -> Unit = {}
+	) {
+		if (baseActivityInf == null) {
+			val errorMessage = "applyUserSelectedLanguage(): skipped — activity reference is null"
+			logger.d(errorMessage)
+			onLanguageChangeFailed.invoke(errorMessage)
+			return
+		}
+		
 		// Reset state for new language change operation
 		this.finishActivityOnResume = false
-
+		
 		// Retrieve user's language preference from persistent storage
 		val languageCode = aioSettings.userSelectedUILanguage
 		val locale = Locale.forLanguageTag(languageCode)
-
+		
 		logger.d("Initiating language change to: $languageCode")
-
-		// Apply the locale technically through the locale management system
-		INSTANCE.localeAwareManager?.setNewLocale(languageCode)
-
-		logger.d("Language applied successfully. System locale set to: $locale")
-
-		// Signal that activity should restart to reflect language change
-		this.finishActivityOnResume = true
-
-		onComplete()
+		
+		baseActivityInf.getActivity()?.let { activity ->
+			if (LocalizeManager.shouldUpdateLocale(activity, locale)){
+				// Apply the locale technically through the locale management system
+				baseActivityInf.getActivity()?.setLocale(locale)
+				
+				logger.d("Language applied successfully. System locale set to: $locale")
+				
+				// Signal that activity should restart to reflect language change
+				this.finishActivityOnResume = false
+				activity.openPrepareLocalize()
+				
+				afterApplyingLanguage()
+			}
+		}
 	}
-
+	
 	/**
-	 * Checks if a language change occurred and closes the activity if needed.
+	 * Checks if a language change is pending and, if so, closes the current activity
+	 * to trigger a full application restart.
 	 *
-	 * **Typical Usage**: Called from Activity's onResume() method to detect
-	 * if a language change was applied while the activity was paused or stopped.
+	 * This method is the crucial second step in the language change process. It should be
+	 * called from the `onResume()` lifecycle method of a base activity. It checks the
+	 * `finishActivityOnResume` flag, which is set by `applyUserSelectedLanguage`.
 	 *
-	 * **Flow Control**:
-	 * - If language was changed: Finish activity and schedule app quit
-	 * - If no change: Continue normal activity operation
+	 * If the flag is `true`, it means a language change has been initiated. The method then:
+	 * 1.  Finishes the current activity and its task stack using `finishAffinity()`.
+	 * 2.  Sets a command to quit the application (`quitApplicationCommand`).
+	 * 3.  Schedules a delayed task to execute the application quit, allowing the current
+	 *     activity to close gracefully before the process exits.
 	 *
-	 * **Why Delay Application Quit**: Provides a smooth transition by allowing
-	 * the current activity to finish cleanly before quitting the entire app.
+	 * This two-step process (apply, then close/restart) ensures a clean and complete UI refresh
+	 * across the entire application, preventing inconsistent language states.
 	 *
-	 * @param baseActivityInf The activity that should check for language changes
+	 * @param baseActivityInf The activity instance to check. If a language change is
+	 *                        detected, this activity (and its task) will be finished.
 	 */
 	fun closeActivityIfLanguageChanged(baseActivityInf: BaseActivityInf?) {
 		baseActivityInf?.getActivity()?.let { safeActivityRef ->
 			if (finishActivityOnResume) {
 				logger.d("Language change detected. Initiating activity closure and app restart.")
-
+				
 				// Finish current activity and all activities below it in the stack
 				safeActivityRef.finishAffinity()
-
+				
 				// Schedule complete application restart
 				quitApplicationCommand = true
-
+				
 				// Allow graceful activity destruction before app quit
 				delay(300, object : OnTaskFinishListener {
 					override fun afterDelay() {
@@ -169,29 +213,31 @@ open class AIOLanguage {
 			}
 		} ?: logger.d("Language change check skipped - activity reference is null")
 	}
-
+	
 	/**
-	 * Forces application quit to complete language change process.
+	 * Forces the application to quit, typically to complete a language change process.
 	 *
-	 * **Why Complete Restart Needed**: Some language changes require rebuilding
-	 * the entire activity stack to ensure all components use the new language.
-	 * This method ensures a clean application state after language switch.
+	 * This method ensures a clean application state after a significant change,
+	 * like switching languages, which requires rebuilding the entire activity stack.
 	 *
-	 * **Safety Features**:
-	 * - Command flag prevents multiple executions
-	 * - Null safety for activity reference
-	 * - Affinity finishing clears entire activity stack
+	 * It is called with a delay in [closeActivityIfLanguageChanged] to allow the
+	 * current activity to finish its lifecycle gracefully before the entire application exits.
 	 *
-	 * @param baseActivityInf The activity context used to quit the application
+	 * ## Safety Features:
+	 * - **Command Flag**: Only executes if [quitApplicationCommand] is true, preventing accidental calls.
+	 * - **Null Safety**: Safely handles cases where the activity reference might be null.
+	 * - **Stack Clearing**: Uses `finishAffinity()` to clear the entire activity stack reliably.
+	 *
+	 * @param baseActivityInf The activity context used to execute the quit command.
 	 */
 	private fun quitApplication(baseActivityInf: BaseActivityInf?) {
 		baseActivityInf?.getActivity()?.let { safeActivityRef ->
 			if (quitApplicationCommand) {
 				logger.d("Executing application quit for language change completion")
-
+				
 				// Reset command to prevent multiple executions
 				quitApplicationCommand = false
-
+				
 				// Clear entire activity stack and exit application
 				safeActivityRef.finishAffinity()
 			} else {
