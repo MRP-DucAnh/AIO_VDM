@@ -36,8 +36,8 @@ import java.util.*
  * }
  * ```
  */
-open class LocaleApplicationInf : Application(), LocaleManagerInf, LanguageChangeListener {
-
+open class LocaleApplicationImpl : Application(), LocaleManagerInf, LanguageChangeListener {
+	
 	/**
 	 * Called when the application is starting, before any other application objects have been created.
 	 * This is where we initialize the localization manager to set up the initial locale
@@ -45,9 +45,9 @@ open class LocaleApplicationInf : Application(), LocaleManagerInf, LanguageChang
 	 */
 	override fun onCreate() {
 		super.onCreate()
-		LocalizeManager.initLocale(this)
+		LocalizeManager.initializeLocale(this)
 	}
-
+	
 	/**
 	 * Attaches the base context to the application, wrapping it with localization support.
 	 *
@@ -62,18 +62,18 @@ open class LocaleApplicationInf : Application(), LocaleManagerInf, LanguageChang
 	override fun attachBaseContext(base: Context) {
 		super.attachBaseContext(LocalizeManager.onAttach(base))
 	}
-
+	
 	/**
 	 * Sets the application's locale.
 	 *
-	 * This method delegates the locale change logic to [LocalizeManager.changeLocale],
+	 * This method delegates the locale change logic to [LocalizeManager.updateApplicationLocale],
 	 * which will update the application's configuration and resources to reflect the new language.
 	 * This change will typically be applied to all components within the application.
 	 *
 	 * @param locale The new [Locale] to be set for the application.
 	 */
-	override fun setLocale(locale: Locale) {
-		LocalizeManager.changeLocale(this, locale)
+	override fun setLanguageLocale(locale: Locale) {
+		LocalizeManager.updateApplicationLocale(this, locale)
 	}
 	
 	/**
