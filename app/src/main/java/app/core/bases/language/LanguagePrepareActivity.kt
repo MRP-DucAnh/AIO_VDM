@@ -26,7 +26,7 @@ import com.aio.*
  * It includes a static `navigate` method to easily start this activity from another.
  */
 class LanguagePrepareActivity : AppCompatActivity() {
-
+	
 	/**
 	 * Called when the activity is first created.
 	 *
@@ -42,7 +42,7 @@ class LanguagePrepareActivity : AppCompatActivity() {
 		setContentView(R.layout.activity_locale_change_prepare)
 		setUpStatusBarTransparent()
 	}
-
+	
 	/**
 	 * Configures the status bar to be transparent and overlays the activity's layout.
 	 *
@@ -72,7 +72,7 @@ class LanguagePrepareActivity : AppCompatActivity() {
 			statusBarColor = Color.TRANSPARENT
 		}
 	}
-
+	
 	/**
 	 * Called when the activity will start interacting with the user.
 	 *
@@ -89,7 +89,7 @@ class LanguagePrepareActivity : AppCompatActivity() {
 			overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
 		}, LocalizeConstant.FINISH_DELAY)
 	}
-
+	
 	/**
 	 * Provides a convenient way to start the [LanguagePrepareActivity].
 	 *
@@ -102,6 +102,7 @@ class LanguagePrepareActivity : AppCompatActivity() {
 	 * The `navigate` function encapsulates the intent creation and starting of this activity.
 	 */
 	companion object {
+		
 		fun navigate(activity: Activity) {
 			val intent = Intent(activity, LanguagePrepareActivity::class.java)
 			activity.apply {
