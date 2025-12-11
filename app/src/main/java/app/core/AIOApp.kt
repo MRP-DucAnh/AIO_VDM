@@ -5,6 +5,7 @@ import androidx.documentfile.provider.*
 import androidx.documentfile.provider.DocumentFile.*
 import androidx.lifecycle.*
 import app.core.AIOApp.Companion.aioHistory
+import app.core.AIOApp.Companion.aioSettings
 import app.core.AIOApp.Companion.internalDataFolder
 import app.core.bases.*
 import app.core.bases.language.*
@@ -395,6 +396,7 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 		}.let { performStartupExecution(it) }
 		
 		logger.d("Application startup sequence completed")
+		
 	}
 	
 	/**
@@ -460,11 +462,11 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 	 * @see StartupManager for the implementation of the priority-based execution logic.
 	 * @see AIOApp.onCreate where this method is called to initiate the startup process.
 	 */
-	private fun StartupManager.initializeCriticalServices() {
+	private fun StartupManager.initializeCriticalServices(onSettingsLoaded: () -> Unit = {}) {
 		addCriticalTask { // Critical tasks block the main thread.
 			warmUpOkHttpClient()
 			logger.d("[Startup] Critical: Loading system configurations...")
-			loadSystemConfigurations()
+			loadSystemConfigurations(onSettingsLoaded)
 			logger.d("[Startup] Critical: System configurations loaded.")
 			logger.d("[Startup] Critical: Initializing download system...")
 			initializeDownloadSystemWithModels()
@@ -584,32 +586,29 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 	}
 	
 	/**
-	 * Loads and initializes the core system configurations and user data.
+	 * Loads and initializes the core system configurations, primarily the application settings.
 	 *
-	 * This function orchestrates the loading of essential application data, including settings,
-	 * bookmarks, and browsing history. It implements a robust, fault-tolerant strategy
-	 * by first attempting to load data from the primary database source (ObjectBox). If any
-	 * error occurs during this process, it gracefully falls back to a legacy file-based
-	 * storage system to ensure the application remains functional.
-	 *
-	 * ### Loading Strategy:
-	 * 1.  **Attempt Database Load**: Tries to initialize `aioSettings`, `aioBookmark`, and
-	 *     `aioHistory` from their respective `DBManager` classes.
-	 * 2.  **Error Handling & Fallback**: If a database-related `Exception` is caught for any
-	 *     component, it logs the error and loads the data from a legacy file (`readObjectFromStorage`).
-	 * 3.  **Continue on Failure**: This approach ensures that a failure in one data system
-	 *     (e.g., bookmarks) does not prevent others (e.g., settings) from loading,
-	 *     promoting application resilience.
+	 * This function handles the loading of `aioSettings`. It implements a robust,
+	 * fault-tolerant strategy by first attempting to load the settings from the primary
+	 * database source (ObjectBox). If any error occurs during this process, it gracefully
+	 * falls back to a legacy file-based storage system (`readObjectFromStorage`) to
+	 * ensure the application remains functional even with database issues.
 	 *
 	 * This method is a critical part of the application's startup sequence, ensuring that all
-	 * user-specific data and configurations are available before the UI is presented.
+	 * user-specific configurations are available before the UI is presented.
+	 *
+	 * ### Loading Strategy:
+	 * 1.  **Attempt Database Load**: Tries to initialize `aioSettings` from the
+	 *     `AIOSettingsDBManager`.
+	 * 2.  **Error Handling & Fallback**: If a database-related `Exception` is caught,
+	 *     it logs the error and loads the settings from a legacy file.
+	 * 3.  **Resilience**: This approach ensures that a database failure does not prevent
+	 *     the application from starting, promoting overall resilience.
 	 *
 	 * @see AIOSettingsDBManager.loadSettingsFromDB
-	 * @see AIOBookmarksDBManager.loadAIOBookmarksFromDB
-	 * @see AIOHistoryDBManager.loadAIOHistoryFromDB
 	 * @see BaseObservable.readObjectFromStorage for the legacy fallback mechanism.
 	 */
-	private fun loadSystemConfigurations() {
+	private fun loadSystemConfigurations(onSettingsLoaded: () -> Unit) {
 		try {
 			logger.d("[Startup] Loading settings from database...")
 			aioSettings = AIOSettingsDBManager.loadSettingsFromDB()
@@ -619,6 +618,7 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 					"falling back to legacy storage.", error
 			)
 			aioSettings = AIOSettings().apply(AIOSettings::readObjectFromStorage)
+			onSettingsLoaded.invoke()
 		}
 	}
 	
@@ -981,6 +981,25 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 	fun getAIOSettings(): AIOSettings {
 		logger.d("Accessing application settings")
 		return aioSettings
+	}
+	
+	/**
+	 * Checks if the global application settings have been successfully loaded.
+	 *
+	 * This utility function provides a reliable way to determine if the `aioSettings`
+	 * singleton has been initialized. It is useful for components that depend on
+	 * settings being available before they can operate correctly.
+	 *
+	 * @return `true` if the `aioSettings` instance has been loaded and is ready for use,
+	 *         `false` otherwise. This can be `false` early in the application lifecycle
+	 *         or if the initialization failed.
+	 * @see aioSettings for the singleton instance.
+	 * @see loadSystemConfigurations for the initialization logic.
+	 */
+	fun isAIOSettingLoaded(): Boolean {
+		return runCatching {
+			return aioSettings.userSelectedUILanguage.isNotEmpty()
+		}.getOrDefault(false)
 	}
 	
 	/**
