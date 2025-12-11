@@ -9,5 +9,6 @@ import java.util.*
  * ensuring that the application's UI and resources can be updated accordingly.
  */
 interface LocaleManagerInf {
-	fun setLocale(locale: Locale)
+	
+	fun setLanguageLocale(locale: Locale)
 }
