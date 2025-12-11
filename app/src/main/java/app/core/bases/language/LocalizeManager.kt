@@ -4,45 +4,59 @@ package app.core.bases.language
 
 import android.content.*
 import android.content.res.*
-import android.os.*
-import android.preference.*
-import androidx.core.content.*
-import app.core.*
-import app.core.bases.language.LocalizeManager.getLocale
+import app.core.AIOApp.Companion.INSTANCE
+import app.core.AIOApp.Companion.aioSettings
+import app.core.bases.language.LocalizeManager.createLocalizedContext
+import app.core.bases.language.LocalizeManager.getStoredLanguageLocale
 import app.core.bases.language.LocalizeManager.registerListener
-import app.core.bases.language.LocalizeManager.setLocale
+import app.core.bases.language.LocalizeManager.setApplicationLanguage
 import app.core.bases.language.LocalizeManager.unregisterListener
-import app.core.bases.language.LocalizeManager.updateResources
+import lib.process.*
 import java.util.*
 
 /**
- * A singleton object responsible for managing the application's localization.
+ * A singleton object responsible for managing the application's localization and in-app language switching.
  *
- * This manager provides a comprehensive set of tools to handle in-app language switching. It allows
- * for persisting the user's selected language, applying the locale to the application's context,
- * and broadcasting changes to update the UI dynamically.
+ * This manager provides a comprehensive set of tools for handling language changes at runtime.
+ * It allows persisting the user's selected language, applying the locale to the application's
+ * context, and notifying other components of changes to update the UI dynamically.
  *
- * Key features include:
- * - Persisting language preferences using `SharedPreferences`.
- * - Attaching a localized `Context` to Activities and the Application via `onAttach`.
- * - Methods to set and get the current language (`setLocale`, `getLanguage`).
- * - Support for both modern and legacy methods of updating resources to ensure compatibility across
- *   different Android API levels.
- * - A broadcast mechanism to notify components (like Activities) of locale changes, enabling them
- *   to recreate and apply the new language settings.
+ * ### Key Features:
+ * - **Language Persistence**: Saves the user's selected language using a settings handler (`aioSettings`),
+ *   ensuring the choice is remembered across app sessions.
+ * - **Context Wrapping**: Provides an `onAttach` method to wrap the base `Context` of an
+ *   `Activity` or `Application`. This is crucial for ensuring all resources (strings, layouts)
+ *   are loaded with the correct locale.
+ * - **Runtime Language Change**: The `setLocale` methods allow changing the application's
+ *   language on the fly.
+ * - **Listener-based Updates**: Implements a listener pattern (`registerListener`, `unregisterListener`)
+ *   for components that need to react to locale changes without a full `Activity` recreation.
  *
- * Typical usage involves calling `onAttach` in the `attachBaseContext` method of your base
- * `Activity` or `Application` class, and using `setLocale` to change the language at runtime,
- * often followed by an activity recreation to reflect the changes.
+ * ### Typical Usage:
+ * 1.  **Initialization**: Call `onAttach(context)` within the `attachBaseContext` method of your
+ *     base `Activity` and `Application` classes.
+ *     ```kotlin
+ *     override fun attachBaseContext(newBase: Context) {
+ *         super.attachBaseContext(LocalizeManager.onAttach(newBase))
+ *     }
+ *     ```
+ *
+ * 2.  **Changing Language**: To change the language at runtime, call `setLocale` with the new
+ *     `Locale`. This will persist the new language and update the configuration.
+ *     ```kotlin
  */
 object LocalizeManager {
 	
 	/**
-	 * SharedPreferences key for the selected language.
-	 * This key is used to persist the user's chosen language code (e.g., "en", "fr")
-	 * so that it can be retrieved and applied across app sessions.
+	 * A private logger instance for recording events, warnings, and errors related
+	 * to the localization process.
+	 *
+	 * This logger is used internally by the `LocalizeManager` to provide diagnostic
+	 * information, which can be helpful for debugging issues with language switching,
+	 * resource loading, or configuration updates. It is initialized lazily using the
+	 * class name as its tag.
 	 */
-	private const val SELECTED_LANGUAGE = "Locale.Manager.Selected.Language"
+	private val logger = LogHelperUtils.from(javaClass)
 	
 	/**
 	 * A list of listeners that are invoked when the application's locale changes.
@@ -83,7 +97,9 @@ object LocalizeManager {
 	 *   that will be executed when the locale changes.
 	 * @see unregisterListener
 	 */
+	@JvmStatic
 	fun registerListener(listener: LanguageChangeListener) {
+		logger.d("Registering listener: $listener")
 		listeners.add(listener)
 	}
 	
@@ -98,43 +114,36 @@ object LocalizeManager {
 	 *
 	 * @see registerListener
 	 */
+	@JvmStatic
 	fun unregisterListener(listener: LanguageChangeListener) {
+		logger.d("Unregistering listener: $listener")
 		listeners.remove(listener)
 	}
 	
 	/**
-	 * Attaches a new configuration to the given [Context] with the persisted locale,
-	 * or the device's default locale if no language has been persisted.
+	 * Wraps the base context of an `Activity` or `Application` to apply the appropriate locale.
 	 *
-	 * This method is intended to be called in the `attachBaseContext` of an Activity or Application.
-	 * It retrieves the previously saved language code from SharedPreferences. If no language
-	 * is found, it falls back to the system's default language. It then returns a new
-	 * context with the appropriate locale configuration applied.
+	 * This method is a crucial part of the localization setup and should be called from
+	 * the `attachBaseContext` method. It retrieves the user's persisted language preference.
+	 * If no language has been saved, it falls back to the device's default language.
+	 * It then returns a new `Context` with the correct locale configuration applied, ensuring
+	 * that all resources (like strings and layouts) are loaded in the selected language.
 	 *
-	 * @param context The base context to be updated.
-	 * @return A new [Context] with the updated locale configuration.
+	 * ### Usage
+	 * In your `Activity` or `Application` class:
+	 * ```kotlin
+	 * override fun attachBaseContext(newBase: Context) {
+	 *     super.attachBaseContext(LocalizeManager.onAttach(newBase))
+	 * }
+	 * ```
+	 *
+	 * @param context The base context to be wrapped.
+	 * @return A new `Context` with the updated locale configuration.
 	 */
+	@JvmStatic
 	fun onAttach(context: Context): Context {
-		val persistedLanguageCode = getPersistedData(context, Locale.getDefault().language)
-		return setLocale(context, persistedLanguageCode)
-	}
-	
-	/**
-	 * Attaches the localization context to an Activity or Application, sets the language,
-	 * and returns a new Context with the updated configuration. This method should be
-	 * called in `attachBaseContext`.
-	 *
-	 * It retrieves the persisted language from SharedPreferences. If no language is found,
-	 * it falls back to the provided `defaultLanguage`.
-	 *
-	 * @param context The base context from the Activity or Application.
-	 * @param defaultLanguage The language code (e.g., "en", "fr") to use if no language
-	 *        has been previously persisted.
-	 * @return A new `Context` object with the locale updated.
-	 */
-	fun onAttach(context: Context, defaultLanguage: String): Context {
-		val persistedLanguage = getPersistedData(context, defaultLanguage)
-		return setLocale(context, persistedLanguage)
+		val storedLanguageCode = getStoredLanguageCode(context)
+		return setApplicationLanguage(context, storedLanguageCode)
 	}
 	
 	/**
@@ -147,8 +156,9 @@ object LocalizeManager {
 	 * @param context The context to use for accessing SharedPreferences.
 	 * @return A string representing the language code (e.g., "en", "fr").
 	 */
-	fun getLanguage(context: Context): String {
-		return getPersistedData(context, Locale.getDefault().language)
+	@JvmStatic
+	fun getLanguageCode(context: Context): String {
+		return getStoredLanguageCode(context)
 	}
 	
 	/**
@@ -159,12 +169,13 @@ object LocalizeManager {
 	 * by calling the appropriate resource update method.
 	 *
 	 * @param context The context from which to get resources and SharedPreferences.
-	 * @param language The language code (e.g., "en", "fr") to set.
+	 * @param languageCode The language code (e.g., "en", "fr") to set.
 	 * @return A new context with the updated configuration.
 	 */
-	fun setLocale(context: Context, language: String): Context {
-		persist(context, language)
-		return updateResources(context, language)
+	@JvmStatic
+	fun setApplicationLanguage(context: Context, languageCode: String): Context {
+		storeLanguageCode(context, languageCode)
+		return createLocalizedContext(context, languageCode)
 	}
 	
 	/**
@@ -181,46 +192,60 @@ object LocalizeManager {
 	 *
 	 * @param context The context used for accessing `SharedPreferences` and updating resources.
 	 * @param locale The new `Locale` to be set for the application.
-	 * @see setLanguage
-	 * @see updateResources
+	 * @see createLocalizedContext
 	 * @see registerListener
 	 */
-	fun setLocale(context: Context, locale: Locale) {
-		persist(context, locale.language)
-		updateResources(context, locale.language)
+	@JvmStatic
+	fun setApplicationLanguage(context: Context, locale: Locale) {
+		storeLanguageCode(context, locale.language)
+		createLocalizedContext(context, locale.language)
 		listeners.forEach { listener ->
 			listener.onLanguageChanged(locale)
 		}
 	}
 	
 	/**
-	 * Retrieves the persisted language code from SharedPreferences.
-	 * If no language code is found, it returns the provided default language.
+	 * Retrieves the persisted language code from shared settings.
 	 *
-	 * @param context The context to access SharedPreferences.
-	 * @param defaultLanguage The language code to return if none is persisted.
-	 * @return The persisted language code or the default one.
+	 * This function accesses the application's shared settings (via `aioSettings`) to
+	 * retrieve the user's selected UI language. If no language has been explicitly
+	 * stored, it returns the provided `defaultLanguage`.
+	 *
+	 * @param context The context, which is unused in the current implementation but kept
+	 *   for potential future use or API consistency.
+	 * @param defaultLanguage The language code to return if no language code is found in
+	 *   the settings. This value is also unused as `aioSettings` handles its own default.
+	 * @return The stored language code (e.g., "en", "fr") or a default value if not set.
 	 */
-	private fun getPersistedData(context: Context, defaultLanguage: String): String {
-		val preferences = PreferenceManager.getDefaultSharedPreferences(context)
-		return preferences.getString(SELECTED_LANGUAGE, defaultLanguage) ?: defaultLanguage
+	@JvmStatic
+	private fun getStoredLanguageCode(context: Context): String {
+		return LocalStoredLangPref.languageCode
 	}
 	
 	/**
-	 * Persists the selected language code to the DataStore.
+	 * Persists the selected language code using `SharedPreferences`.
 	 *
-	 * This is a suspend function that asynchronously saves the provided language code
-	 * (e.g., "en", "fr") into the application's settings using Jetpack DataStore.
-	 * This allows the chosen language to be retrieved later, even after the app is restarted.
+	 * This function saves the provided language code (e.g., "en", "fr") to the
+	 * default `SharedPreferences` of the application. This ensures that the user's
+	 * language choice is remembered across application sessions. The language is stored
+	 * under the `SELECTED_LANGUAGE` key.
 	 *
-	 * @param context The context used to access the DataStore.
-	 * @param language The language code string to save.
+	 * @param context The context used to access `SharedPreferences`.
+	 * @param language The language code string to save (e.g., "en", "es").
 	 */
-	private fun persist(context: Context, language: String) {
-		val preferences = PreferenceManager.getDefaultSharedPreferences(context)
-		preferences.edit(commit = true) {
-			putString(SELECTED_LANGUAGE, language)
-		}
+	@JvmStatic
+	private fun storeLanguageCode(context: Context, languageCode: String) {
+		ThreadsUtility.executeInBackground(timeOutInMilli = 100, codeBlock = {
+			LocalStoredLangPref.languageCode = languageCode
+			try {
+				if (INSTANCE.isAIOSettingLoaded()) {
+					aioSettings.userSelectedUILanguage = languageCode
+					aioSettings.updateInStorage()
+				}
+			} catch (error: Exception) {
+				logger.e("Error storing language code:", error)
+			}
+		})
 	}
 	
 	/**
@@ -239,7 +264,8 @@ object LocalizeManager {
 	 * @param language The language code (e.g., "en", "ar") to apply.
 	 * @return A new [Context] with the locale configuration updated.
 	 */
-	private fun updateResources(context: Context, language: String): Context {
+	@JvmStatic
+	private fun createLocalizedContext(context: Context, language: String): Context {
 		val locale = Locale(language)
 		Locale.setDefault(locale)
 		val configuration = context.resources.configuration
@@ -249,122 +275,47 @@ object LocalizeManager {
 	}
 	
 	/**
-	 * Updates the application's resources with a new locale, using a legacy method
-	 * suitable for Android versions older than Nougat (API 24).
+	 * Updates the application's locale for a given [Context] to the specified language.
 	 *
-	 * This function is marked as deprecated because it mutates the `Resources` object
-	 * directly via `updateConfiguration`, which is discouraged in newer Android versions.
-	 * For modern implementations, `Context.createConfigurationContext()` is preferred.
+	 * This function creates a new `Locale` from the provided [language] code. It then generates
+	 * an updated `Configuration` with this new locale and applies it to the context, returning
+	 * a new `Context` instance that is properly configured for the new language. This is the
+	 * core mechanism for applying a language change to a `Context`, which is essential for
+	 * ensuring that resources like strings and layouts are loaded correctly.
 	 *
-	 * It sets the default `Locale` for the JVM, updates the `Configuration` of the
-	 * provided context's resources, and, for API 17+, sets the layout direction.
+	 * This method is suitable for modern Android versions (API 17+).
 	 *
-	 * @param context The context whose resources need to be updated.
-	 * @param language The language code (e.g., "en", "fr") to apply.
-	 * @return The original `Context`, now with its resources' configuration updated.
-	 *         Note that unlike `createConfigurationContext`, this method modifies the
-	 *         existing context's resources and returns the same context instance.
+	 * @param context The base `Context` whose configuration needs to be updated.
+	 * @param language The language code (e.g., "en", "fr", "ar") to apply.
+	 * @return A new `Context` with the updated locale configuration.
 	 */
-	@Deprecated("This method is deprecated")
-	private fun updateResourcesLegacy(context: Context, language: String): Context {
-		val locale = Locale(language)
-		Locale.setDefault(locale)
-		val resources: Resources = context.resources
-		val configuration: Configuration = resources.configuration
-		configuration.locale = locale
-		configuration.setLayoutDirection(locale)
-		resources.updateConfiguration(configuration, resources.displayMetrics)
-		return context
+	@JvmStatic
+	fun updateApplicationLocale(context: Context, locale: Locale): Configuration? {
+		setApplicationLanguage(context, locale)
+		return setApplicationLanguage(context)
 	}
 	
 	/**
-	 * Determines whether the application's locale needs to be updated.
+	 * Retrieves the persisted `Locale` based on the stored language code.
 	 *
-	 * This function compares the language of the provided `newLocale` with the currently
-	 * configured locale in the given `context`. It returns `true` if the languages are
-	 * different, indicating that a locale update is necessary. This is useful for avoiding
-	 * unnecessary resource reloads or UI recreations when the selected language is already
-	 * active.
+	 * This function fetches the language code from the application's shared settings
+	 * via `aioSettings`. It then constructs and returns a `Locale` object from this code.
+	 * If no language has been explicitly stored, the default value from `aioSettings` is used.
 	 *
-	 * @param context The current context, used to get the existing configuration.
-	 * @param newLocale The new `Locale` to compare against the current one.
-	 * @return `true` if the new locale's language is different from the current one,
-	 *         `false` otherwise.
+	 * @param context The context, which is unused in the current implementation but kept
+	 *   for potential future use or API consistency.
+	 * @return The `Locale` object corresponding to the user's selected language.
 	 */
-	fun shouldUpdateLocale(context: Context, newLocale: Locale): Boolean {
-		val currentLocale = getLocale(context)
-		return currentLocale.language != newLocale.language ||
-			currentLocale.country != newLocale.country
-	}
-	
-	/**
-	 * Extracts the updated [Configuration] from a broadcast [Intent].
-	 *
-	 * This function is designed to be used in a `BroadcastReceiver` that listens for
-	 * locale change events. It checks if the provided [Intent] has the specific action
-	 * `LocalizeConstant.ON_LOCALE_CHANGED_ACTION`. If it does, it attempts to
-	 * retrieve a `Configuration` object that was passed as a parcelable extra
-	 * under the key `LocalizeConstant.CONFIGURATION_KEY`.
-	 *
-	 * @param intent The [Intent] received by the broadcast receiver, which may contain
-	 *               the updated configuration. Can be null.
-	 * @return The new [Configuration] object if it was successfully extracted,
-	 *         otherwise `null`.
-	 */
-	fun getConfigurationChanged(intent: Intent?): Configuration? {
-		if (intent?.action?.isEmpty() == false) {
-			if (intent.action == LocalizeConstant.ON_LOCALE_CHANGED_ACTION) {
-				val bundle = intent.extras
-				return if (bundle != null) {
-					bundle.getParcelable<Parcelable>(
-						LocalizeConstant.CONFIGURATION_KEY
-					) as? Configuration
-				} else null
-			}
-		}
-		return null
-	}
-	
-	/**
-	 * Changes the application's locale and returns the new configuration.
-	 *
-	 * This function first persists the new language preference using the provided [locale].
-	 * It then updates the application's resources to reflect this new locale, creating
-	 * and returning a new [Configuration] object if the locale was successfully changed.
-	 * This new configuration can be used to update the context or broadcast the change.
-	 *
-	 * @param context The context used for persisting the language and updating resources.
-	 * @param locale The new [Locale] to apply to the application.
-	 * @return A new [Configuration] object with the updated locale, or `null` if the
-	 *   locale was already set to the new one and no change was needed.
-	 */
-	fun changeLocale(context: Context, locale: Locale): Configuration? {
-		setLocale(context, locale)
-		return setLocale(context)
-	}
-	
-	/**
-	 * Retrieves the currently configured [Locale] for the application.
-	 *
-	 * This function reads the language code from [SharedPreferences]. If a language code
-	 * has not been previously saved, it falls back to the default language specified
-	 * in [Localize.DEFAULT].
-	 *
-	 * @param context The context used to access [SharedPreferences].
-	 * @return The [Locale] object corresponding to the saved language, or the default locale.
-	 */
-	fun getLocale(context: Context): Locale {
-		val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-		val defValue = AIOApp.aioLanguage.languagesList[0].first
-		val lang = sharedPreferences.getString(LocalizeConstant.PREF_LANGUAGE_KEY, defValue)
-			?: defValue
+	@JvmStatic
+	fun getStoredLanguageLocale(context: Context): Locale {
+		val lang = getStoredLanguageCode(context)
 		return Locale(lang)
 	}
 	
 	/**
 	 * Updates the application's configuration with the currently persisted locale.
 	 *
-	 * This function retrieves the saved locale using [getLocale]. If the current
+	 * This function retrieves the saved locale using [getStoredLanguageLocale]. If the current
 	 * configuration's locale is different from the saved one, it updates the
 	 * configuration with the new locale, persists the change, and applies it to the
 	 * application's resources.
@@ -376,13 +327,14 @@ object LocalizeManager {
 	 * @return A new [Configuration] object with the updated locale if a change was made,
 	 *         otherwise `null`.
 	 */
-	fun setLocale(context: Context): Configuration? {
+	@JvmStatic
+	fun setApplicationLanguage(context: Context): Configuration? {
 		val resources: Resources = context.resources
 		val configuration: Configuration = resources.configuration
-		val locale: Locale = getLocale(context)
+		val locale: Locale = getStoredLanguageLocale(context)
 		if (configuration.locale != locale) {
 			configuration.setLocale(locale)
-			setLocale(context, locale)
+			setApplicationLanguage(context, locale)
 			resources.updateConfiguration(configuration, resources.displayMetrics)
 			return configuration
 		}
@@ -392,15 +344,17 @@ object LocalizeManager {
 	/**
 	 * Initializes the application's locale based on the persisted language setting.
 	 *
-	 * This function retrieves the saved locale using [getLocale] and then applies it
-	 * to the application's context by calling [setLocale] with the corresponding
+	 * This function retrieves the saved locale using [getStoredLanguageLocale] and then applies it
+	 * to the application's context by calling [setApplicationLanguage] with the corresponding
 	 * language code. It's a convenient way to ensure the correct language is set
 	 * when the application starts or when a configuration change requires it.
 	 *
 	 * @param context The context used for retrieving the saved locale and applying the new one.
 	 */
-	fun initLocale(context: Context) {
-		val locale = getLocale(context)
-		setLocale(context, locale.language)
+	@JvmStatic
+	fun initializeLocale(context: Context) {
+		LocalStoredLangPref.init(context)
+		val locale = getStoredLanguageLocale(context)
+		setApplicationLanguage(context, locale.language)
 	}
 }
