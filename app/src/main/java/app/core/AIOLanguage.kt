@@ -2,6 +2,7 @@ package app.core
 
 import app.core.AIOApp.Companion.aioSettings
 import app.core.bases.*
+import app.core.bases.language.*
 import lib.process.*
 import java.util.*
 
@@ -131,17 +132,14 @@ open class AIOLanguage {
 		}
 		
 		// Retrieve user's language preference from persistent storage
-		val languageCode = aioSettings.userSelectedUILanguage
+		val languageCode = LocalStoredLangPref.languageCode
 		val locale = Locale.forLanguageTag(languageCode)
 		
 		logger.d("Initiating language change to: $languageCode")
-		
 		baseActivity.getActivity()?.let { safeActivityRef ->
 			// Apply the locale technically through the locale management system
 			baseActivity.getActivity()?.setLanguageLocale(locale)
-			
 			logger.d("Language applied successfully. System locale set to: $locale")
-			safeActivityRef.openPrepareLocalize()
 			afterApplyingLanguage()
 		}
 	}

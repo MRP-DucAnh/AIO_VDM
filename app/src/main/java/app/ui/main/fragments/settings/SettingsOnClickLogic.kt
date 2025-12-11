@@ -157,7 +157,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 			LanguagePickerDialog(activity).apply {
 				getDialogBuilder().setCancelable(true)
 				onApplyListener = {
-					showToast(activity, R.string.title_setting_applied)
+					restartApplicationProcess()
 				}
 			}.show()
 		}

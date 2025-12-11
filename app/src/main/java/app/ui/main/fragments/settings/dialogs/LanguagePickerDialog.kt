@@ -209,6 +209,7 @@ class LanguagePickerDialog(baseActivity: BaseActivity) {
 		aioSettings.userSelectedUILanguage = selectedLanguageCode
 		LocalStoredLangPref.languageCode = selectedLanguageCode
 		aioSettings.updateInStorage()
+		
 		close()
 		aioLanguage.applyUserSelectedLanguage(
 			weakReferenceOfActivity.get(),
