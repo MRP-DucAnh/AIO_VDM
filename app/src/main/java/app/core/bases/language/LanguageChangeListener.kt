@@ -8,5 +8,6 @@ import java.util.*
  * like Activities or Fragments to refresh their UI accordingly.
  */
 interface LanguageChangeListener {
+	
 	fun onLanguageChanged(newLocale: Locale)
 }
