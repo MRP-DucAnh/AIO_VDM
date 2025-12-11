@@ -27,7 +27,6 @@ import androidx.core.view.*
 import app.core.*
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioAdblocker
-import app.core.AIOApp.Companion.aioLanguage
 import app.core.AIOApp.Companion.aioSettings
 import app.core.AIOApp.Companion.downloadSystem
 import app.core.bases.dialogs.*
@@ -102,7 +101,7 @@ import kotlin.toString
  * @see LanguageAwareActivity For localization and language switching capabilities
  * @see BaseActivityInf For the interface defining common activity operations
  */
-abstract class BaseActivity : LocaleActivityInf(), BaseActivityInf {
+abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf {
 
 	/**
 	 * Logger instance for debugging, tracing lifecycle events, and monitoring application behavior.
@@ -291,11 +290,6 @@ abstract class BaseActivity : LocaleActivityInf(), BaseActivityInf {
 			// Handles permissions and provides abstraction for storage operations
 			logger.d("Initializing ScopedStorageHelper for file system access")
 			scopedStorageHelper = SimpleStorageHelper(activity)
-
-			// Apply user-selected language for localization and internationalization
-			// Overrides system language if user has specified a preference
-			logger.d("Applying user-selected language for localization")
-			aioLanguage.applyUserSelectedLanguage(getActivity())
 
 			// Lock activity orientation to portrait for consistent user experience
 			// Prevents layout recalculations and provides predictable UI behavior
