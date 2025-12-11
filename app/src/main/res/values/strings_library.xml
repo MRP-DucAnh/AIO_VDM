@@ -441,6 +441,7 @@
 	<string name="title_experimental_feature">Experimental Feature</string>
 	<string name="title_proceed">Proceed</string>
 	<string name="title_restart_application">Restart Application</string>
+	<string name="title_restart_application_underline"><u>Restart Application</u></string>
 	
 	<!-- Section Break -->
 	<string name="title_left">Left</string>
