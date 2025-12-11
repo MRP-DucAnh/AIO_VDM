@@ -7,7 +7,7 @@ import androidx.lifecycle.*
 import app.core.AIOApp.Companion.aioHistory
 import app.core.AIOApp.Companion.internalDataFolder
 import app.core.bases.*
-import app.core.bases.language.LocaleApplicationInf
+import app.core.bases.language.*
 import app.core.engines.backend.*
 import app.core.engines.browser.bookmarks.*
 import app.core.engines.browser.history.*
@@ -18,7 +18,7 @@ import app.core.engines.objectbox.*
 import app.core.engines.objectbox.ObjectBoxManager.initializeObjectBoxDB
 import app.core.engines.settings.*
 import app.core.engines.youtube.*
-import com.aio.BuildConfig
+import com.aio.*
 import com.anggrayudi.storage.file.DocumentFileCompat.fromPublicFolder
 import com.anggrayudi.storage.file.PublicDirectory.*
 import com.dslplatform.json.*
@@ -76,7 +76,7 @@ import lib.process.ThreadsUtility.executeInBackground
  *
  * ## Startup Sequence:
  */
-class AIOApp : LocaleApplicationInf(), LifecycleObserver {
+class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 	
 	/**
 	 * Logger instance for comprehensive application lifecycle tracking.
@@ -302,7 +302,7 @@ class AIOApp : LocaleApplicationInf(), LifecycleObserver {
 		 * @see DslJson
 		 */
 		val aioDSLJsonInstance = DslJson<Any>()
-
+		
 		/**
 		 * Comprehensive download management and execution system.
 		 *
@@ -614,8 +614,10 @@ class AIOApp : LocaleApplicationInf(), LifecycleObserver {
 			logger.d("[Startup] Loading settings from database...")
 			aioSettings = AIOSettingsDBManager.loadSettingsFromDB()
 		} catch (error: Exception) {
-			logger.e("[Startup] Failed to load settings from database, " +
-				"falling back to legacy storage.", error)
+			logger.e(
+				"[Startup] Failed to load settings from database, " +
+					"falling back to legacy storage.", error
+			)
 			aioSettings = AIOSettings().apply(AIOSettings::readObjectFromStorage)
 		}
 	}
