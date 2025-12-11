@@ -1,46 +1,37 @@
 package app.ui.main.fragments.settings
 
-import android.content.Context
-import android.content.Intent
-import android.widget.EditText
-import android.widget.TextView
-import androidx.annotation.IdRes
-import androidx.core.content.ContextCompat.getDrawable
-import androidx.core.net.toUri
+import android.content.*
+import android.widget.*
+import androidx.annotation.*
+import androidx.core.content.ContextCompat.*
+import androidx.core.net.*
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioSettings
 import app.core.engines.settings.AIOSettings.Companion.AIO_SETTING_DARK_MODE_FILE_NAME
-import app.core.engines.updater.AIOUpdater
-import app.ui.main.fragments.settings.activities.browser.AdvBrowserSettingsActivity
-import app.ui.main.fragments.settings.dialogs.ContentRegionSelector
-import app.ui.main.fragments.settings.dialogs.DownloadLocationSelector
-import app.ui.others.information.UserFeedbackActivity
-import app.ui.main.fragments.settings.dialogs.LanguagePickerDialog
-import com.aio.R
-import kotlinx.coroutines.delay
-import lib.device.ShareUtility
+import app.core.engines.updater.*
+import app.ui.main.fragments.settings.activities.browser.*
+import app.ui.main.fragments.settings.dialogs.*
+import app.ui.others.information.*
+import com.aio.*
+import kotlinx.coroutines.*
+import lib.device.*
 import lib.files.FileSystemUtility.hasFullFileSystemAccess
 import lib.files.FileSystemUtility.openAllFilesAccessSettings
-import lib.networks.URLUtility.ensureHttps
-import lib.networks.URLUtility.isValidURL
+import lib.networks.URLUtility.*
+import lib.process.*
 import lib.process.CommonTimeUtils.OnTaskFinishListener
 import lib.process.CommonTimeUtils.delay
 import lib.process.IntentHelperUtils.openInstagramApp
-import lib.process.LogHelperUtils
 import lib.process.OSProcessUtils.restartApp
-import lib.process.ThreadsUtility
 import lib.texts.CommonTextUtils.getText
-import lib.ui.MsgDialogUtils
+import lib.ui.*
 import lib.ui.MsgDialogUtils.getMessageDialog
-import lib.ui.ViewUtility
 import lib.ui.ViewUtility.setLeftSideDrawable
 import lib.ui.ViewUtility.showOnScreenKeyboard
-import lib.ui.builders.DialogBuilder
-import lib.ui.builders.FileFolderPicker
+import lib.ui.builders.*
 import lib.ui.builders.ToastView.Companion.showToast
-import lib.ui.builders.WaitingDialog
-import java.io.File
-import java.lang.ref.WeakReference
+import java.io.*
+import java.lang.ref.*
 
 /**
  * Handles click logic for all settings options within SettingsFragment.
@@ -163,40 +154,13 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	fun showLanguageChanger() {
 		logger.d("Language Picker - Starting language selection workflow")
 		settingsFragmentRef?.safeMotherActivityRef?.let { activity ->
-			// Step 1: Show experimental feature warning dialog
-			getMessageDialog(
-				baseActivityInf = activity,
-				isTitleVisible = true,
-				titleText = getText(R.string.title_experimental_feature),
-				// Explain that language switching may have incomplete translations
-				messageTextViewCustomize = { it.setText(R.string.text_feature_is_experimental_msg) },
-				isNegativeButtonVisible = false, // Force user to explicitly proceed or back out
-				positiveButtonTextCustomize = {
-					it.setText(R.string.title_proceed)
-					it.setLeftSideDrawable(R.drawable.ic_button_arrow_next) // Indicates forward action
+			LanguagePickerDialog(activity).apply {
+				getDialogBuilder().setCancelable(true)
+				onApplyListener = {
+					showToast(activity, R.string.title_setting_applied)
 				}
-			)?.apply {
-				// Handle user confirmation to proceed with language selection
-				setOnClickForPositiveButton {
-					logger.d("User confirmed - Proceeding to LanguagePickerDialog")
-					close() // Dismiss the warning dialog
-
-					// Step 2: Show language selection interface
-					LanguagePickerDialog(activity).apply {
-						// Allow users to cancel without making changes
-						getDialogBuilder().setCancelable(true)
-
-						// Step 3: Handle language selection and restart app
-						onApplyListener = {
-							logger.d("Language selected - Initiating application restart")
-							close() // Close language picker dialog
-							// Restart app to fully apply language changes to all components
-							restartApp(shouldKillProcess = true)
-						}
-					}.show() // Display the language selection dialog
-				}
-			}?.show() // Display the initial warning dialog
-		} ?: logger.d("Language Picker failed: Activity null - Cannot access language resources without activity")
+			}.show()
+		}
 	}
 
 	/**
