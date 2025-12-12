@@ -3,6 +3,7 @@ package app.core.engines.supabase
 import app.core.*
 import com.aio.*
 import io.github.jan.supabase.*
+import io.github.jan.supabase.auth.*
 import io.github.jan.supabase.postgrest.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.*
@@ -30,6 +31,7 @@ object SupabaseCloudServer {
 			supabaseUrl = getText(R.string.text_supabase_client_key),
 			supabaseKey = getText(R.string.text_supabase_client_anon_key)
 		) {
+			install(Auth)
 			install(Postgrest)
 		}.also {
 			logger.i("Supabase client initialized successfully")
