@@ -37,11 +37,12 @@ plugins {
  * - jitpack.io: A repository that builds and serves dependencies directly from Git repositories (e.g., GitHub).
  */
 dependencyResolutionManagement {
-	repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+	repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
 	
 	repositories {
 		google()
 		mavenCentral()
+		gradlePluginPortal()
 		maven { url "https://jitpack.io" }
 	}
 }

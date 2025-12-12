@@ -10,6 +10,7 @@ plugins {
 	alias(libs.plugins.kotlin.android)
 	alias(libs.plugins.kotlin.kapt)
 	alias(libs.plugins.objectbox.db)
+	alias(libs.plugins.supabase.serialization)
 }
 
 /**
@@ -197,6 +198,10 @@ dependencies {
 	// Storage and data parsing
 	implementation libs.saf.storage // Storage Access Framework helper
 	implementation libs.parse // Data parsing
+
+	implementation platform(libs.bom)
+	implementation(libs.postgrest.kt)
+	implementation(libs.ktor.client.android)
 
 	// Video downloading and extraction libraries
 	implementation libs.ytdlp.library
