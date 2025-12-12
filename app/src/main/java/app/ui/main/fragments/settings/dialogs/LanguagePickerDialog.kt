@@ -77,8 +77,9 @@ class LanguagePickerDialog(baseActivity: BaseActivity) {
 	}
 	
 	/**
-	 * Retrieves the underlying [DialogBuilder] instance used to create and manage the language selection dialog.
-	 * This can be used for more advanced customizations or to access the dialog's properties directly.
+	 * Retrieves the underlying [DialogBuilder] instance used to create and manage the
+	 * language selection dialog. This can be used for more advanced customizations or
+	 * to access the dialog's properties directly.
 	 *
 	 * @return The [DialogBuilder] instance for this dialog.
 	 */
@@ -137,7 +138,7 @@ class LanguagePickerDialog(baseActivity: BaseActivity) {
 						id = index
 						text = name
 						
-						val itemHeight = resources.getDimensionPixelSize(R.dimen._40)
+						val itemHeight = resources.getDimensionPixelSize(R.dimen._36)
 						layoutParams = ViewGroup.LayoutParams(MATCH_PARENT, itemHeight)
 						val hp = resources.getDimensionPixelSize(R.dimen._5)
 						val vp = resources.getDimensionPixelSize(R.dimen._5)
