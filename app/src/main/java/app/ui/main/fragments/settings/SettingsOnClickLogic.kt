@@ -105,7 +105,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 */
 	fun showLoginOrRegistrationDialog() {
 		settingsFragmentRef?.safeMotherActivityRef?.apply {
-			AccountRegistration(this).show()
+			LogInWithGoogleAccount(this).tryLogin()
 		}
 	}
 	
