@@ -614,5 +614,15 @@
 	<string name="title_trending_videos">Trending Videos</string>
 	<string name="title_sample_views_count">4.1M Views</string>
 	<string name="title_sample_featured_vid_metainfo">AIO Films / 8 Months Ago</string>
+	<string name="title_your_full_name">Enter Your Full Name</string>
+	<string name="title_enter_your_secret_password">Enter Your Secret Password</string>
+	<string name="title_forget_password_question"><u>Forgot Password?</u></string>
+	<string name="title_sign_in_now">Sign In Now</string>
+	<string name="title_quick_login_with">Quick Login With</string>
+	<string name="title_invalid_email_address">Invalid Email Address</string>
+	<string name="title_invalid_name">Enter Your Full Name</string>
+	<string name="title_password_is_empty">Password Is Empty</string>
+	<string name="title_password_is_small">Password Is Too Small</string>
+	<string name="title_login_with_google">Login With Google</string>
 
 </resources>
