@@ -102,7 +102,41 @@ object URLUtilityKT {
 			false
 		}
 	}
-
+	
+	/**
+	 * Validates whether a given string is a well-formed email address.
+	 *
+	 * This function uses a regular expression to check if the input string conforms to
+	 * a standard email address format (e.g., `user@example.com`). It is a simple
+	 * syntactic check and does not verify the actual existence or deliverability of the
+	 * email address.
+	 *
+	 * The validation checks for:
+	 * - A non-empty local part (before the `@`).
+	 * - A single `@` symbol.
+	 * - A non-empty domain part (after the `@`).
+	 * - A domain containing at least one dot (`.`).
+	 *
+	 * @param email The string to validate.
+	 * @return `true` if the string matches the email pattern, `false` otherwise.
+	 */
+	@JvmStatic
+	fun isValidEmail(email: String): Boolean {
+		if (!email.contains("@")) return false
+		
+		val parts = email.split("@")
+		if (parts.size != 2) return false
+		val (local, domain) = parts
+		
+		if (local.isEmpty() || domain.isEmpty()) return false
+		if (!domain.contains(".")) return false
+		
+		// small regex just for sanity
+		val simple = "^[A-Za-z0-9._%+-]+$".toRegex()
+		return simple.matches(local)
+	}
+	
+	
 	/**
 	 * Asynchronously retrieves the content of the `<title>` tag from a webpage.
 	 *
