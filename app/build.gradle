@@ -202,12 +202,16 @@ dependencies {
 	implementation platform(libs.bom)
 	implementation(libs.postgrest.kt)
 	implementation(libs.ktor.client.android)
+	implementation(libs.auth.kt)
 
 	// Video downloading and extraction libraries
 	implementation libs.ytdlp.library
 	implementation libs.ytdlp.ffmpeg
 	implementation libs.newpipe.extractor
 	implementation libs.mp4.iso.parser
+
+// Google Play Services for authentication
+	implementation(libs.play.services.auth)
 
 	// Desugaring for newer Java APIs on older Android versions
 	coreLibraryDesugaring libs.desugar.jdk.libs.nio

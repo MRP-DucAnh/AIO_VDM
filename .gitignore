@@ -9,6 +9,7 @@
 .cxx
 local.properties
 release_signature.jks
+client_secret_google_auth.json
 memory_paper.txt
 release_signature_key.png
 /app/src/main/res/values/strings_unit_ids.xml
