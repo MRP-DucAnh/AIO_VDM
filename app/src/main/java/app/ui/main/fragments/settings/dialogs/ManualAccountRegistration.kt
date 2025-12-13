@@ -205,7 +205,7 @@ class ManualAccountRegistration(baseActivity: BaseActivity) {
 	 */
 	private fun initializeDialogViews() {
 		// Set the layout for the dialog
-		dialogBuilder.setView(R.layout.dialog_user_registration_1)
+		dialogBuilder.setView(R.layout.dialog_user_manual_registration_1)
 		
 		// Allow dialog to be canceled by tapping outside or back button
 		dialogBuilder.setCancelable(true)

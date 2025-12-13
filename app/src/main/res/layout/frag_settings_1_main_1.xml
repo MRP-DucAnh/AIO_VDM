@@ -135,21 +135,37 @@
 						tools:ignore="TouchTargetSizeCheck"
 						>
 						
-						<TextView
-							android:id="@+id/txt_connect_to_cloud"
+						<LinearLayout
 							android:layout_width="wrap_content"
 							android:layout_height="wrap_content"
 							android:layout_centerInParent="true"
-							android:layout_margin="@dimen/_7"
-							android:drawableStart="@drawable/ic_button_connect"
-							android:drawablePadding="@dimen/_5"
-							android:drawableTint="@color/color_on_secondary"
-							android:fontFamily="@font/font_family_semibold"
-							android:gravity="center"
-							android:text="@string/title_sign_in_register"
-							android:textColor="@color/color_on_secondary"
-							android:textSize="@dimen/normal_text_size"
-							/>
+							android:orientation="horizontal"
+							tools:ignore="UseCompoundDrawables,UselessParent"
+							>
+							
+							<ImageView
+								android:layout_width="@dimen/_26"
+								android:layout_height="wrap_content"
+								android:layout_gravity="center_vertical"
+								android:adjustViewBounds="true"
+								android:importantForAccessibility="no"
+								android:src="@drawable/ic_site_google"
+								/>
+							
+							<TextView
+								android:id="@+id/txt_connect_to_cloud"
+								android:layout_width="wrap_content"
+								android:layout_height="wrap_content"
+								android:layout_margin="@dimen/_7"
+								android:drawablePadding="@dimen/_5"
+								android:drawableTint="@color/color_on_secondary"
+								android:fontFamily="@font/font_family_semibold"
+								android:gravity="center"
+								android:text="@string/title_login_with_google"
+								android:textColor="@color/color_on_secondary"
+								android:textSize="@dimen/normal_text_size"
+								/>
+						</LinearLayout>
 					</RelativeLayout>
 				</LinearLayout>
 			</LinearLayout>
