@@ -1,76 +1,106 @@
 /**
- * This block applies the necessary Gradle plugins for the application.
- * - android.application: The base plugin for building Android applications.
- * - kotlin.android: Enables Kotlin support for Android development.
- * - kotlin.kapt: The Kotlin Annotation Processing Tool for handling annotation processors.
- * - objectbox.db: The plugin for integrating the ObjectBox database.
+ * ---------------------------------------------------------------------------
+ * Plugin configuration
+ * ---------------------------------------------------------------------------
+ * Applies all Gradle plugins required to build, package, and process the app.
  */
 plugins {
+
+	// Android Application plugin: enables APK/AAB generation and Android tooling.
 	alias(libs.plugins.android.application)
+
+	// Kotlin Android plugin: adds Kotlin language support for Android modules.
 	alias(libs.plugins.kotlin.android)
+
+	// Kotlin KAPT: required for annotation processors (ObjectBox, DSL-JSON, etc.).
 	alias(libs.plugins.kotlin.kapt)
+
+	// ObjectBox database plugin: generates database schema and entity bindings.
 	alias(libs.plugins.objectbox.db)
+
+	// Kotlin serialization plugin used by Supabase client libraries.
 	alias(libs.plugins.supabase.serialization)
 }
 
 /**
- * The main configuration block for the Android application.
+ * ---------------------------------------------------------------------------
+ * Android project configuration
+ * ---------------------------------------------------------------------------
+ * Defines how the Android application is compiled, packaged, and signed.
  */
 android {
-	// The namespace for the application's generated R class.
-	namespace 'com.aio'
-	// The API level to compile the application against.
+
+	// Package namespace used for generated R, BuildConfig, and other classes.
+	namespace "com.aio"
+
+	// Android SDK version used to compile the app.
 	compileSdkVersion 36
-	// Specifies the version of the NDK to be used.
-	ndkVersion '28.0.12916984 rc3'
+
+	// Explicit NDK version to ensure consistent native builds across machines.
+	ndkVersion "28.0.12916984 rc3"
 
 	/**
-	 * Default configuration for all build variants.
-	 * These settings can be overridden by specific build types or product flavors.
+	 * -----------------------------------------------------------------------
+	 * Default configuration shared by all build variants.
+	 * -----------------------------------------------------------------------
 	 */
 	defaultConfig {
-		// A unique identifier for the application on the device and in the Google Play Store.
+
+		// Unique app identifier on the device and Google Play.
 		applicationId "com.aio.video_downloader"
-		// The minimum API level required for the app to run.
+
+		// Minimum Android version required to install the app.
 		minSdk 28
-		// The API level the app is designed and tested for.
+
+		// Android version the app is tested and optimized against.
 		targetSdk 36
-		// An integer representing the version of the app's code. Incremented for each release.
+
+		// Internal version used by Google Play for update ordering.
 		versionCode 82
-		// A user-facing string for the app version.
-		versionName '2025.11.11'
-		// Enables the use of vector drawables on pre-Lollipop devices.
+
+		// User-visible app version string.
+		versionName "2025.11.11"
+
+		// Enables backward-compatible vector drawable support.
 		vectorDrawables.useSupportLibrary = true
-		// Enables support for applications with more than 65,536 methods.
+
+		// Enables MultiDex support when exceeding the 65K method limit.
 		multiDexEnabled true
 
 		/**
-		 * NDK configuration to specify which ABIs (Application Binary Interfaces) to build for.
-		 * This reduces the size of the APK by only including native libraries for the specified architectures.
+		 * Restricts native builds to specific CPU architectures.
+		 * Reduces APK size by excluding unused ABIs.
 		 */
 		ndk {
 			abiFilters "x86", "x86_64", "armeabi-v7a", "arm64-v8a"
 		}
 	}
 
-	// Loads signing credentials from an external properties file.
+	/**
+	 * -----------------------------------------------------------------------
+	 * Signing configuration
+	 * -----------------------------------------------------------------------
+	 */
+
+	// Loads signing credentials from an external, non-committed properties file.
 	def keystoreProps = new Properties()
 
-	// Reads keystore passwords and aliases from a local file.
+	// Reads keystore passwords and aliases from disk.
 	file("${rootProject.projectDir}/others/release_keystore.properties").withInputStream {
 		keystoreProps.load(it)
 	}
 
 	/**
-	 * Signing configurations used to cryptographically sign APKs/AABs.
-	 * Ensures consistent application identity across installations.
+	 * Defines keystores used to sign debug and release builds.
+	 * Ensures consistent application identity across installs.
 	 */
 	signingConfigs {
+
 		debug {
-			// Keystore file used to sign the debug build.
+			// Keystore file used for signing debug builds.
 			storeFile rootProject.file("others/release_signature.jks")
 
-			// Password for the keystore file.
+			// Keystore file password.
 			storePassword keystoreProps["STORE_PASSWORD"]
 
 			// Alias of the signing key.
@@ -81,105 +111,114 @@ android {
 		}
 
 		release {
-			// Keystore file used to sign the debug build.
+			// Keystore file used for signing release builds.
 			storeFile rootProject.file("others/release_signature.jks")
-
-			// Password for the keystore file.
 			storePassword keystoreProps["STORE_PASSWORD"]
-
-			// Alias of the signing key.
 			keyAlias keystoreProps["KEY_ALIAS"]
-
-			// Password for the signing key.
 			keyPassword keystoreProps["KEY_PASSWORD"]
 		}
 	}
 
 	/**
-	 * Defines build types for different stages of development, e.g., debug and release.
+	 * -----------------------------------------------------------------------
+	 * Build types
+	 * -----------------------------------------------------------------------
+	 * Controls behavior differences between debug and release builds.
 	 */
 	buildTypes {
+
 		debug {
-			// Allows debugging of the application.
+			// Enables debugger attachment.
 			debuggable true
+
 			// Disables code shrinking and obfuscation.
 			minifyEnabled false
-			// Disables removal of unused resources.
+
+			// Keeps all packaged resources.
 			shrinkResources false
-			// Creates a custom boolean field in the BuildConfig class.
+
+			// Exposes debug flag via BuildConfig.
 			buildConfigField "boolean", "IS_DEBUG_MODE_ON", "true"
 		}
 
 		release {
-			// Disables code shrinking and obfuscation (typically should be 'true' for release).
-			minifyEnabled false
-			// Disables removal of unused resources (typically should be 'true' for release).
-			shrinkResources false
-			// Disables debugging for the release build.
+			// Disables debugger for production builds.
 			debuggable false
-			// Specifies ProGuard rules for code shrinking, obfuscation, and optimization.
-			proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
-				'proguard-rules.pro'
+
+			// ProGuard/R8 configuration (disabled here by choice).
+			minifyEnabled false
+			shrinkResources false
+
+			// ProGuard rules configuration.
+			proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"),
+				"proguard-rules.pro"
+
+			// Exposes release flag via BuildConfig.
 			buildConfigField "boolean", "IS_DEBUG_MODE_ON", "false"
 		}
 	}
 
+	// Generates full native debug symbols for release builds.
 	buildTypes.release.ndk.debugSymbolLevel = "FULL"
-	// Enables the generation of the BuildConfig class.
-	android.buildFeatures.buildConfig = true
+
+	// Enables generation of the BuildConfig class.
+	buildFeatures {
+		buildConfig true
+	}
 
 	/**
-	 * Specifies packaging options for the final APK.
-	 * This is used to resolve conflicts when multiple dependencies include the same files.
+	 * -----------------------------------------------------------------------
+	 * Packaging options
+	 * -----------------------------------------------------------------------
+	 * Resolves conflicts caused by duplicate files in dependencies.
 	 */
 	packagingOptions {
-		// Excludes metadata files to prevent packaging conflicts.
-		exclude 'META-INF/LICENSE'
-		exclude 'META-INF/NOTICE'
-		exclude 'META-INF/*.kotlin_module'
-		// Uses legacy packaging for native libraries (.so files).
+
+		// Removes common license and metadata files.
+		exclude "META-INF/LICENSE"
+		exclude "META-INF/NOTICE"
+		exclude "META-INF/*.kotlin_module"
+
+		// Uses legacy packaging for native libraries.
 		jniLibs.useLegacyPackaging = true
 	}
 
 	/**
-	 * Configuration for creating multiple APKs based on screen density or ABI.
+	 * -----------------------------------------------------------------------
+	 * APK splits
+	 * -----------------------------------------------------------------------
+	 * Generates separate APKs per CPU architecture.
 	 */
 	splits {
 		abi {
-			// Enables splitting the APK by ABI.
 			enable true
-			// Clears any previously defined list of ABIs.
 			reset()
-			// Specifies the ABIs to create separate APKs for.
-			include 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
-			// Also generates a universal APK that includes all ABIs.
+			include "x86", "x86_64", "armeabi-v7a", "arm64-v8a"
 			universalApk true
 		}
 	}
 
 	/**
-	 * Configures Java compilation options.
+	 * -----------------------------------------------------------------------
+	 * Java & Kotlin compilation
+	 * -----------------------------------------------------------------------
 	 */
 	compileOptions {
-		// Enables support for newer Java APIs on older Android versions through "desugaring".
+		// Enables newer Java APIs on older Android versions.
 		coreLibraryDesugaringEnabled true
-		// Sets the Java language version for the source code.
+
+		// Java language level.
 		sourceCompatibility JavaVersion.VERSION_17
-		// Sets the Java language version for the generated bytecode.
 		targetCompatibility JavaVersion.VERSION_17
 	}
 
-	/**
-	 * Configures Kotlin specific options.
-	 */
 	kotlin {
-		// Specifies the JVM target version for the Kotlin compiler.
+		// JVM toolchain used by Kotlin compiler.
 		jvmToolchain(17)
 	}
 
 	/**
-	 * Controls whether dependency information is included in the final artifact.
-	 * This is typically used for library modules, not application modules.
+	 * Controls dependency metadata inclusion in APK/AAB.
 	 */
 	dependenciesInfo {
 		includeInBundle false
@@ -187,7 +226,11 @@ android {
 	}
 }
 
-// Dependencies for the application.
+/**
+ * ---------------------------------------------------------------------------
+ * Application dependencies
+ * ---------------------------------------------------------------------------
+ */
 dependencies {
 	// Local JAR dependencies
 	implementation fileTree(dir: 'libs', include: ['*.jar'])
@@ -242,14 +285,9 @@ dependencies {
 	implementation libs.parse                         // Structured data parsing utilities
 
 	// Backend & networking (BOM-managed versions)
-	implementation platform(libs.bom)                 // Bill of Materials for aligned versions
+	implementation platform(libs.supabase.bom)                 // Bill of Materials for aligned versions
 	implementation(libs.postgrest.kt)                 // Kotlin client for PostgREST APIs
 	implementation(libs.ktor.client.android)          // Ktor HTTP client for Android
-
-	// Authentication & identity
-	implementation(libs.androidx.credentials)         // Android Credential Manager API
-	implementation(libs.googleid)                     // Google Sign-In / Identity Services
-	implementation(libs.androidx.credentials.auth)    // Android Credential Manager API Support < 13
 
 	// Video downloading and extraction libraries
 	implementation libs.ytdlp.library                 // yt-dlp core download library
