@@ -151,68 +151,69 @@ dependencies {
 	implementation fileTree(dir: 'libs', include: ['*.jar'])
 
 	// AndroidX libraries for core UI components and compatibility
-	implementation libs.androidx.appcompat
-	implementation libs.androidx.viewpager2
-	implementation libs.androidx.cardview
-	implementation libs.androidx.core.ktx
-	implementation libs.constraint.layout
-	implementation libs.androidx.webkit
-	implementation libs.androidx.biometric
-	implementation libs.androidx.lifecycle.process
+	implementation libs.androidx.appcompat           // Backward-compatible AppCompat UI components
+	implementation libs.androidx.viewpager2          // ViewPager2 for swipe-based page navigation
+	implementation libs.androidx.cardview            // CardView UI container with rounded corners
+	implementation libs.androidx.core.ktx            // Kotlin extensions for core Android APIs
+	implementation libs.androidx.constraintlayout    // Flexible and performant layout system
+	implementation libs.androidx.webkit              // WebView and web-related AndroidX APIs
+	implementation libs.androidx.biometric           // Biometric authentication (fingerprint/face)
+	implementation libs.androidx.lifecycle.process   // Lifecycle handling for the whole app process
 
 	// Kotlin Coroutines for asynchronous programming
-	implementation libs.kotlin.coroutines.core
-	implementation libs.kotlin.coroutines
+	implementation libs.kotlin.coroutines.core       // Core coroutine primitives
+	implementation libs.kotlin.coroutines.android    // Android coroutine support and dispatchers
 
 	// Media3 for media playback (ExoPlayer's successor)
-	implementation libs.media3.exoplayer
-	implementation libs.media3.exoplayer.hls
-	implementation libs.media3.exoplayer.dash
-	implementation libs.media3.datasource
-	implementation libs.media3.ui
-	implementation libs.media3.session
+	implementation libs.media3.exoplayer             // Core Media3 ExoPlayer implementation
+	implementation libs.media3.exoplayer.hls         // HLS streaming support
+	implementation libs.media3.exoplayer.dash        // MPEG-DASH streaming support
+	implementation libs.media3.datasource            // Media data source implementations
+	implementation libs.media3.ui                    // Media player UI components
+	implementation libs.media3.session               // Media session and background playback
 
 	// ObjectBox for high-performance object-oriented database
-	implementation libs.objectbox.android
-	implementation libs.objectbox.kotlin
+	implementation libs.objectbox.android             // ObjectBox runtime for Android
+	implementation libs.objectbox.kotlin              // Kotlin extensions for ObjectBox
 
 	// JSON and serialization libraries
-	implementation libs.fst // Fast serialization
-	implementation libs.jsoup // HTML parsing
-	implementation libs.gson // JSON parsing and serialization
-	implementation(libs.dsljson) // Fast JSON processing
-	kapt(libs.dsljson) // DSL Json annotation processor
-	compileOnly(libs.jsonbind.api) // JSON binding API
+	implementation libs.fst                           // Fast binary serialization
+	implementation libs.jsoup                         // HTML parsing and web scraping
+	implementation libs.gson                          // JSON parsing and serialization
+	implementation(libs.dsljson)                      // High-performance JSON processing
+	kapt(libs.dsljson)                                // DSL-JSON annotation processor
+	compileOnly(libs.jsonbind.api)                    // JSON-B API (compile-time only)
 
 	// Networking libraries
-	implementation libs.retrofit
-	implementation libs.retrofit.converter.gson
-	implementation libs.okhttp
+	implementation libs.retrofit                      // Type-safe REST API client
+	implementation libs.retrofit.converter.gson       // Gson converter for Retrofit
+	implementation libs.okhttp                        // HTTP client and connection management
 
 	// UI enhancement libraries
-	implementation libs.lottie // After Effects animations
-	implementation libs.glide // Image loading and caching
-	implementation libs.circleimageview // Circular ImageView
-	implementation libs.permissionx // Runtime permissions
+	implementation libs.lottie                        // After Effects / Lottie animations
+	implementation libs.glide                         // Image loading, caching, and GIF support
+	implementation libs.circleimageview               // Circular ImageView widget
+	implementation libs.permissionx                   // Simplified runtime permission handling
 
 	// Storage and data parsing
-	implementation libs.saf.storage // Storage Access Framework helper
-	implementation libs.parse // Data parsing
+	implementation libs.saf.storage                   // Storage Access Framework helper utilities
+	implementation libs.parse                         // Structured data parsing utilities
 
-	implementation platform(libs.bom)
-	implementation(libs.postgrest.kt)
-	implementation(libs.ktor.client.android)
-	implementation(libs.auth.kt)
+	// Backend & networking (BOM-managed versions)
+	implementation platform(libs.bom)                 // Bill of Materials for aligned versions
+	implementation(libs.postgrest.kt)                 // Kotlin client for PostgREST APIs
+	implementation(libs.ktor.client.android)          // Ktor HTTP client for Android
+
+	// Authentication & identity
+	implementation(libs.androidx.credentials)         // Android Credential Manager API
+	implementation(libs.googleid)                     // Google Sign-In / Identity Services
 
 	// Video downloading and extraction libraries
-	implementation libs.ytdlp.library
-	implementation libs.ytdlp.ffmpeg
-	implementation libs.newpipe.extractor
-	implementation libs.mp4.iso.parser
-
-// Google Play Services for authentication
-	implementation(libs.play.services.auth)
+	implementation libs.ytdlp.library                 // yt-dlp core download library
+	implementation libs.ytdlp.ffmpeg                  // FFmpeg integration for yt-dlp
+	implementation libs.newpipe.extractor              // Media metadata extraction (YouTube, etc.)
+	implementation libs.mp4.iso.parser                // MP4/ISO base media file parsing
 
 	// Desugaring for newer Java APIs on older Android versions
-	coreLibraryDesugaring libs.desugar.jdk.libs.nio
+	coreLibraryDesugaring libs.desugar.jdk.libs.nio    // Java 8+ API backport for Android
 }
