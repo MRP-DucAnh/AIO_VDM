@@ -647,5 +647,7 @@
 	<string name="title_password_is_empty">Password Is Empty</string>
 	<string name="title_password_is_small">Password Is Too Small</string>
 	<string name="title_login_with_google">Login With Google</string>
+	<string name="title_view_account_details">Account Details</string>
+	<string name="title_login_successful">Login Successful</string>
 
 </resources>
