@@ -207,6 +207,7 @@ dependencies {
 	// Authentication & identity
 	implementation(libs.androidx.credentials)         // Android Credential Manager API
 	implementation(libs.googleid)                     // Google Sign-In / Identity Services
+	implementation(libs.androidx.credentials.auth)    // Android Credential Manager API Support < 13
 
 	// Video downloading and extraction libraries
 	implementation libs.ytdlp.library                 // yt-dlp core download library
