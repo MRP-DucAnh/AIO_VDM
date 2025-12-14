@@ -53,6 +53,48 @@ android {
 		}
 	}
 
+	// Loads signing credentials from an external properties file.
+	def keystoreProps = new Properties()
+
+	// Reads keystore passwords and aliases from a local file.
+	file("${rootProject.projectDir}/others/release_keystore.properties").withInputStream {
+		keystoreProps.load(it)
+	}
+
+	/**
+	 * Signing configurations used to cryptographically sign APKs/AABs.
+	 * Ensures consistent application identity across installations.
+	 */
+	signingConfigs {
+		debug {
+			// Keystore file used to sign the debug build.
+			storeFile rootProject.file("others/release_signature.jks")
+
+			// Password for the keystore file.
+			storePassword keystoreProps["STORE_PASSWORD"]
+
+			// Alias of the signing key.
+			keyAlias keystoreProps["KEY_ALIAS"]
+
+			// Password for the signing key.
+			keyPassword keystoreProps["KEY_PASSWORD"]
+		}
+
+		release {
+			// Keystore file used to sign the debug build.
+			storeFile rootProject.file("others/release_signature.jks")
+
+			// Password for the keystore file.
+			storePassword keystoreProps["STORE_PASSWORD"]
+
+			// Alias of the signing key.
+			keyAlias keystoreProps["KEY_ALIAS"]
+
+			// Password for the signing key.
+			keyPassword keystoreProps["KEY_PASSWORD"]
+		}
+	}
+
 	/**
 	 * Defines build types for different stages of development, e.g., debug and release.
 	 */
