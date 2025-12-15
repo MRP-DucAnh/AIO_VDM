@@ -119,7 +119,7 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 		 *
 		 * @see AIOBackend for the underlying implementation.
 		 */
-		var IS_CLOUD_BACKUP_ENABLED = true
+		var IS_CLOUD_BACKUP_ENABLED = false
 		
 		/**
 		 * A global flag indicating whether the "Ultimate" version of the application
@@ -401,6 +401,7 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 		
 		INSTANCE = this
 		initializeObjectBoxDB(INSTANCE)
+		initializeSupabaseClient()
 		aioBackend.initParseBackend()
 		
 		startupManager.apply {
