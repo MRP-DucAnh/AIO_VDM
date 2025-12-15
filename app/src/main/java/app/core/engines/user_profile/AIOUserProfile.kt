@@ -15,6 +15,31 @@ import lib.process.*
 import java.io.*
 import kotlin.jvm.Transient
 
+/**
+ * Represents a user's profile data within the application.
+ *
+ * This class is designed to be a central repository for user-specific information,
+ * such as authentication status and personal details. It supports multiple persistence
+ * mechanisms to ensure data integrity and backward compatibility.
+ *
+ * The data is persisted in three ways:
+ * 1.  **ObjectBox Database:** As an `@Entity`, it is stored in a structured, efficient database.
+ * 2.  **JSON File:** A human-readable JSON representation (`user_profile.json`) is saved
+ *     in the app's internal storage for easy debugging and potential cross-platform use.
+ * 3.  **Binary File:** A serialized binary format (`user_profile.dat`) is used for fast
+ *     read/write operations, leveraging FST serialization.
+ *
+ * The class includes logic to read from older formats (binary, then JSON) and migrate
+ * the data to the current persistence layers upon initialization.
+ *
+ * @property id The unique identifier for the user profile entry in the local ObjectBox database.
+ * @property uniqueUserServerId A unique ID assigned by the server to identify the user across devices.
+ *           Null if not available.
+ * @property isUserCurrentlyLoggedIn A flag indicating whether the user is currently signed into their account.
+ * @property userFullName The full name of the user. Null if not provided.
+ * @property userEmailAddress The email address associated with the user's account. Null if not provided.
+ * @property userPhoneNumber The phone number associated with the user's account. Null if not provided.
+ */
 @CompiledJson
 @Entity
 class AIOUserProfile : Serializable {
@@ -106,7 +131,7 @@ class AIOUserProfile : Serializable {
 					fileName = USER_PROFILE_FILE_NAME_JSON,
 					data = convertClassToJSON()
 				)
-				AIOUserProfileDBManager.saveUserProfileInDB(settings = this)
+				AIOUserProfileDBManager.saveUserProfileInDB(userProfile = this)
 				logger.d("User profile successfully updated in storage")
 			} catch (error: Exception) {
 				logger.e("Error updating user profile in storage: ${error.message}", error)
