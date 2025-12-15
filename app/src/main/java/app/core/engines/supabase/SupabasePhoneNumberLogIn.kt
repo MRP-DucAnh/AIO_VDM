@@ -173,10 +173,13 @@ class SupabasePhoneNumberLogIn(
 	 * @return The current instance of `SupabasePhoneNumberLogIn` to allow for method chaining.
 	 */
 	fun initialize(): SupabasePhoneNumberLogIn {
+		logger.d("Initializing SupabasePhoneNumberLogIn dialog")
 		dialogBuilder.setView(R.layout.dialog_user_phone_registration_1)
 		dialogBuilder.setCancelable(true)
 		
 		dialogBuilder.view.apply {
+			logger.d("Binding dialog views")
+			
 			editTextPhoneNumber = findViewById(R.id.edit_field_phone_number)
 			editTextPassword = findViewById(R.id.edit_field_password)
 			containerEditTextPhoneNumber = findViewById(R.id.container_edit_field_phone_number)
@@ -185,21 +188,43 @@ class SupabasePhoneNumberLogIn(
 			btnTextRegisterAccount = findViewById(R.id.txt_register_account)
 			txtResendOptTimerCount = findViewById(R.id.txt_resend_opt_timer_info)
 			
-			containerEditTextPhoneNumber?.setOnClickListener { focusKeyboardOnPhoneNumberField() }
-			containerEditTextPassword?.setOnClickListener { focusKeyboardOnPasswordField() }
-			btnTextRegisterAccount?.text = getText(R.string.title_send_verification_code)
+			containerEditTextPhoneNumber?.setOnClickListener {
+				logger.v("Phone number field container clicked")
+				focusKeyboardOnPhoneNumberField()
+			}
+			
+			containerEditTextPassword?.setOnClickListener {
+				logger.v("OTP field container clicked")
+				focusKeyboardOnPasswordField()
+			}
+			
+			btnTextRegisterAccount?.text =
+				getText(R.string.title_send_verification_code)
 			
 			containerEditTextPassword?.visibility = View.GONE
 			txtResendOptTimerCount?.visibility = View.GONE
 			
+			logger.d("Initial UI state set (OTP hidden, timer hidden)")
 			btnRegisterAccount?.setOnClickListener {
 				val rawNumber = editTextPhoneNumber?.text.toString()
 				val phone = normalizeIndianNumber(rawNumber)
 				
-				if (!hasOptBeenSent) sendUserOTP(phone)
-				else verifyUserOTP(phone, editTextPassword?.text.toString())
+				logger.d(
+					"Register button clicked → raw='$rawNumber', " +
+						"normalized='$phone', otpSent=$hasOptBeenSent"
+				)
+				
+				if (!hasOptBeenSent) {
+					logger.d("Triggering OTP send flow")
+					sendUserOTP(phone)
+				} else {
+					logger.d("Triggering OTP verification flow")
+					verifyUserOTP(phone, editTextPassword?.text.toString())
+				}
 			}
 		}
+		
+		logger.d("SupabasePhoneNumberLogIn initialization completed")
 		return this@SupabasePhoneNumberLogIn
 	}
 	
@@ -291,35 +316,48 @@ class SupabasePhoneNumberLogIn(
 	 *        Not used in this implementation.
 	 */
 	override fun onAIOTimerTick(loopCount: Double) {
-		if (otpStartTimeMillis == 0L) return
-		if (txtResendOptTimerCount?.visibility != View.VISIBLE) return
+		if (otpStartTimeMillis == 0L) {
+			logger.v("Timer tick ignored: OTP timer not started")
+			return
+		}
 		
-		val elapsedSeconds =
-			((System.currentTimeMillis() - otpStartTimeMillis) / 1000).toInt()
+		if (txtResendOptTimerCount?.visibility != View.VISIBLE) {
+			logger.v("Timer tick ignored: resend timer not visible")
+			return
+		}
 		
+		val elapsedSeconds = ((System.currentTimeMillis() - otpStartTimeMillis) / 1000).toInt()
 		val remainingSeconds = totalSeconds - elapsedSeconds
-		if (remainingSeconds < 0 || remainingSeconds == lastShownSecond) return
+		
+		if (remainingSeconds < 0) {
+			logger.d("OTP timer expired (remainingSeconds < 0)")
+			return
+		}
+		
+		if (remainingSeconds == lastShownSecond) {
+			logger.v("Timer tick skipped: already rendered second=$remainingSeconds")
+			return
+		}
 		
 		lastShownSecond = remainingSeconds
-		
 		val minutes = remainingSeconds / 60
 		val seconds = remainingSeconds % 60
 		
-		safeBaseActivity
-			?.getAttachedCoroutineScope()
-			?.launch(Dispatchers.Main) {
-				
-				txtResendOptTimerCount?.text =
-					"${getText(R.string.title_you_can_resend_otp_after)} $minutes:$seconds Mins"
-				
-				if (remainingSeconds == 0) {
-					containerEditTextPassword?.visibility = View.GONE
-					txtResendOptTimerCount?.visibility = View.GONE
-					hasOptBeenSent = false
-					btnTextRegisterAccount?.text =
-						getText(R.string.title_resend_verification_code)
-				}
+		logger.d("OTP timer tick → remaining=$remainingSeconds sec ($minutes:$seconds)")
+		safeBaseActivity?.getAttachedCoroutineScope()?.launch(Dispatchers.Main) {
+			val remainingMgs = "${getText(R.string.title_you_can_resend_otp_after)} " +
+				"$minutes:$seconds ${getText(R.string.title_minutes)}"
+			txtResendOptTimerCount?.text = remainingMgs
+			
+			if (remainingSeconds == 0) {
+				logger.d("OTP timer reached zero, resetting UI state")
+				containerEditTextPassword?.visibility = View.GONE
+				txtResendOptTimerCount?.visibility = View.GONE
+				hasOptBeenSent = false
+				btnTextRegisterAccount?.text =
+					getText(R.string.title_resend_verification_code)
 			}
+		}
 	}
 	
 	/**
@@ -335,7 +373,10 @@ class SupabasePhoneNumberLogIn(
 	 * @param userPhoneNumber The 10-digit user phone number without the country code.
 	 */
 	private fun sendUserOTP(userPhoneNumber: String) {
+		logger.d("sendUserOTP() called with number=$userPhoneNumber")
+		
 		if (userPhoneNumber.length != 10) {
+			logger.e("Invalid phone number length: ${userPhoneNumber.length}")
 			safeBaseActivity?.doSomeVibration()
 			showToast(safeBaseActivity, R.string.title_enter_valid_phone_number)
 			return
@@ -344,19 +385,34 @@ class SupabasePhoneNumberLogIn(
 		safeBaseActivity
 			?.getAttachedCoroutineScope()
 			?.launch(Dispatchers.IO) {
+				logger.d("Preparing UI for OTP input")
+				
 				withContext(Dispatchers.Main) {
 					resetOtpTimer()
-					
 					containerEditTextPassword?.visibility = View.VISIBLE
 					txtResendOptTimerCount?.visibility = View.VISIBLE
-					btnTextRegisterAccount?.text =
-						getText(R.string.title_verify_and_login)
-					
+					btnTextRegisterAccount?.text = getText(R.string.title_verify_and_login)
 					hasOptBeenSent = true
 					focusKeyboardOnPasswordField()
 				}
-				supabaseClient.auth.signInWith(OTP) {
-					phone = "91$userPhoneNumber"
+				
+				try {
+					logger.d("Requesting OTP from Supabase for phone=91$userPhoneNumber")
+					supabaseClient.auth.signInWith(OTP) { phone = "91$userPhoneNumber" }
+					logger.d("OTP request sent successfully")
+					
+				} catch (error: Exception) {
+					logger.e("Failed to send OTP", error)
+					
+					withContext(Dispatchers.Main) {
+						hasOptBeenSent = false
+						containerEditTextPassword?.visibility = View.GONE
+						txtResendOptTimerCount?.visibility = View.GONE
+						
+						onAccountRegistrationFailed.invoke()
+						safeBaseActivity?.doSomeVibration()
+						showToast(safeBaseActivity, R.string.title_failed_to_send_otp)
+					}
 				}
 			}
 	}
@@ -382,18 +438,32 @@ class SupabasePhoneNumberLogIn(
 		safeBaseActivity
 			?.getAttachedCoroutineScope()
 			?.launch(Dispatchers.IO) {
-				logger.d("Verifying OTP")
-				supabaseClient.auth.verifyPhoneOtp(
-					type = OtpType.Phone.SMS,
-					phone = "91$userPhoneNumber",
-					token = otp
-				)
+				logger.d("Starting OTP verification for phone=91$userPhoneNumber")
 				
-				withContext(Dispatchers.Main) {
-					safeBaseActivity?.doSomeVibration()
-					showToast(safeBaseActivity, R.string.title_login_successful)
-					close()
+				try {
+					supabaseClient.auth.verifyPhoneOtp(
+						type = OtpType.Phone.SMS,
+						phone = "91$userPhoneNumber",
+						token = otp
+					)
+					
+					logger.d("OTP verification successful")
+					withContext(Dispatchers.Main) {
+						onAccountSuccessfullyRegistered.invoke()
+						safeBaseActivity?.doSomeVibration()
+						showToast(safeBaseActivity, R.string.title_login_successful)
+						close()
+					}
+					
+				} catch (error: Exception) {
+					logger.e("OTP verification failed", error)
+					withContext(Dispatchers.Main) {
+						onAccountRegistrationFailed.invoke()
+						safeBaseActivity?.doSomeVibration()
+						showToast(safeBaseActivity, R.string.title_invalid_or_expired_otp)
+					}
 				}
 			}
 	}
+	
 }
