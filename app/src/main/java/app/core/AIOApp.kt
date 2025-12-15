@@ -476,18 +476,28 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 	 * @see StartupManager for the implementation of the priority-based execution logic.
 	 * @see AIOApp.onCreate where this method is called to initiate the startup process.
 	 */
-	private fun StartupManager.initializeCriticalServices(onSettingsLoaded: () -> Unit = {}) {
+	private fun StartupManager.initializeCriticalServices(
+		onSettingsLoaded: () -> Unit = {},
+		onUserProfileLoaded: () -> Unit = {}
+	) {
 		addCriticalTask { // Critical tasks block the main thread.
 			warmUpOkHttpClient()
 			logger.d("[Startup] Critical: Loading system configurations...")
 			loadSystemConfigurations(onSettingsLoaded)
 			logger.d("[Startup] Critical: System configurations loaded.")
+			
+			logger.d("[Startup] Critical: Loading application user profile...")
+			loadApplicationUserProfile(onUserProfileLoaded)
+			logger.d("[Startup] Critical: application user profile loaded.")
+			
 			logger.d("[Startup] Critical: Initializing download system...")
 			initializeDownloadSystemWithModels()
 			logger.d("[Startup] Critical: Download system initialized.")
+			
 			logger.d("[Startup] Critical: Preloading raw files...")
 			preloadApplicationRawFiles()
 			logger.d("[Startup] Critical: Raw files preloaded.")
+			
 			logger.d("[Startup] Critical: Initializing YouTube services...")
 			initializeYouTubeServices()
 			logger.d("[Startup] Critical: YouTube services initialized.")
@@ -633,6 +643,38 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 			)
 			aioSettings = AIOSettings().apply(AIOSettings::readObjectFromStorage)
 			onSettingsLoaded.invoke()
+		}
+	}
+	
+	/**
+	 * Loads the application user profile from the database.
+	 *
+	 * This function is responsible for retrieving the current user's profile information,
+	 * such as username, preferences, and subscription status, from the local ObjectBox
+	 * database. It initializes the `aioUserProfile` singleton instance, making the
+	 * user's data accessible throughout the application.
+	 *
+	 * This operation is executed as part of the high-priority startup sequence, ensuring
+	 * that user-specific data is available early in the application lifecycle without
+	 * blocking the main thread.
+	 *
+	 * If the database fails to load the profile, an error is logged, and the
+	 * application proceeds with a default or empty user profile, ensuring resilience.
+	 *
+	 * @see AIOUserProfileDBManager.loadUserProfileFromDB for the database retrieval logic.
+	 * @see AIOUserProfile for the data model.
+	 */
+	private fun loadApplicationUserProfile(onUserProfileLoaded: () -> Unit = {}) {
+		try {
+			logger.d("[Startup] Loading user profile from database...")
+			aioUserProfile = AIOUserProfileDBManager.loadSettingsFromDB()
+		} catch (error: Exception) {
+			logger.e(
+				"[Startup] Failed to load user profile from database, " +
+					"falling back to legacy storage.", error
+			)
+			aioUserProfile = AIOUserProfile().apply(AIOUserProfile::readObjectFromStorage)
+			onUserProfileLoaded.invoke()
 		}
 	}
 	
