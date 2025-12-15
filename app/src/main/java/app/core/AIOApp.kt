@@ -18,6 +18,8 @@ import app.core.engines.downloader.DownloadModelsDBManager.getAllDownloadsWithRe
 import app.core.engines.objectbox.*
 import app.core.engines.objectbox.ObjectBoxManager.initializeObjectBoxDB
 import app.core.engines.settings.*
+import app.core.engines.supabase.SupabaseCloudServer.initializeSupabaseClient
+import app.core.engines.user_profile.*
 import app.core.engines.youtube.*
 import com.aio.*
 import com.anggrayudi.storage.file.DocumentFileCompat.fromPublicFolder
@@ -183,6 +185,18 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 		 * @see getAIOSettings for the public accessor.
 		 */
 		lateinit var aioSettings: AIOSettings
+		
+		/**
+		 * Manages the currently logged-in user's profile information.
+		 *
+		 * This lazily-initialized singleton holds the data model for the user's profile,
+		 * which may include details such as username, email, subscription status, and
+		 * cloud sync preferences. It is initialized on first access and serves as the
+		 * single source of truth for user-specific data throughout the application.
+		 *
+		 * @see AIOUser for the underlying data model.
+		 */
+		lateinit var aioUserProfile: AIOUserProfile
 		
 		/**
 		 * Browser bookmarks management system.
