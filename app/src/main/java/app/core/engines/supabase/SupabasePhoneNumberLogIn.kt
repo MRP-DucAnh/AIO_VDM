@@ -5,7 +5,10 @@ import android.widget.*
 import app.core.*
 import app.core.AIOTimer.*
 import app.core.bases.*
+import app.core.engines.supabase.SupabaseCloudServer.supabaseClient
 import com.aio.*
+import io.github.jan.supabase.auth.*
+import io.github.jan.supabase.auth.providers.builtin.*
 import kotlinx.coroutines.*
 import lib.device.DeviceUtility.normalizeIndianNumber
 import lib.process.*
@@ -17,9 +20,9 @@ import lib.ui.builders.ToastView.Companion.showToast
 import java.lang.ref.*
 
 class SupabasePhoneNumberLogIn(
-	baseActivity: BaseActivity,
-	val onAccountSuccessfullyRegistered: () -> Unit = {},
-	val onAccountRegistrationFailed: () -> Unit = {}
+	private val baseActivity: BaseActivity,
+	private val onAccountSuccessfullyRegistered: () -> Unit = {},
+	private val onAccountRegistrationFailed: () -> Unit = {}
 ) : AIOTimerListener {
 	
 	private val logger = LogHelperUtils.from(javaClass)
@@ -39,8 +42,7 @@ class SupabasePhoneNumberLogIn(
 	
 	private var hasOptBeenSent = false
 	
-	// OTP timer state
-	private val totalSeconds = 15
+	private val totalSeconds = 3 * 60
 	private var lastShownSecond = -1
 	private var otpStartTimeMillis = 0L
 	
@@ -150,23 +152,22 @@ class SupabasePhoneNumberLogIn(
 		
 		safeBaseActivity
 			?.getAttachedCoroutineScope()
-			?.launch(Dispatchers.Main) {
-				
-				resetOtpTimer()
-				
-				containerEditTextPassword?.visibility = View.VISIBLE
-				txtResendOptTimerCount?.visibility = View.VISIBLE
-				btnTextRegisterAccount?.text =
-					getText(R.string.title_verify_and_login)
-				
-				hasOptBeenSent = true
-				focusKeyboardOnPasswordField()
+			?.launch(Dispatchers.IO) {
+				withContext(Dispatchers.Main) {
+					resetOtpTimer()
+					
+					containerEditTextPassword?.visibility = View.VISIBLE
+					txtResendOptTimerCount?.visibility = View.VISIBLE
+					btnTextRegisterAccount?.text =
+						getText(R.string.title_verify_and_login)
+					
+					hasOptBeenSent = true
+					focusKeyboardOnPasswordField()
+				}
+				supabaseClient.auth.signInWith(OTP) {
+					phone = "91$userPhoneNumber"
+				}
 			}
-		
-		// Supabase OTP send (enable when ready)
-		// supabaseClient.auth.signInWith(OTP) {
-		//     phone = "91$userPhoneNumber"
-		// }
 	}
 	
 	private fun verifyUserOTP(userPhoneNumber: String, otp: String) {
@@ -179,15 +180,12 @@ class SupabasePhoneNumberLogIn(
 		safeBaseActivity
 			?.getAttachedCoroutineScope()
 			?.launch(Dispatchers.IO) {
-				
 				logger.d("Verifying OTP")
-				
-				// Supabase verify (enable when ready)
-				// supabaseClient.auth.verifyPhoneOtp(
-				//     type = OtpType.Phone.SMS,
-				//     phone = userPhoneNumber,
-				//     token = otp
-				// )
+				supabaseClient.auth.verifyPhoneOtp(
+					type = OtpType.Phone.SMS,
+					phone = "91$userPhoneNumber",
+					token = otp
+				)
 				
 				withContext(Dispatchers.Main) {
 					safeBaseActivity?.doSomeVibration()
