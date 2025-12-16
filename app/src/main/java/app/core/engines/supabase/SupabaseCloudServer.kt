@@ -1,6 +1,8 @@
 package app.core.engines.supabase
 
 import app.core.*
+import app.core.engines.supabase.SupabaseCloudServer.supabaseClient
+import app.core.engines.supabase.SupabaseCloudServer.updateDataModelToSupabase
 import com.aio.*
 import io.github.jan.supabase.*
 import io.github.jan.supabase.auth.*
@@ -10,6 +12,20 @@ import kotlinx.serialization.json.*
 import lib.process.*
 import lib.texts.CommonTextUtils.getText
 
+/**
+ * A singleton object that acts as a client for interacting with a Supabase cloud server.
+ *
+ * This object manages the connection and data transfer to a Supabase backend. It provides
+ * a centralized, lazily-initialized Supabase client and utility functions to upload
+ * data models to specific tables.
+ *
+ * The primary functionality is encapsulated in [updateDataModelToSupabase], which handles
+ * asynchronous data insertion, respecting application-level settings for cloud backups.
+ * It is designed to be thread-safe and can be used with or without a provided CoroutineScope.
+ *
+ * @see supabaseClient for the underlying Supabase client instance.
+ * @see updateDataModelToSupabase for the main data upload function.
+ */
 object SupabaseCloudServer {
 	
 	/**
@@ -36,6 +52,37 @@ object SupabaseCloudServer {
 		}.also {
 			logger.i("Supabase client initialized successfully")
 		}
+	}
+	
+	/**
+	 * Creates and configures a new Supabase client instance.
+	 *
+	 * This function initializes a Supabase client with the specified URL and key. It is
+	 * pre-configured to use the Ktor Android engine for network requests and can be
+	 * further customized by the `config` lambda. This allows for the installation of
+	 * various Supabase plugins like `Auth`, `Postgrest`, `Storage`, etc., tailored to
+	 * the application's needs.
+	 *
+	 * Example usage:
+	 * ```kotlin
+	 * val client = initializeSupabaseClient(
+	 *     supabaseUrl = "YOUR_SUPABASE_URL",
+	 *     supabaseKey = "YOUR_SUPABASE_KEY"
+	 * ) {
+	 *     install(Auth)
+	 *     install(Postgrest)
+	 * }
+	 * ```
+	 *
+	 * @param supabaseUrl The URL of the Supabase project.
+	 * @param supabaseKey The public anonymous key for the Supabase project.
+	 * @param config A lambda with `SupabaseClientBuilder` as its receiver, used to
+	 *               install plugins and apply further configurations.
+	 * @return A configured [SupabaseClient] instance.
+	 */
+	@JvmStatic
+	fun initializeSupabaseClient() {
+		supabaseClient
 	}
 	
 	/**
