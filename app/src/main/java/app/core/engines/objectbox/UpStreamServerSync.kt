@@ -1,72 +1,70 @@
 package app.core.engines.objectbox
 
 import app.core.*
-import app.core.bases.*
-import app.core.engines.downloader.*
-import app.ui.main.*
+import app.core.engines.settings.*
 import com.parse.*
 import com.parse.ParseInstallation.*
 import lib.process.*
 import org.json.*
 import java.util.*
 
-class UpStreamServerDownloadModelSync {
+class UpStreamServerSync {
 	
 	/**
 	 * Logger instance for this class, used for detailed operation logging.
 	 */
 	private val logger = LogHelperUtils.from(javaClass)
 	
-	fun uploadUserDetailsToSever(baseActivity: BaseActivity) {
+	fun uploadUserDetailsToSever() {
 		ThreadsUtility.executeInBackground(codeBlock = {
-			AIOApp.downloadSystem.prefetchedEntireDownloadModels.ifEmpty {
-				DownloadModelsDBManager.getAllDownloadsWithRelationsAssembled()
-			}.forEachIndexed { index, dataModel ->
-				val convertClassToJSON = dataModel.convertClassToJSON()
-				logger.d("Index:$index, DownloadModel [${dataModel.downloadId}]: $convertClassToJSON")
-				uploadJsonToParse(downloadId = dataModel.downloadId, dataModel.javaClass.simpleName, convertClassToJSON)
+			AIOSettingsDBManager.getSettingsObjectBox().all.forEachIndexed { index, settings ->
+				val convertClassToJSON = settings.convertClassToJSON()
+				logger.d("Index:$index, Setting [${settings.downloadDataModelDBId}]: $convertClassToJSON")
+				uploadJsonToParse(settings.javaClass.simpleName, convertClassToJSON)
 			}
 		})
 	}
 	
-	fun downStreamSyncFromServer(baseActivity: BaseActivity) {
+	fun downStreamSyncFromServer() {
 		ThreadsUtility.executeInBackground(
 			timeOutInMilli = 5000,
 			codeBlock = {
 				try {
-					val parseQuery = ParseQuery.getQuery<ParseObject>("DownloadDataModel")
+					val parseQuery = ParseQuery.getQuery<ParseObject>("AIOSettings")
+					
+					// Get ALL settings for this installation (not just latest)
 					parseQuery.whereEqualTo("installation_id", getCurrentInstallation().installationId)
-					parseQuery.orderByDescending("createdAt")
+					parseQuery.orderByDescending("createdAt") // Optional: keep newest first
+					
 					val results = parseQuery.find()
 					
 					if (results.isNotEmpty()) {
-						logger.d("Found ${results.size} download model records from server")
+						logger.d("Found ${results.size} settings records from server")
+						
+						// Process all results
 						for (parseObject in results) {
+							// 1. Try to get raw JSON first
 							val rawJson = parseObject.getString("raw_json")
 							
 							if (!rawJson.isNullOrEmpty()) {
-								DownloadDataModel.convertToClassFromJSON(rawJson)?.let {
-									it.updateInStorage()
-									logger.d("Restored DownloadModel ID${it.id}, DownloadId${it.downloadId}")
+								AIOSettings.convertJSONStringToClass(rawJson).let {
+									if (it.downloadDataModelDBId < 0) {
+										AIOApp.aioSettings = it
+										AIOApp.aioSettings.updateInStorage()
+									} else {
+										it.updateInStorage()
+									}
+									logger.d("Restored Setting ID${it.id}, DownloadModelId${it.downloadDataModelDBId}")
 								}
 								
 								val createdAt = parseObject.createdAt
-								logger.d("DownloadModel restored from record created at: $createdAt")
+								logger.d("Settings restored from record created at: $createdAt")
 							}
 						}
 						
 					} else {
-						logger.d("No DownloadModel found on server for this installation")
+						logger.d("No settings found on server for this installation")
 					}
-					AIOApp.downloadSystem.parseDownloadDataModelsAndSync(onComplete = {
-						if (baseActivity is MotherActivity) {
-							baseActivity.downloadFragment
-								?.finishedTasksFragment
-								?.finishedTasksListAdapter
-								?.notifyDataSetChangedOnSort(true)
-						}
-						logger.d("Refresh finished")
-					})
 				} catch (error: Exception) {
 					logger.d("downStreamSyncFromServer failed: ${error.message}")
 				}
@@ -75,7 +73,6 @@ class UpStreamServerDownloadModelSync {
 	}
 	
 	fun uploadJsonToParse(
-		downloadId: Int? = null,
 		tableName: String,
 		jsonString: String,
 		additionalData: Map<String, Any> = emptyMap(),
@@ -102,7 +99,6 @@ class UpStreamServerDownloadModelSync {
 						try {
 							val parseQuery = ParseQuery.getQuery<ParseObject>(tableName)
 							parseQuery.whereEqualTo("installation_id", installationId)
-							downloadId?.let { parseQuery.whereEqualTo("downloadID", it) }
 							parseQuery.orderByDescending("createdAt")
 							parseQuery.limit = 1
 							
@@ -142,9 +138,11 @@ class UpStreamServerDownloadModelSync {
 						
 						when {
 							key == "id" -> cloudTable.put("original_id", value)
+							
 							key in listOf("objectId", "ACL", "createdAt", "updatedAt") -> {
 								// Skip Parse reserved fields
 							}
+							
 							value != null && value != JSONObject.NULL -> {
 								cloudTable.put(key, value)
 							}
@@ -197,4 +195,5 @@ class UpStreamServerDownloadModelSync {
 			}
 		)
 	}
+	
 }
