@@ -333,11 +333,6 @@
           "id": "67:1368932844357110787",
           "name": "hasUserSkipBatteryOptimization",
           "type": 1
-        },
-        {
-          "id": "68:178972667968884868",
-          "name": "demoDATA",
-          "type": 9
         }
       ],
       "relations": []
@@ -1223,9 +1218,48 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "11:20975917045098968",
+      "lastPropertyId": "6:3300727228893496431",
+      "name": "UserProfileDataModel",
+      "properties": [
+        {
+          "id": "1:8763911908649575557",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:4624010957096845038",
+          "name": "uniqueUserServerId",
+          "type": 9
+        },
+        {
+          "id": "3:8448751441554402215",
+          "name": "userFullName",
+          "type": 9
+        },
+        {
+          "id": "4:6548612220169475477",
+          "name": "userEmailAddress",
+          "type": 9
+        },
+        {
+          "id": "5:1328303030505046394",
+          "name": "userPhoneNumber",
+          "type": 9
+        },
+        {
+          "id": "6:3300727228893496431",
+          "name": "isUserCurrentlyLoggedIn",
+          "type": 1
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "10:6838358189535358868",
+  "lastEntityId": "11:20975917045098968",
   "lastIndexId": "0:0",
   "lastRelationId": "1:8496475234812365537",
   "lastSequenceId": "0:0",
@@ -1239,7 +1273,8 @@
     720351275970656264,
     2728132546519396816,
     2878173129867797327,
-    9019781913617655866
+    9019781913617655866,
+    178972667968884868
   ],
   "retiredRelationUids": [],
   "version": 1
