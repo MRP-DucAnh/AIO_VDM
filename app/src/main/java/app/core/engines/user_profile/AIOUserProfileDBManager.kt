@@ -100,6 +100,7 @@ object AIOUserProfileDBManager {
 	fun loadSettingsFromDB(): AIOUserProfile {
 		return try {
 			val userProfileBox = getUserProfileObjectBox()
+			logger.d("Loading user profile from database, size ${userProfileBox.count()}")
 			var appUserProfile = userProfileBox.query().build().findFirst()
 			
 			if (appUserProfile == null) {

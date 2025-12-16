@@ -637,12 +637,14 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 		try {
 			logger.d("[Startup] Loading settings from database...")
 			aioSettings = AIOSettingsDBManager.loadSettingsFromDB()
+			aioSettings.updateInStorage()
 		} catch (error: Exception) {
 			logger.e(
 				"[Startup] Failed to load settings from database, " +
 					"falling back to legacy storage.", error
 			)
 			aioSettings = AIOSettings().apply(AIOSettings::readObjectFromStorage)
+			aioSettings.updateInStorage()
 			onSettingsLoaded.invoke()
 		}
 	}
@@ -669,12 +671,14 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 		try {
 			logger.d("[Startup] Loading user profile from database...")
 			aioUserProfile = AIOUserProfileDBManager.loadSettingsFromDB()
+			aioUserProfile.updateInStorage()
 		} catch (error: Exception) {
 			logger.e(
 				"[Startup] Failed to load user profile from database, " +
 					"falling back to legacy storage.", error
 			)
 			aioUserProfile = AIOUserProfile().apply(AIOUserProfile::readObjectFromStorage)
+			aioUserProfile.updateInStorage()
 			onUserProfileLoaded.invoke()
 		}
 	}
@@ -752,10 +756,12 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 		try {
 			logger.d("[Startup] Loading browsing history from storage...")
 			aioHistory = AIOHistoryDBManager.loadAIOHistoryFromDB()
+			aioHistory.updateInStorage()
 			logger.d("[Startup] Browsing history loaded successfully")
 		} catch (error: Exception) {
 			logger.e("[Startup] Failed to load browsing history: ${error.message}", error)
 			aioHistory = AIOHistory().apply(AIOHistory::readObjectFromStorage)
+			aioHistory.updateInStorage()
 			logger.d("[Startup] Using legacy history storage as fallback")
 		}
 	}
@@ -783,11 +789,13 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 			logger.d("[Startup] Loading bookmarks from database...")
 			aioBookmark = AIOBookmarks()
 			aioBookmark = AIOBookmarksDBManager.loadAIOBookmarksFromDB()
+			aioBookmark.updateInStorage()
 			logger.d("[Startup] Bookmarks loaded successfully")
 			
 		} catch (error: Exception) {
 			logger.e("[Startup] Failed to load bookmarks from database: ${error.message}", error)
 			aioBookmark = AIOBookmarks().apply(AIOBookmarks::readObjectFromStorage)
+			aioBookmark.updateInStorage()
 			logger.d("[Startup] Using legacy bookmarks storage as fallback")
 		}
 	}
