@@ -649,5 +649,25 @@
 	<string name="title_login_with_google">Login With Google</string>
 	<string name="title_view_account_details">Account Details</string>
 	<string name="title_login_successful">Login Successful</string>
+	<string name="title_create_new_account">Don\'t Have Account? Register Now!</string>
+	<string name="title_enter_your_phone_number">Enter Your Phone Number</string>
+	<string name="title_register_account">Register Account</string>
+	<string name="title_register_your_account">Register Your Account</string>
+	<string name="title_registering_account_is_free_safe">Registering With AIO Is Completely Free &amp; Safe</string>
+	<string name="title_enter_your_secret_otp">Enter Your Secret OTP</string>
+	<string name="title_login_with_phone_number">Login With Phone Number</string>
+	<string name="title_verify_phone_number">Verify Phone Number</string>
+	<string name="title_enter_valid_phone_number">Enter Valid Phone Number</string>
+	<string name="title_verify_and_login">Verify And Login</string>
+	<string name="title_send_verification_code">Send Verification Code</string>
+	<string name="title_resend_verification_code">Resend Verification Code</string>
+	<string name="title_you_can_resend_otp_after">You Can Resend OTP After</string>
+	<string name="title_enter_valid_otp_number">Enter Valid OTP Number</string>
+	<string name="title_invalid_or_expired_otp">Invalid Or Expired OTP</string>
+	<string name="title_failed_to_send_otp">Failed To Send Verification Code</string>
+	<string name="text_feature_only_available_in_india"><b>This feature is currently available only in India.</b> We’ll be rolling it out to other countries soon. Thanks for your understanding.</string>
+	<string name="title_already_logged_in">User Has Already Logged In</string>
+	<string name="title_sign_out">Sign Out From AIO Cloud</string>
+	<string name="title_minutes">Minutes</string>
 
 </resources>

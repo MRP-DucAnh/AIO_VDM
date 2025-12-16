@@ -8,11 +8,14 @@ import androidx.core.net.*
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioSettings
 import app.core.engines.settings.AIOSettings.Companion.AIO_SETTING_DARK_MODE_FILE_NAME
+import app.core.engines.supabase.*
+import app.core.engines.supabase.SupabaseCloudServer.supabaseClient
 import app.core.engines.updater.*
 import app.ui.main.fragments.settings.activities.browser.*
 import app.ui.main.fragments.settings.dialogs.*
 import app.ui.others.information.*
 import com.aio.*
+import io.github.jan.supabase.auth.*
 import kotlinx.coroutines.*
 import lib.device.*
 import lib.files.FileSystemUtility.hasFullFileSystemAccess
@@ -105,7 +108,25 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 */
 	fun showLoginOrRegistrationDialog() {
 		settingsFragmentRef?.safeMotherActivityRef?.apply {
-			LogInWithGoogleAccount(this).tryLogin()
+			if (DeviceUtility.isUserFromIndia(this)) {
+				val userSession = supabaseClient.auth.currentSessionOrNull()
+				if (userSession?.user == null) {
+					SupabasePhoneNumberLogIn(this).initialize().show()
+				} else {
+					logger.d("User is logged in: ${userSession.user?.phone}")
+					showToast(this, R.string.title_already_logged_in)
+				}
+			} else {
+				logger.d("Login or registration is only available in India")
+				this.doSomeVibration()
+				MsgDialogUtils.showMessageDialog(
+					baseActivityInf = this,
+					isTitleVisible = true,
+					titleText = getText(R.string.title_feature_isnt_implemented),
+					messageTextViewCustomize = { it.text = getText(R.string.text_feature_only_available_in_india) },
+					isNegativeButtonVisible = false
+				)
+			}
 		}
 	}
 	

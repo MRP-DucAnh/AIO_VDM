@@ -1,16 +1,16 @@
 package app.ui.main.fragments.settings
 
-import android.os.Bundle
-import android.view.View
-import android.widget.TextView
-import app.core.bases.BaseFragment
-import app.ui.main.MotherActivity
-import com.aio.R
+import android.os.*
+import android.view.*
+import android.widget.*
+import app.core.bases.*
+import app.ui.main.*
+import com.aio.*
 import lib.device.AppVersionUtility.versionCode
 import lib.device.AppVersionUtility.versionName
-import lib.process.LogHelperUtils
+import lib.process.*
 import lib.texts.CommonTextUtils.fromHtmlStringToSpanned
-import java.lang.ref.WeakReference
+import java.lang.ref.*
 
 /**
  * Fragment responsible for displaying and managing the application settings UI.
@@ -26,27 +26,27 @@ import java.lang.ref.WeakReference
  * with [SettingsOnClickLogic] for managing user click interactions.
  */
 class SettingsFragment : BaseFragment() {
-
+	
 	/** Logger utility for internal debugging and event tracing. */
 	private val logger = LogHelperUtils.from(javaClass)
-
+	
 	/**
 	 * Weak reference to the SettingsFragment instance to prevent memory leaks.
 	 * This allows safe reference passing to external logic classes.
 	 */
 	val safeSettingsFragmentRef = WeakReference(this).get()
-
+	
 	/**
 	 * Weak lazy reference to the parent [MotherActivity] to safely access activity-level
 	 * functionality without risking context leaks.
 	 */
 	val safeMotherActivityRef by lazy { WeakReference(safeBaseActivityRef as MotherActivity).get() }
-
+	
 	/**
 	 * Logic handler that defines and executes all click-based actions within the settings fragment.
 	 */
 	var settingsOnClickLogic: SettingsOnClickLogic? = null
-
+	
 	/**
 	 * Provides the layout resource identifier associated with this fragment.
 	 *
@@ -56,7 +56,7 @@ class SettingsFragment : BaseFragment() {
 		logger.d("Providing layout resource ID for SettingsFragment")
 		return R.layout.frag_settings_1_main_1
 	}
-
+	
 	/**
 	 * Initializes fragment logic after the layout is fully loaded and ready.
 	 * This is the starting point for UI setup and click-binding operations.
@@ -78,7 +78,7 @@ class SettingsFragment : BaseFragment() {
 			logger.e("Exception during onAfterLayoutLoad()", error)
 		}
 	}
-
+	
 	/**
 	 * Called when the fragment resumes. It refreshes UI states and ensures
 	 * synchronization with the host activity.
@@ -92,7 +92,7 @@ class SettingsFragment : BaseFragment() {
 			logger.e("Exception while updating settings state UI", error)
 		}
 	}
-
+	
 	/**
 	 * Lifecycle callback for when the fragment goes into the background.
 	 * Currently left empty since no action is required.
@@ -100,7 +100,7 @@ class SettingsFragment : BaseFragment() {
 	override fun onPauseFragment() {
 		logger.d("onPauseFragment() called: No cleanup necessary")
 	}
-
+	
 	/**
 	 * Invoked before the fragment's view is destroyed.
 	 * Cleans up weak references and releases any held resources.
@@ -110,7 +110,7 @@ class SettingsFragment : BaseFragment() {
 		unregisterSelfReferenceInMotherActivity()
 		super.onDestroyView()
 	}
-
+	
 	/**
 	 * Registers this fragment instance with its hosting [MotherActivity].
 	 * This ensures the parent can identify and communicate with this fragment.
@@ -124,7 +124,7 @@ class SettingsFragment : BaseFragment() {
 			logger.e("Error while registering fragment with MotherActivity", error)
 		}
 	}
-
+	
 	/**
 	 * Clears this fragment's reference from [MotherActivity] to prevent memory leaks.
 	 */
@@ -136,6 +136,7 @@ class SettingsFragment : BaseFragment() {
 			logger.e("Error during fragment unregistration", error)
 		}
 	}
+	
 	/**
 	 * Configures all onClick listeners for the settings controls.
 	 * Each view triggers a corresponding handler in [SettingsOnClickLogic].
@@ -147,7 +148,7 @@ class SettingsFragment : BaseFragment() {
 		logger.d("Setting up onClick listeners for settings actions")
 		try {
 			settingsOnClickLogic = SettingsOnClickLogic(settingsFragmentRef)
-
+			
 			val clickActions = mapOf(
 				// Application settings
 				R.id.btn_user_info to { settingsOnClickLogic?.showUsernameEditor() },
@@ -157,7 +158,7 @@ class SettingsFragment : BaseFragment() {
 				R.id.btn_dark_mode_ui to { settingsOnClickLogic?.togglesDarkModeUISettings() },
 				R.id.btn_content_location to { settingsOnClickLogic?.changeDefaultContentRegion() },
 				R.id.btn_daily_suggestions to { settingsOnClickLogic?.toggleDailyContentSuggestions() },
-
+				
 				// Download settings
 				R.id.btn_default_download_folder to { settingsOnClickLogic?.changeDefaultDownloadFolder() },
 				R.id.btn_hide_task_notifications to { settingsOnClickLogic?.toggleHideDownloadNotification() },
@@ -165,7 +166,7 @@ class SettingsFragment : BaseFragment() {
 				R.id.btn_single_click_open to { settingsOnClickLogic?.toggleSingleClickToOpenFile() },
 				R.id.btn_play_notification_sound to { settingsOnClickLogic?.toggleDownloadNotificationSound() },
 				R.id.btn_adv_downloads_settings to { settingsOnClickLogic?.openAdvanceDownloadsSettings() },
-
+				
 				// Browser settings
 				R.id.btn_browser_homepage to { settingsOnClickLogic?.setBrowserDefaultHomepage() },
 				R.id.btn_enable_adblock to { settingsOnClickLogic?.toggleBrowserBrowserAdBlocker() },
@@ -173,22 +174,22 @@ class SettingsFragment : BaseFragment() {
 				R.id.btn_show_image_on_web to { settingsOnClickLogic?.toggleBrowserWebImages() },
 				R.id.btn_enable_video_grabber to { settingsOnClickLogic?.toggleBrowserVideoGrabber() },
 				R.id.btn_adv_browser_settings to { settingsOnClickLogic?.openAdvanceBrowserSettings() },
-
+				
 				// Custom services
 				R.id.btn_share_with_friends to { settingsOnClickLogic?.shareApplicationWithFriends() },
 				R.id.btn_open_feedback to { settingsOnClickLogic?.openUserFeedbackActivity() },
 				R.id.btn_open_about_info to { settingsOnClickLogic?.openApplicationInformation() },
 				R.id.btn_open_privacy_policy to { settingsOnClickLogic?.showPrivacyPolicyActivity() },
 				R.id.btn_open_terms_condition to { settingsOnClickLogic?.showTermsConditionActivity() },
-
+				
 				// Updates and reset
 				R.id.btn_check_new_update to { settingsOnClickLogic?.checkForNewApkVersion() },
 				R.id.btn_restart_application to { settingsOnClickLogic?.restartApplication() },
-
+				
 				// Developer acknowledgements
 				R.id.btn_follow_shibafoss to { settingsOnClickLogic?.followDeveloperAtInstagram() },
 			)
-
+			
 			// Apply click actions to respective view elements
 			clickActions.forEach { (id, action) ->
 				fragmentLayout.setClickListener(id) {
@@ -204,7 +205,7 @@ class SettingsFragment : BaseFragment() {
 			logger.e("Error during click listener setup", error)
 		}
 	}
-
+	
 	/**
 	 * Displays application version details combining version name and version code.
 	 *
@@ -224,7 +225,7 @@ class SettingsFragment : BaseFragment() {
 			logger.e("Error initializing version info view", error)
 		}
 	}
-
+	
 	/**
 	 * Simplifies setting click listeners to avoid redundant boilerplate.
 	 *
