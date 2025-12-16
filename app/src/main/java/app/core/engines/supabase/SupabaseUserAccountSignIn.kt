@@ -1,4 +1,4 @@
-package app.ui.main.fragments.settings.dialogs
+package app.core.engines.supabase
 
 import android.text.method.*
 import android.view.*
@@ -7,9 +7,9 @@ import androidx.annotation.*
 import app.core.bases.*
 import com.aio.R
 import com.bumptech.glide.*
-import lib.networks.URLUtilityKT.isValidEmail
+import lib.networks.*
 import lib.process.*
-import lib.ui.ViewUtility.showOnScreenKeyboard
+import lib.ui.*
 import lib.ui.builders.*
 import java.lang.ref.*
 
@@ -22,10 +22,10 @@ import java.lang.ref.*
  * to register using an email/password or via social media accounts like Google, Facebook,
  * and Twitter.
  *
- * @param baseActivity The [BaseActivity] context used to build and show the dialog. A [WeakReference]
+ * @param baseActivity The [app.core.bases.BaseActivity] context used to build and show the dialog. A [java.lang.ref.WeakReference]
  *                     is used to avoid potential memory leaks.
  */
-class ManualAccountRegistration(baseActivity: BaseActivity) {
+class SupabaseUserAccountSignIn(baseActivity: BaseActivity) {
 	
 	/**
 	 * Logger for this class, used for logging various events and debugging information.
@@ -34,7 +34,7 @@ class ManualAccountRegistration(baseActivity: BaseActivity) {
 	private val logger = LogHelperUtils.from(javaClass)
 	
 	/**
-	 * A [WeakReference] to the [BaseActivity] instance.
+	 * A [java.lang.ref.WeakReference] to the [BaseActivity] instance.
 	 *
 	 * This is used to avoid memory leaks. The activity can be garbage collected
 	 * if it's destroyed, and this class won't hold a strong reference preventing it.
@@ -55,10 +55,10 @@ class ManualAccountRegistration(baseActivity: BaseActivity) {
 	private val safeBaseActivity get() = weakReferenceOfBaseActivity.get()
 	
 	/**
-	 * A lazy-initialized [DialogBuilder] instance.
+	 * A lazy-initialized [lib.ui.builders.DialogBuilder] instance.
 	 *
 	 * This property provides a convenient way to build and manage the dialog for account registration.
-	 * It is initialized lazily, meaning the [DialogBuilder] object is only created when it's first accessed.
+	 * It is initialized lazily, meaning the [lib.ui.builders.DialogBuilder] object is only created when it's first accessed.
 	 * This approach is efficient as it avoids unnecessary object creation until it's actually needed.
 	 * The builder is instantiated with [safeBaseActivity] to ensure it has a valid context.
 	 */
@@ -103,7 +103,7 @@ class ManualAccountRegistration(baseActivity: BaseActivity) {
 	private var containerEditTextPassword: View? = null
 	
 	/**
-	 * The [ImageView] that acts as a button to toggle the visibility of the password
+	 * The [android.widget.ImageView] that acts as a button to toggle the visibility of the password
 	 * in the `editTextPassword` field. Clicking this should switch the password input
 	 * between visible text and masked (e.g., asterisks).
 	 */
@@ -111,7 +111,7 @@ class ManualAccountRegistration(baseActivity: BaseActivity) {
 	
 	/**
 	 * A [View] that acts as a button for the user to initiate the password recovery process.
-	 * This is typically a [TextView] or a similar clickable element labeled "Forgot Password?".
+	 * This is typically a [android.widget.TextView] or a similar clickable element labeled "Forgot Password?".
 	 * When clicked, it should trigger the flow for resetting a forgotten password.
 	 */
 	private var btnForgetPassword: View? = null
@@ -121,24 +121,6 @@ class ManualAccountRegistration(baseActivity: BaseActivity) {
 	 * When clicked, it initiates the account creation or login flow.
 	 */
 	private var btnSignInAccount: View? = null
-	
-	/**
-	 * The button (ImageView) for initiating the Google login process.
-	 */
-	private var btnGoogleLogin: ImageView? = null
-	
-	/**
-	 * The button for initiating the Facebook login process.
-	 */
-	private var btnFacebookLogin: ImageView? = null
-	
-	/**
-	 * The [ImageView] that functions as the "Login with Twitter" button.
-	 *
-	 * This button, when clicked, is intended to initiate the Twitter OAuth login flow,
-	 * allowing the user to sign in or register using their Twitter account.
-	 */
-	private var btnTwitterLogin: ImageView? = null
 	
 	/**
 	 * Tracks the current visibility state of the password field.
@@ -191,7 +173,7 @@ class ManualAccountRegistration(baseActivity: BaseActivity) {
 	 * reclaim the memory used by the dialog's views.
 	 */
 	fun clearResources() {
-		
+	
 	}
 	
 	/**
@@ -205,7 +187,7 @@ class ManualAccountRegistration(baseActivity: BaseActivity) {
 	 */
 	private fun initializeDialogViews() {
 		// Set the layout for the dialog
-		dialogBuilder.setView(R.layout.dialog_user_manual_registration_1)
+		dialogBuilder.setView(R.layout.dialog_user_sign_in_form_1)
 		
 		// Allow dialog to be canceled by tapping outside or back button
 		dialogBuilder.setCancelable(true)
@@ -226,16 +208,6 @@ class ManualAccountRegistration(baseActivity: BaseActivity) {
 			btnTogglePasswordVisibility = findViewById(R.id.btn_toggle_password_visibility)
 			btnForgetPassword = findViewById(R.id.btn_forget_user_password)
 			btnSignInAccount = findViewById(R.id.btn_sign_in)
-			
-			// Find and assign social login buttons
-			btnGoogleLogin = findViewById(R.id.img_google_login)
-			btnFacebookLogin = findViewById(R.id.img_facebook_login)
-			btnTwitterLogin = findViewById(R.id.img_twitter_login)
-			
-			// Load social login button icons using Glide
-			lazyLoadImageByGlide(btnGoogleLogin, R.drawable.ic_site_google)
-			lazyLoadImageByGlide(btnFacebookLogin, R.drawable.ic_site_facebook)
-			lazyLoadImageByGlide(btnTwitterLogin, R.drawable.ic_site_twitter)
 			
 			// Set click listeners on containers to focus corresponding input fields
 			containerEditTextPassword?.setOnClickListener { focusKeyboardOnPasswordField() }
@@ -274,9 +246,9 @@ class ManualAccountRegistration(baseActivity: BaseActivity) {
 			val userGivenPassword = editTextPassword?.text.toString().trim()
 			
 			// Validate email field
-			if (!isValidEmail(userGivenEmail) || userGivenEmail.isEmpty()) {
+			if (!URLUtilityKT.isValidEmail(userGivenEmail) || userGivenEmail.isEmpty()) {
 				safeBaseActivity?.doSomeVibration()  // Provide haptic feedback
-				ToastView.showToast(safeBaseActivity, R.string.title_invalid_email_address)
+				ToastView.Companion.showToast(safeBaseActivity, R.string.title_invalid_email_address)
 				focusKeyboardOnEmailField()  // Move cursor to email field
 				return@setOnClickListener  // Stop further execution
 			}
@@ -285,7 +257,7 @@ class ManualAccountRegistration(baseActivity: BaseActivity) {
 			val isNameValid = userGivenName.isNotEmpty()
 			if (!isNameValid) {
 				safeBaseActivity?.doSomeVibration()
-				ToastView.showToast(safeBaseActivity, R.string.title_invalid_name)
+				ToastView.Companion.showToast(safeBaseActivity, R.string.title_invalid_name)
 				focusKeyboardOnUsernameField()  // Move cursor to username field
 				return@setOnClickListener
 			}
@@ -294,7 +266,7 @@ class ManualAccountRegistration(baseActivity: BaseActivity) {
 			val isPasswordValid = userGivenPassword.isNotEmpty()
 			if (!isPasswordValid) {
 				safeBaseActivity?.doSomeVibration()
-				ToastView.showToast(safeBaseActivity, R.string.title_password_is_empty)
+				ToastView.Companion.showToast(safeBaseActivity, R.string.title_password_is_empty)
 				focusKeyboardOnPasswordField()  // Move cursor to password field
 				return@setOnClickListener
 			}
@@ -302,7 +274,7 @@ class ManualAccountRegistration(baseActivity: BaseActivity) {
 			// Validate password length (minimum 6 characters)
 			if (userGivenPassword.length < 6) {
 				safeBaseActivity?.doSomeVibration()
-				ToastView.showToast(safeBaseActivity, R.string.title_password_is_small)
+				ToastView.Companion.showToast(safeBaseActivity, R.string.title_password_is_small)
 				focusKeyboardOnPasswordField()
 				return@setOnClickListener
 			}
@@ -376,7 +348,7 @@ class ManualAccountRegistration(baseActivity: BaseActivity) {
 	private fun focusKeyboardOnEmailField() {
 		editTextEmail?.focusable
 		editTextEmail?.selectAll()
-		showOnScreenKeyboard(safeBaseActivity, editTextEmail)
+		ViewUtility.showOnScreenKeyboard(safeBaseActivity, editTextEmail)
 	}
 	
 	/**
@@ -390,7 +362,7 @@ class ManualAccountRegistration(baseActivity: BaseActivity) {
 	private fun focusKeyboardOnUsernameField() {
 		editTextUsername?.focusable
 		editTextUsername?.selectAll()
-		showOnScreenKeyboard(safeBaseActivity, editTextUsername)
+		ViewUtility.showOnScreenKeyboard(safeBaseActivity, editTextUsername)
 	}
 	
 	/**
@@ -403,7 +375,7 @@ class ManualAccountRegistration(baseActivity: BaseActivity) {
 	private fun focusKeyboardOnPasswordField() {
 		editTextPassword?.focusable
 		editTextPassword?.selectAll()
-		showOnScreenKeyboard(safeBaseActivity, editTextPassword)
+		ViewUtility.showOnScreenKeyboard(safeBaseActivity, editTextPassword)
 	}
 	
 	/**
