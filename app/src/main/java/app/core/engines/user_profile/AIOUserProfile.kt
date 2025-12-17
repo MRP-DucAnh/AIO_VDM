@@ -468,7 +468,6 @@ class AIOUserProfile : Serializable {
 		return jsonOutputStream.toString(Charsets.UTF_8.name())
 	}
 	
-	
 	/**
 	 * Resets the user profile to its default state and clears all persisted data.
 	 *
@@ -484,29 +483,21 @@ class AIOUserProfile : Serializable {
 	 */
 	fun resetUserProfile() {
 		uniqueUserServerId = ""
-		
 		isUserCurrentlyLoggedIn = false
 		isUserAccountVerified = false
-		
 		userFullName = ""
-		
 		isEmailVerified = false
 		emailVerifiedAt = ""
 		userEmailAddress = ""
-		
 		isPhoneVerified = false
 		phoneVerifiedAt = ""
 		userPhoneNumber = ""
-		
 		supabaseAccountCreatedAt = ""
 		lastSupabaseLoginAt = ""
-		
 		isSupabaseLinked = false
-		
 		supabaseUserMetadata = ""
 		supabaseAppMetadata = ""
 	}
-	
 	
 	companion object {
 		
