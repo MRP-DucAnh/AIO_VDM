@@ -1,11 +1,15 @@
 package app.core.engines.supabase
 
 import app.core.*
+import app.core.AIOApp.Companion.aioUserProfile
 import app.core.engines.supabase.SupabaseCloudServer.supabaseClient
 import app.core.engines.supabase.SupabaseCloudServer.updateDataModelToSupabase
+import app.core.engines.user_profile.*
+import app.core.engines.user_profile.AIOUserProfileManager.updateLocalUserWithSupabaseUser
 import com.aio.*
 import io.github.jan.supabase.*
 import io.github.jan.supabase.auth.*
+import io.github.jan.supabase.auth.status.*
 import io.github.jan.supabase.postgrest.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.*
@@ -83,6 +87,49 @@ object SupabaseCloudServer {
 	@JvmStatic
 	fun initializeSupabaseClient() {
 		supabaseClient
+	}
+	
+	/**
+	 * Observes the Supabase authentication state and reacts to changes.
+	 *
+	 * This function launches a coroutine that collects the `sessionStatus` flow from the
+	 * Supabase `Auth` client. It is used to monitor the user's authentication status in real-time.
+	 *
+	 * - When the status is `Authenticated`, it calls [AIOUserProfileManager.updateLocalUserWithSupabaseUser]
+	 *   to synchronize the local user profile with the authenticated Supabase user's data.
+	 * - When the status is `NotAuthenticated` (e.g., after a logout), it resets the local
+	 *   user profile by calling [aioUserProfile.resetUserProfile].
+	 * - For any other status, it does nothing.
+	 *
+	 * This allows the application to dynamically update its state based on whether a user
+	 * is signed in or out of Supabase.
+	 *
+	 * @param scope The [CoroutineScope] in which to launch the observer coroutine. This scope
+	 *              should typically be tied to a lifecycle that allows the observation to
+	 *              persist as long as needed (e.g., a ViewModel's `viewModelScope` or a
+	 *              service's scope).
+	 */
+	@JvmStatic
+	fun observeSupabaseAuthState(scope: CoroutineScope) {
+		scope.launch {
+			supabaseClient.auth.sessionStatus.collect { status ->
+				when (status) {
+					is SessionStatus.Authenticated -> {
+						logger.d("Supabase session authenticated, updating local user.")
+						updateLocalUserWithSupabaseUser(0L)
+					}
+					
+					is SessionStatus.NotAuthenticated -> {
+						logger.d("Supabase session authenticated failed, updating local user.")
+						aioUserProfile.resetUserProfile()
+					}
+					
+					else -> {
+						logger.d("Supabase session status: $status")
+					}
+				}
+			}
+		}
 	}
 	
 	/**
