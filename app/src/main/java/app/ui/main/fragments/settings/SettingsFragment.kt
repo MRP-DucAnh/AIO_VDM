@@ -3,14 +3,15 @@ package app.ui.main.fragments.settings
 import android.os.*
 import android.view.*
 import android.widget.*
+import androidx.lifecycle.*
 import app.core.bases.*
 import app.core.engines.user_profile.*
 import app.ui.main.*
 import com.aio.*
+import kotlinx.coroutines.*
 import lib.device.AppVersionUtility.versionCode
 import lib.device.AppVersionUtility.versionName
 import lib.process.*
-import lib.process.CommonTimeUtils.OnTaskFinishListener
 import lib.texts.CommonTextUtils.fromHtmlStringToSpanned
 import lib.ui.*
 import lib.ui.ViewUtility.setLeftSideDrawable
@@ -125,13 +126,8 @@ class SettingsFragment : BaseFragment() {
 			safeSettingsFragmentRef?.let { fragmentRef ->
 				safeFragmentLayoutRef?.let { layoutRef ->
 					registerSelfReferenceInMotherActivity()
-					updateViewsWithCurrentData(layoutRef)
+					hideActualLayout()
 					setupViewsOnClickEvents(fragmentRef, layoutRef)
-					CommonTimeUtils.delay(500, object : OnTaskFinishListener {
-						override fun afterDelay() {
-							releaseActualLayout()
-						}
-					})
 				}
 			}
 		} catch (error: Exception) {
@@ -159,7 +155,18 @@ class SettingsFragment : BaseFragment() {
 		logger.d("onResumeFragment() called: Updating UI and re-registering references")
 		registerSelfReferenceInMotherActivity()
 		try {
-			settingsOnClickLogic?.updateSettingStateUI()
+			safeSettingsFragmentRef?.let { fragmentRef ->
+				safeFragmentLayoutRef?.let { layoutRef ->
+					settingsOnClickLogic?.updateSettingStateUI()
+					updateViewsWithCurrentData(layoutRef)
+					fragmentRef.viewLifecycleOwner.lifecycleScope.launch {
+						delay(500)
+						if (fragmentRef.isResumed) {
+							releaseActualLayout()
+						}
+					}
+				}
+			}
 		} catch (error: Exception) {
 			logger.e("Exception while updating settings state UI", error)
 		}
@@ -176,6 +183,7 @@ class SettingsFragment : BaseFragment() {
 	 * only logs the event for debugging purposes.
 	 */
 	override fun onPauseFragment() {
+		hideActualLayout()
 		logger.d("onPauseFragment() called: No cleanup necessary")
 	}
 	
@@ -339,7 +347,7 @@ class SettingsFragment : BaseFragment() {
 	 * This method is typically called during the fragment's `onResume` or after an initial setup
 	 * to ensure the UI is always up-to-date.
 	 */
-	private fun updateViewsWithCurrentData(fragmentLayout: View) {
+	fun updateViewsWithCurrentData(fragmentLayout: View) {
 		displayApplicationVersion(fragmentLayout)
 		updateUserAccountCard(fragmentLayout)
 	}
@@ -360,12 +368,16 @@ class SettingsFragment : BaseFragment() {
 	 * @param isPro A boolean flag indicating whether the user has a "PRO" subscription. This is only
 	 *              relevant if `username` is not null.
 	 */
-	private fun updateUserAccountCard(fragmentLayout: View) {
+	fun updateUserAccountCard(fragmentLayout: View) {
 		fragmentLayout.findViewById<TextView>(R.id.txt_connect_to_cloud).let {
 			if (AIOUserProfileManager.getAIOUserProfile().isUserAccountVerified) {
 				it.text = getText(R.string.title_view_account_details)
 				it.setLeftSideDrawable(R.drawable.ic_button_account)
 				it.setRightSideDrawable(R.drawable.ic_button_arrow_next, true)
+			} else {
+				it.text = getText(R.string.title_sign_in_register)
+				it.setCompoundDrawables(null, null, null, null)
+				it.setLeftSideDrawable(R.drawable.ic_button_connect)
 			}
 		}
 	}
@@ -448,6 +460,27 @@ class SettingsFragment : BaseFragment() {
 			}
 			fragLayout.findViewById<View>(R.id.container_main_layout).let {
 				ViewUtility.showView(it, true)
+			}
+		}
+	}
+	
+	/**
+	 * Hides the main content layout and displays the loading indicator.
+	 *
+	 * This method is intended to be called when the fragment needs to perform a
+	 * background task and wants to provide visual feedback to the user that
+	 * something is happening. It makes the main settings container invisible
+	 * and shows a loading spinner in its place.
+	 *
+	 * It is the counterpart to [releaseActualLayout], which performs the opposite action.
+	 */
+	private fun hideActualLayout() {
+		safeFragmentLayoutRef?.let { fragLayout ->
+			fragLayout.findViewById<View>(R.id.container_layout_loading).let {
+				ViewUtility.showView(it, true)
+			}
+			fragLayout.findViewById<View>(R.id.container_main_layout).let {
+				ViewUtility.hideView(it, true)
 			}
 		}
 	}
