@@ -5,17 +5,16 @@ import android.widget.*
 import androidx.annotation.*
 import androidx.core.content.ContextCompat.*
 import androidx.core.net.*
+import app.core.*
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioSettings
 import app.core.engines.settings.AIOSettings.Companion.AIO_SETTING_DARK_MODE_FILE_NAME
 import app.core.engines.supabase.*
-import app.core.engines.supabase.SupabaseCloudServer.supabaseClient
 import app.core.engines.updater.*
 import app.ui.main.fragments.settings.activities.browser.*
 import app.ui.main.fragments.settings.dialogs.*
 import app.ui.others.information.*
 import com.aio.*
-import io.github.jan.supabase.auth.*
 import kotlinx.coroutines.*
 import lib.device.*
 import lib.files.FileSystemUtility.hasFullFileSystemAccess
@@ -109,11 +108,10 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	fun showLoginOrRegistrationDialog() {
 		settingsFragmentRef?.safeMotherActivityRef?.apply {
 			if (DeviceUtility.isUserFromIndia(this)) {
-				val userSession = supabaseClient.auth.currentSessionOrNull()
-				if (userSession?.user == null) {
+				if (!AIOApp.aioUserProfile.isUserAccountVerified) {
 					SupabasePhoneNumberLogIn(this).initialize().show()
 				} else {
-					logger.d("User is logged in: ${userSession.user?.phone}")
+					logger.d("User is logged in: ${AIOApp.aioUserProfile.uniqueUserServerId}")
 					showToast(this, R.string.title_already_logged_in)
 				}
 			} else {

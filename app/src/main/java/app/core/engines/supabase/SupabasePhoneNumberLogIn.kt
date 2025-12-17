@@ -6,6 +6,7 @@ import app.core.*
 import app.core.AIOTimer.*
 import app.core.bases.*
 import app.core.engines.supabase.SupabaseCloudServer.supabaseClient
+import app.core.engines.user_profile.AIOUserProfileManager.updateLocalUserWithSupabaseUser
 import com.aio.*
 import io.github.jan.supabase.auth.*
 import io.github.jan.supabase.auth.providers.builtin.*
@@ -462,6 +463,8 @@ class SupabasePhoneNumberLogIn(
 						safeBaseActivity?.doSomeVibration()
 						showToast(safeBaseActivity, R.string.title_invalid_or_expired_otp)
 					}
+				} finally {
+					updateLocalUserWithSupabaseUser()
 				}
 			}
 	}
