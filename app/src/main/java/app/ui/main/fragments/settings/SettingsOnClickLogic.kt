@@ -5,9 +5,9 @@ import android.widget.*
 import androidx.annotation.*
 import androidx.core.content.ContextCompat.*
 import androidx.core.net.*
-import app.core.*
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioSettings
+import app.core.AIOApp.Companion.aioUserProfile
 import app.core.engines.settings.AIOSettings.Companion.AIO_SETTING_DARK_MODE_FILE_NAME
 import app.core.engines.supabase.*
 import app.core.engines.updater.*
@@ -47,7 +47,7 @@ import java.lang.ref.*
  *
  * @param settingsFragment Primary reference to the parent SettingsFragment for context and UI access.
  */
-class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
+class SettingsOnClickLogic(settingsFragment: SettingsFragment) {
 	
 	/**
 	 * Logger instance for tracking user interactions, method executions, and error conditions
@@ -62,10 +62,10 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 * settings controller doesn't retain references to destroyed UI components while
 	 * still allowing access to the fragment when it's active and visible.
 	 */
-	private val weakReferenceOfSettingFrag = WeakReference(settingsFragment)
+	private val weakReferenceOfSettingFragment = WeakReference(settingsFragment)
 	
-	private val settingsFragmentRef: SettingsFragment?
-		get() = weakReferenceOfSettingFrag.get()
+	private val safeSettingsFragmentRef: SettingsFragment?
+		get() = weakReferenceOfSettingFragment.get()
 	
 	/**
 	 * Launches the username editor interface with haptic feedback and feature availability notice.
@@ -82,7 +82,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 * - Integration with user profile synchronization
 	 */
 	fun showUsernameEditor() {
-		settingsFragmentRef?.safeMotherActivityRef?.apply {
+		safeSettingsFragmentRef?.safeMotherActivityRef?.apply {
 			// Provide tactile feedback to acknowledge user interaction
 			doSomeVibration()
 			// Inform user that username editing is coming soon
@@ -91,39 +91,54 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	}
 	
 	/**
-	 * Opens the authentication dialog for user login or new account registration.
+	 * Opens the authentication dialog for user login or new account registration, with region-specific behavior.
 	 *
-	 * This placeholder implementation provides user feedback and indicates that authentication
-	 * features are under development. The method follows the same pattern as other upcoming
-	 * features to maintain consistency in the user experience when accessing in-development
-	 * functionality.
+	 * For users in India, this function initiates the phone number-based authentication flow. If the user is
+	 * not already logged in, it presents the `SupabasePhoneNumberLogIn` dialog. Upon successful registration
+	 * or login, the user's profile is updated, and the settings UI is refreshed. If the user is already
+	 * verified, a toast message confirms their logged-in status.
 	 *
-	 * Planned Authentication Flow:
-	 * - Email/password and social authentication options
-	 * - Forgot password and account recovery workflows
-	 * - Terms of service and privacy policy acceptance
-	 * - Profile synchronization and cloud backup setup
-	 * - Multi-device login management
+	 * For users outside of India, the feature is disabled. A dialog is shown informing them that login and
+	 * registration are currently available only in India.
+	 *
+	 * @see SupabasePhoneNumberLogIn The authentication component used for the login/registration process.
+	 * @see aioUserProfile For checking the user's current account verification status.
+	 * @see DeviceUtility.isUserFromIndia To determine the user's geographical region.
 	 */
 	fun showLoginOrRegistrationDialog() {
-		settingsFragmentRef?.safeMotherActivityRef?.apply {
-			if (DeviceUtility.isUserFromIndia(this)) {
-				if (!AIOApp.aioUserProfile.isUserAccountVerified) {
-					SupabasePhoneNumberLogIn(this).initialize().show()
-				} else {
-					logger.d("User is logged in: ${AIOApp.aioUserProfile.uniqueUserServerId}")
-					showToast(this, R.string.title_already_logged_in)
+		safeSettingsFragmentRef?.let { fragmentRef ->
+			fragmentRef.safeFragmentLayoutRef?.let { fragmentLayoutRef ->
+				fragmentRef.safeMotherActivityRef.let { motherActivity ->
+					if (DeviceUtility.isUserFromIndia(motherActivity)) {
+						if (!aioUserProfile.isUserAccountVerified) {
+							SupabasePhoneNumberLogIn(
+								baseActivity = motherActivity,
+								onAccountSuccessfullyRegistered = {
+									logger.d("User logged in: ${aioUserProfile.uniqueUserServerId}")
+									fragmentRef.updateUserAccountCard(fragmentLayoutRef)
+								},
+								onAccountRegistrationFailed = {
+									logger.d("Registration failed")
+									fragmentRef.updateUserAccountCard(fragmentLayoutRef)
+								})
+								.initialize()
+								.show()
+						} else {
+							logger.d("User is logged in: ${aioUserProfile.uniqueUserServerId}")
+							showToast(motherActivity, R.string.title_already_logged_in)
+						}
+					} else {
+						logger.d("Login or registration is only available in India")
+						motherActivity.doSomeVibration()
+						MsgDialogUtils.showMessageDialog(
+							baseActivityInf = motherActivity,
+							isTitleVisible = true,
+							titleText = getText(R.string.title_feature_isnt_implemented),
+							messageTextViewCustomize = { it.text = getText(R.string.text_feature_only_available_in_india) },
+							isNegativeButtonVisible = false
+						)
+					}
 				}
-			} else {
-				logger.d("Login or registration is only available in India")
-				this.doSomeVibration()
-				MsgDialogUtils.showMessageDialog(
-					baseActivityInf = this,
-					isTitleVisible = true,
-					titleText = getText(R.string.title_feature_isnt_implemented),
-					messageTextViewCustomize = { it.text = getText(R.string.text_feature_only_available_in_india) },
-					isNegativeButtonVisible = false
-				)
 			}
 		}
 	}
@@ -144,7 +159,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 */
 	fun showDownloadLocationPicker() {
 		logger.d("Download Location Picker - Initiating directory selection dialog")
-		settingsFragmentRef?.safeMotherActivityRef?.let { activity ->
+		safeSettingsFragmentRef?.safeMotherActivityRef?.let { activity ->
 			// Create and display the download location selector
 			DownloadLocationSelector(baseActivity = activity).show()
 		} ?: logger.d("Picker failed: Activity null - Cannot show dialog without valid activity context")
@@ -169,7 +184,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 */
 	fun showLanguageChanger() {
 		logger.d("Language Picker - Starting language selection workflow")
-		settingsFragmentRef?.safeMotherActivityRef?.let { activity ->
+		safeSettingsFragmentRef?.safeMotherActivityRef?.let { activity ->
 			LanguagePickerDialog(activity).apply {
 				getDialogBuilder().setCancelable(true)
 				onApplyListener = {
@@ -211,7 +226,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 				// Update UI on main thread to reflect theme change immediately
 				ThreadsUtility.executeOnMain {
 					updateSettingStateUI()
-					settingsFragmentRef?.safeMotherActivityRef?.apply {
+					safeSettingsFragmentRef?.safeMotherActivityRef?.apply {
 						// Apply new theme to all activities and system UI
 						ViewUtility.changesSystemTheme(this)
 						logger.d("Dark Mode UI is now: ${tempFile.exists()}")
@@ -242,7 +257,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 */
 	fun changeDefaultContentRegion() {
 		logger.d("Content Region Selector - Launching geographic preference dialog")
-		settingsFragmentRef?.safeMotherActivityRef?.apply {
+		safeSettingsFragmentRef?.safeMotherActivityRef?.apply {
 			ContentRegionSelector(this).apply {
 				// Allow users to cancel without making region changes
 				getDialogBuilder().setCancelable(true)
@@ -278,7 +293,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 */
 	fun toggleDailyContentSuggestions() {
 		logger.d("Toggle Daily Suggestions - Updating content recommendation preferences")
-		settingsFragmentRef?.safeMotherActivityRef?.apply {
+		safeSettingsFragmentRef?.safeMotherActivityRef?.apply {
 			try {
 				// Get current state and invert for toggle behavior
 				val contentSuggestion = aioSettings.enableDailyContentSuggestion
@@ -325,7 +340,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 */
 	fun changeDefaultDownloadFolder() {
 		logger.d("Custom Download Folder Selector - Initiating directory selection workflow")
-		settingsFragmentRef?.safeMotherActivityRef?.let { activityRef ->
+		safeSettingsFragmentRef?.safeMotherActivityRef?.let { activityRef ->
 			// Step 1: Check for required file system access permissions
 			if (!hasFullFileSystemAccess(activityRef)) {
 				// Step 2: Show permission education dialog when access is limited
@@ -457,7 +472,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 			aioSettings.openDownloadedFileOnSingleClick = !singleClickOpen
 			aioSettings.updateInStorage()
 			
-			settingsFragmentRef?.safeMotherActivityRef?.downloadFragment?.finishedTasksFragment?.finishedTasksListAdapter?.notifyDataSetChangedOnSort(
+			safeSettingsFragmentRef?.safeMotherActivityRef?.downloadFragment?.finishedTasksFragment?.finishedTasksListAdapter?.notifyDataSetChangedOnSort(
 				true
 			)
 			
@@ -519,7 +534,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 */
 	fun openAdvanceDownloadsSettings() {
 		logger.d("Opening Advanced Downloads Settings (not implemented) - Showing feature roadmap")
-		settingsFragmentRef?.safeMotherActivityRef.let {
+		safeSettingsFragmentRef?.safeMotherActivityRef.let {
 			// Provide tactile feedback to acknowledge user interaction
 			it?.doSomeVibration(20)
 			// Inform users about upcoming advanced features
@@ -559,7 +574,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	fun setBrowserDefaultHomepage() {
 		logger.d("Opening Browser Homepage dialog - Initiating URL configuration workflow")
 		try {
-			settingsFragmentRef?.safeMotherActivityRef?.let { activityRef ->
+			safeSettingsFragmentRef?.safeMotherActivityRef?.let { activityRef ->
 				val dialogBuilder = DialogBuilder(activityRef)
 				dialogBuilder.setView(R.layout.dialog_browser_homepage_1)
 				
@@ -605,7 +620,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 		} catch (error: Exception) {
 			logger.e("Error setting browser homepage: ${error.message}", error)
 			showToast(
-				activityInf = settingsFragmentRef?.safeMotherActivityRef,
+				activityInf = safeSettingsFragmentRef?.safeMotherActivityRef,
 				msgId = R.string.title_something_went_wrong
 			)
 		}
@@ -679,7 +694,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 */
 	fun openAdvanceBrowserSettings() {
 		logger.d("Opening Advanced Settings For Browser")
-		settingsFragmentRef?.safeMotherActivityRef
+		this@SettingsOnClickLogic.safeSettingsFragmentRef?.safeMotherActivityRef
 			?.openActivity(
 				targetActivity = AdvBrowserSettingsActivity::class.java,
 				shouldAnimate = true
@@ -691,7 +706,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 */
 	fun shareApplicationWithFriends() {
 		logger.d("Sharing application with friends")
-		settingsFragmentRef?.safeMotherActivityRef?.let { activityRef ->
+		safeSettingsFragmentRef?.safeMotherActivityRef?.let { activityRef ->
 			ShareUtility.shareText(
 				context = activityRef,
 				title = getText(R.string.title_share_with_others),
@@ -705,7 +720,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 */
 	fun openUserFeedbackActivity() {
 		logger.d("Opening User Feedback Activity")
-		settingsFragmentRef?.safeMotherActivityRef?.openActivity(
+		safeSettingsFragmentRef?.safeMotherActivityRef?.openActivity(
 			UserFeedbackActivity::class.java, shouldAnimate = false
 		) ?: run { logger.d("Failed: null activity") }
 	}
@@ -715,7 +730,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 */
 	fun openApplicationInformation() {
 		logger.d("Opening Application Info in system settings")
-		val safeBaseActivityRef = settingsFragmentRef?.safeBaseActivityRef
+		val safeBaseActivityRef = this@SettingsOnClickLogic.safeSettingsFragmentRef?.safeBaseActivityRef
 		safeBaseActivityRef?.openAppInfoSetting() ?: run { logger.d("Failed: null activity") }
 	}
 	
@@ -724,7 +739,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 */
 	fun showPrivacyPolicyActivity() {
 		logger.d("Opening Privacy Policy in browser")
-		val safeBaseActivityRef = settingsFragmentRef?.safeBaseActivityRef
+		val safeBaseActivityRef = this@SettingsOnClickLogic.safeSettingsFragmentRef?.safeBaseActivityRef
 		safeBaseActivityRef?.let { activityRef ->
 			try {
 				val urlResId = R.string.text_aio_official_privacy_policy_url
@@ -745,7 +760,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 */
 	fun showTermsConditionActivity() {
 		logger.d("Opening Terms & Conditions in browser")
-		val safeBaseActivityRef = settingsFragmentRef?.safeBaseActivityRef
+		val safeBaseActivityRef = this@SettingsOnClickLogic.safeSettingsFragmentRef?.safeBaseActivityRef
 		safeBaseActivityRef?.let { activityRef ->
 			try {
 				val urlResId = R.string.text_aio_official_terms_conditions_url
@@ -767,7 +782,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 */
 	fun checkForNewApkVersion() {
 		logger.d("Check for APK update")
-		settingsFragmentRef?.safeBaseActivityRef?.let { activityRef ->
+		this@SettingsOnClickLogic.safeSettingsFragmentRef?.safeBaseActivityRef?.let { activityRef ->
 			ThreadsUtility.executeInBackground(codeBlock = {
 				var waitingDialog: WaitingDialog? = null
 				ThreadsUtility.executeOnMain {
@@ -808,7 +823,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	fun updateSettingStateUI() {
 		logger.d("Update settings UI")
 		val darkModeTempConfigFile = File(INSTANCE.filesDir, AIO_SETTING_DARK_MODE_FILE_NAME)
-		settingsFragmentRef?.safeFragmentLayoutRef?.let { layout ->
+		safeSettingsFragmentRef?.safeFragmentLayoutRef?.let { layout ->
 			listOf(
 				SettingViewConfig(R.id.txt_dark_mode_ui, darkModeTempConfigFile.exists()),
 				SettingViewConfig(R.id.txt_daily_suggestions, aioSettings.enableDailyContentSuggestion),
@@ -833,7 +848,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 */
 	fun restartApplication() {
 		logger.d("Show restart dialog")
-		settingsFragmentRef?.safeBaseActivityRef?.let { safeMotherActivityRef ->
+		this@SettingsOnClickLogic.safeSettingsFragmentRef?.safeBaseActivityRef?.let { safeMotherActivityRef ->
 			val msgResId = R.string.text_cation_msg_of_restarting_application
 			getMessageDialog(
 				baseActivityInf = safeMotherActivityRef,
@@ -859,7 +874,7 @@ class SettingsOnClickLogic(private val settingsFragment: SettingsFragment) {
 	 */
 	fun followDeveloperAtInstagram() {
 		try {
-			settingsFragmentRef?.safeMotherActivityRef?.let {
+			safeSettingsFragmentRef?.safeMotherActivityRef?.let {
 				openInstagramApp(it, "https://www.instagram.com/shibafoss/")
 			}
 		} catch (error: Exception) {
