@@ -24,6 +24,7 @@ import androidx.core.content.ContextCompat.*
 import androidx.core.graphics.drawable.*
 import androidx.core.net.*
 import androidx.core.view.*
+import androidx.lifecycle.*
 import app.core.*
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioAdblocker
@@ -35,7 +36,6 @@ import app.core.bases.language.*
 import app.core.engines.backend.AIOSelfDestruct.shouldSelfDestructApplication
 import app.core.engines.services.*
 import app.core.engines.updater.*
-import app.core.engines.user_profile.*
 import app.ui.main.*
 import app.ui.others.startup.*
 import com.aio.R
@@ -125,8 +125,7 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf {
 	 */
 	private var weakReferenceOfActivity: WeakReference<BaseActivity>? = null
 	
-	private val activityJob = SupervisorJob()
-	private val activityScope = CoroutineScope(Dispatchers.Main + activityJob)
+	val activityScope get() = lifecycleScope
 	
 	/**
 	 * Flag to track whether a user permission check is currently in progress.
@@ -423,12 +422,6 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf {
 				downloadSystem.downloadsUIManager.safeMotherActivity = motherActivity
 			}
 			
-			// Synchronizes the local user profile with the latest Supabase user data.
-			// This is a network-dependent operation that may fail silently if the device
-			// is offline or the user's session has expired. In such cases, the local cached
-			// profile continues to be used.
-			AIOUserProfileManager.updateLocalUserWithSupabaseUser()
-			
 			// Handle self-destruct mode if enabled for security purposes
 			// Provides automatic cleanup for sensitive applications
 			logger.d("Checking self-destruct activation status for security")
@@ -488,7 +481,6 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf {
 		permissionCheckListener = null
 		
 		cancelUpdateCheck()
-		activityJob.cancel()
 		
 		if (vibrator?.hasVibrator() == true) {
 			vibrator?.cancel()
