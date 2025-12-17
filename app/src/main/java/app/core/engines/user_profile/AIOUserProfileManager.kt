@@ -2,9 +2,11 @@
 
 package app.core.engines.user_profile
 
+import android.os.*
 import app.core.AIOApp.Companion.aioUserProfile
 import app.core.engines.supabase.SupabaseCloudServer.supabaseClient
 import io.github.jan.supabase.auth.*
+import kotlinx.coroutines.*
 import lib.process.*
 import kotlin.time.*
 
@@ -43,43 +45,51 @@ object AIOUserProfileManager {
 	/**
 	 * Synchronizes the local user profile with data from the current Supabase session.
 	 *
-	 * This function operates asynchronously on a background thread. It first retrieves the
-	 * current Supabase session and its associated user object. If a session and user exist,
-	 * it checks if the user is verified (i.e., either their email or phone number has been confirmed).
+	 * This function operates asynchronously on a background thread. It retrieves the
+	 * current Supabase session and its associated user object. If a session and a verified
+	 * user exist (i.e., email or phone is confirmed), it updates the local `aioUserProfile`
+	 * singleton with details from the Supabase user, such as ID, contact info,
+	 * metadata, and various timestamps.
 	 *
-	 * If the user is verified, the function proceeds to update the local `aioUserProfile`
-	 * singleton with details from the Supabase user, including ID, contact information,
-	 * verification status, metadata, and various timestamps. After updating the local
-	 * profile, it sets the `isUserCurrentlyLoggedIn` and `isSupabaseLinked` flags to true
-	 * and persists these changes to local storage.
+	 * After updating, it sets the `isUserCurrentlyLoggedIn` and `isSupabaseLinked` flags
+	 * to true and persists the changes to local storage. If no active session is found,
+	 * the user is null, or the user is unverified, the local profile is reset.
 	 *
-	 * The synchronization will be skipped under the following conditions:
-	 * - There is no active Supabase session.
-	 * - The session exists, but its user object is null.
-	 * - The Supabase user is not verified (neither email nor phone is confirmed).
+	 * A rate-limiting mechanism is in place to prevent this function from running too
+	 * frequently. By default, it will not execute if the last update was less than 5 seconds ago.
+	 * This interval can be configured via the `updateMinInternal` parameter.
+	 *
+	 * @param updateMinInternal The minimum time interval in milliseconds that must pass
+	 *        since the last successful update for a new synchronization to occur.
+	 *        Defaults to 5000 milliseconds (5 seconds).
 	 *
 	 * @see AIOUserProfile
 	 * @see ThreadsUtility.executeInBackground
 	 */
 	@JvmStatic
 	@Synchronized
-	fun updateLocalUserWithSupabaseUser() {
+	fun updateLocalUserWithSupabaseUser(updateMinInternal: Long = 2_000L) {
+		logger.d("updateLocalUserWithSupabaseUser() called")
+		
+		val now = SystemClock.elapsedRealtime()
+		val minInterval = updateMinInternal // 2 seconds
+		if (now - aioUserProfile.lastTimeUpdatedWithSupabase < minInterval) {
+			logger.d("Supabase sync skipped (throttled)")
+			return
+		}
+		
 		ThreadsUtility.executeInBackground(
-			timeOutInMilli = 500,
+			timeOutInMilli = 1000,
 			codeBlock = {
-				logger.d("updateLocalUserWithSupabaseUser() called")
-				
 				val session = supabaseClient.auth.currentSessionOrNull()
 				if (session == null) {
 					logger.d("No active Supabase session, skipping sync")
-					aioUserProfile.resetUserProfile()
 					return@executeInBackground
 				}
 				
 				val supabaseUser = session.user
 				if (supabaseUser == null) {
 					logger.d("Session exists but user is null, skipping sync")
-					aioUserProfile.resetUserProfile()
 					return@executeInBackground
 				}
 				
@@ -89,7 +99,6 @@ object AIOUserProfileManager {
 				
 				if (!isVerified) {
 					logger.d("Supabase user not verified, local profile will NOT be synced")
-					aioUserProfile.resetUserProfile()
 					return@executeInBackground
 				}
 				
@@ -113,12 +122,44 @@ object AIOUserProfileManager {
 					
 					isUserCurrentlyLoggedIn = true
 					isSupabaseLinked = true
+					aioUserProfile.lastTimeUpdatedWithSupabase = SystemClock.elapsedRealtime()
 					updateInStorage()
 				}
 				
 				logger.d("Local user profile fully synced with Supabase")
 			}
 		)
+	}
+	
+	/**
+	 * Logs the user out from both the Supabase session and the local user profile.
+	 *
+	 * This function performs a comprehensive logout by first invalidating the user's
+	 * session on the Supabase server via `supabaseClient.auth.signOut()`. Upon successful
+	 * remote logout, it then resets the local `aioUserProfile` singleton to its default,
+	 * logged-out state.
+	 *
+	 * The operation is executed asynchronously within the provided [CoroutineScope]. Any
+	 * exceptions that occur during the Supabase sign-out process are caught and logged,
+	 * preventing the application from crashing.
+	 *
+	 * @param scope The [CoroutineScope] in which to launch the asynchronous logout process.
+	 *              This is typically a scope tied to a ViewModel or a lifecycle-aware component.
+	 *
+	 * @see AIOUserProfile.resetUserProfile
+	 * @see io.github.jan.supabase.gotrue.GoTrue.signOut
+	 */
+	@JvmStatic
+	@Synchronized
+	fun logOutFromSupabaseAndLocalUser(scope: CoroutineScope) {
+		scope.launch {
+			try {
+				supabaseClient.auth.signOut()
+				aioUserProfile.resetUserProfile()
+			} catch (error: Exception) {
+				logger.e("Supabase logout failed", error)
+			}
+		}
 	}
 	
 	@JvmStatic
@@ -128,7 +169,7 @@ object AIOUserProfileManager {
 			timeOutInMilli = 1000,
 			codeBlock = {
 				logger.d("updateAppSettingsFromSupabaseSettings() called")
-
+				
 			}
 		)
 	}
