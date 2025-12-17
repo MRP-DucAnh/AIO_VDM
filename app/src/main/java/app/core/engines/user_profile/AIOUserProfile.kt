@@ -63,21 +63,28 @@ class AIOUserProfile : Serializable {
 	var id: Long = 0L
 	
 	/**
-	 * A unique identifier assigned by the server to this user.
+	 * A unique, server-assigned identifier for the user, sourced from Supabase Auth.
 	 *
-	 * This ID is used to consistently identify the user across different devices or sessions.
-	 * It remains `null` if the user has not logged in or if the ID has not yet been
-	 * retrieved from the server.
+	 * This ID (often a UUID) is the primary key for the user in the remote database
+	 * and is used to consistently identify them across different devices or sessions.
+	 *
+	 * It remains `null` until the user successfully authenticates and the ID is retrieved
+	 * from the server.
+	 *
+	 * @see isSupabaseLinked
 	 */
 	@JvmField
 	@JsonAttribute(name = "uniqueUserServerId")
-	var uniqueUserServerId: String? = null
+	var uniqueUserServerId: String = ""
 	
 	/**
 	 * A flag indicating the user's current authentication status.
 	 *
-	 * This property is `true` if the user is successfully signed into their account,
-	 * and `false` otherwise. It serves as a quick check for login state across the application.
+	 * This property is `true` when the user has an active, authenticated session,
+	 * meaning they are successfully signed into their account. It is `false` if the
+	 * user is logged out or the session is invalid. It serves as a quick, client-side
+	 * check for the login state across the application.
+	 *
 	 * Defaults to `false`.
 	 */
 	@JvmField
@@ -85,30 +92,189 @@ class AIOUserProfile : Serializable {
 	var isUserCurrentlyLoggedIn: Boolean = false
 	
 	/**
-	 * The full name of the user, as provided during registration or profile updates.
-	 * This value is `null` if the user has not provided their full name.
+	 * A flag indicating whether the user's account has been verified through any method.
+	 *
+	 * This property is a general-purpose flag that becomes `true` if the user completes
+	 * any verification process, such as confirming an email (`isEmailVerified`) or a
+	 * phone number (`isPhoneVerified`). It serves as a quick, consolidated check for
+	 * overall account verification status.
+	 *
+	 * This value is typically derived from other specific verification flags and defaults
+	 * to `false`.
+	 */
+	@JvmField
+	@JsonAttribute(name = "isUserAccountVerified")
+	var isUserAccountVerified: Boolean = false
+	
+	/**
+	 * The full name of the user, as sourced from Supabase user metadata.
+	 *
+	 * This value is extracted from the `user.user_metadata` object, typically from a
+	 * key such as `full_name`. It is `null` if the user has not provided their name
+	 * or if the metadata has not been fetched.
 	 */
 	@JvmField
 	@JsonAttribute(name = "userFullName")
-	var userFullName: String? = null
+	var userFullName: String = ""
+	
+	/**
+	 * A flag indicating whether the user's email address has been verified.
+	 *
+	 * This property is `true` if the user has completed the email verification process
+	 * (e.g., by clicking a link in a confirmation email), and `false` otherwise. It can be
+	 * used to control access to features that require a verified email. Defaults to `false`.
+	 *
+	 * This value is typically synchronized with the `email_confirmed_at` timestamp from
+	 * the authentication provider (e.g., Supabase). A non-null timestamp implies this flag
+	 * should be `true`.
+	 *
+	 * @see emailVerifiedAt
+	 */
+	@JvmField
+	@JsonAttribute(name = "isEmailVerified")
+	var isEmailVerified: Boolean = false
+	
+	/**
+	 * The timestamp when the user's email address was verified, in ISO-8601 format.
+	 *
+	 * This value is populated by Supabase upon successful email verification. It remains `null`
+	 * if the user has not verified their email or if email-based authentication is not used.
+	 *
+	 * Example: "2023-10-26T10:00:00Z".
+	 */
+	@JvmField
+	@JsonAttribute(name = "emailVerifiedAt")
+	var emailVerifiedAt: String = ""
 	
 	/**
 	 * The email address associated with the user's account.
-	 * This value is populated during the login or registration process.
-	 * It is `null` if the user is not logged in or has not provided an email.
+	 *
+	 * This value is populated during login or registration and is sourced from the
+	 * Supabase user object. It remains `null` if the user is not logged in, has not
+	 * provided an email, or uses a different authentication method (e.g., phone).
 	 */
 	@JvmField
 	@JsonAttribute(name = "userEmailAddress")
-	var userEmailAddress: String? = null
+	var userEmailAddress: String = ""
 	
 	/**
-	 * The phone number associated with the user's account, including the country code.
-	 * This property is nullable, indicating that the user may not have provided a phone number.
+	 * Indicates whether the user's phone number has been successfully verified.
+	 *
+	 * This flag is `true` if the user has completed the phone verification process,
+	 * typically by submitting an OTP (One-Time Password) received via SMS. A `false`
+	 * value indicates the phone number is either unverified or has not been provided.
+	 * This property is distinct from `isEmailVerified` and defaults to `false`.
+	 */
+	@JvmField
+	@JsonAttribute(name = "isPhoneVerified")
+	var isPhoneVerified: Boolean = false
+	
+	/**
+	 * The timestamp when the user's phone number was verified on Supabase, in ISO-8601 format.
+	 *
+	 * This value is populated by Supabase upon successful phone number verification (e.g., via OTP).
+	 * A non-null value indicates that the verification process was completed. It remains `null`
+	 * if the user has not verified their phone number.
+	 */
+	@JvmField
+	@JsonAttribute(name = "phoneVerifiedAt")
+	var phoneVerifiedAt: String = ""
+	
+	/**
+	 * The phone number associated with the user's account, formatted in the E.164 standard.
+	 *
+	 * This value is sourced from the Supabase user object and is populated during login
+	 * or registration. It includes the country code. The property will be an empty string
+	 * if the user has not provided a phone number or used a different authentication method.
+	 *
 	 * Example: `+11234567890`.
+	 *
+	 * @see isPhoneVerified
+	 * @see phoneVerifiedAt
 	 */
 	@JvmField
 	@JsonAttribute(name = "userPhoneNumber")
-	var userPhoneNumber: String? = null
+	var userPhoneNumber: String = ""
+	
+	/**
+	 * The timestamp indicating when the user's account was created in Supabase.
+	 *
+	 * This value is sourced directly from the Supabase `user.createdAt` property and
+	 * represents the server-side timestamp of account creation. It is formatted as an
+	 * ISO-8601 string (e.g., "2023-10-26T10:00:00Z").
+	 *
+	 * This property will be `null` if the user is not logged in or if the data has not
+	 * yet been fetched from the server.
+	 */
+	@JvmField
+	@JsonAttribute(name = "supabaseAccountCreatedAt")
+	var supabaseAccountCreatedAt: String = ""
+	
+	/**
+	 * The timestamp of the user's last successful sign-in on Supabase, in ISO-8601 format.
+	 *
+	 * This value is automatically updated by Supabase on each successful authentication
+	 * and is sourced from the `user.last_sign_in_at` field. It is useful for auditing,
+	 * session management, or displaying activity information to the user.
+	 * Remains `null` if the user has never signed in.
+	 */
+	@JvmField
+	@JsonAttribute(name = "lastSupabaseLoginAt")
+	var lastSupabaseLoginAt: String = ""
+	
+	/**
+	 * A flag indicating whether this local user profile is successfully linked
+	 * to a Supabase user account.
+	 *
+	 * This becomes `true` after a successful authentication event, such as OTP
+	 * verification or social login, which confirms the local session is tied
+	 * to a valid remote user. It should remain `false` for anonymous or
+	 * unverified sessions.
+	 */
+	@JvmField
+	@JsonAttribute(name = "isSupabaseLinked")
+	var isSupabaseLinked: Boolean = false
+	
+	/**
+	 * Arbitrary user-defined metadata from Supabase, stored as a raw JSON string.
+	 *
+	 * This property holds the `user.user_metadata` object from a Supabase authentication
+	 * response. It is stored as a string to preserve the original JSON structure, allowing
+	 * for flexible parsing of custom fields.
+	 *
+	 * The metadata typically contains profile-related information such as display name,
+	 * avatar URL, or other custom attributes defined by the application.
+	 *
+	 * Example JSON structure:
+	 * ```json
+	 * {
+	 *   "full_name": "John Doe",
+	 *   "avatar_url": "https://example.com/avatar.png"
+	 * }
+	 * ```
+	 */
+	@JvmField
+	@JsonAttribute(name = "supabaseUserMetadata")
+	var supabaseUserMetadata: String = ""
+	
+	/**
+	 * Application-level metadata assigned by Supabase, stored as a JSON string.
+	 *
+	 * This field contains non-user-editable data managed by the backend, such as
+	 * subscription status, user roles (e.g., "admin"), or other system-level flags.
+	 * The raw value is a JSON string that must be parsed to access its contents.
+	 *
+	 * Example JSON structure:
+	 * ```json
+	 * {
+	 *   "provider": "email",
+	 *   "providers": ["email"]
+	 * }
+	 * ```
+	 */
+	@JvmField
+	@JsonAttribute(name = "supabaseAppMetadata")
+	var supabaseAppMetadata: String = ""
 	
 	/**
 	 * Asynchronously reads the user profile from legacy storage formats.
