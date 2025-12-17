@@ -468,6 +468,46 @@ class AIOUserProfile : Serializable {
 		return jsonOutputStream.toString(Charsets.UTF_8.name())
 	}
 	
+	
+	/**
+	 * Resets the user profile to its default state and clears all persisted data.
+	 *
+	 * This function performs a comprehensive reset by:
+	 * 1.  Re-initializing the in-memory `aioUserProfile` instance to a new, empty object.
+	 * 2.  Deleting the corresponding entry from the ObjectBox database.
+	 * 3.  Deleting the legacy `user_profile.json` and `user_profile.dat` files from
+	 *     internal storage to ensure no old data is loaded on the next app start.
+	 *
+	 * This is effectively a "logout and clear" operation, removing all traces of the
+	 * current user's data from the device. The operation is performed asynchronously
+	 * on a background thread to prevent blocking the UI.
+	 */
+	fun resetUserProfile() {
+		uniqueUserServerId = ""
+		
+		isUserCurrentlyLoggedIn = false
+		isUserAccountVerified = false
+		
+		userFullName = ""
+		
+		isEmailVerified = false
+		emailVerifiedAt = ""
+		userEmailAddress = ""
+		
+		isPhoneVerified = false
+		phoneVerifiedAt = ""
+		userPhoneNumber = ""
+		
+		supabaseAccountCreatedAt = ""
+		lastSupabaseLoginAt = ""
+		
+		isSupabaseLinked = false
+		
+		supabaseUserMetadata = ""
+		supabaseAppMetadata = ""
+	}
+	
+	
 	companion object {
 		
 		/**

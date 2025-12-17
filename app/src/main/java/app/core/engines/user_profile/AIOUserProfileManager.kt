@@ -43,19 +43,23 @@ object AIOUserProfileManager {
 	/**
 	 * Synchronizes the local user profile with data from the current Supabase session.
 	 *
-	 * This function first checks for an active Supabase session and a valid user object.
-	 * It then verifies if the user's email or phone number has been confirmed. If the user
-	 * is verified, it proceeds to update the local `aioUserProfile` singleton with various
-	 * details from the Supabase user, including ID, contact information, verification status,
-	 * metadata, and timestamps.
+	 * This function operates asynchronously on a background thread. It first retrieves the
+	 * current Supabase session and its associated user object. If a session and user exist,
+	 * it checks if the user is verified (i.e., either their email or phone number has been confirmed).
 	 *
-	 * The function will not perform the sync and will return early if:
+	 * If the user is verified, the function proceeds to update the local `aioUserProfile`
+	 * singleton with details from the Supabase user, including ID, contact information,
+	 * verification status, metadata, and various timestamps. After updating the local
+	 * profile, it sets the `isUserCurrentlyLoggedIn` and `isSupabaseLinked` flags to true
+	 * and persists these changes to local storage.
+	 *
+	 * The synchronization will be skipped under the following conditions:
 	 * - There is no active Supabase session.
-	 * - The session exists but the user object is null.
+	 * - The session exists, but its user object is null.
 	 * - The Supabase user is not verified (neither email nor phone is confirmed).
 	 *
-	 * After a successful sync, it updates the local profile's state to reflect that the
-	 * user is logged in and linked to Supabase, and persists these changes to storage.
+	 * @see AIOUserProfile
+	 * @see ThreadsUtility.executeInBackground
 	 */
 	@JvmStatic
 	@Synchronized
@@ -68,20 +72,24 @@ object AIOUserProfileManager {
 				val session = supabaseClient.auth.currentSessionOrNull()
 				if (session == null) {
 					logger.d("No active Supabase session, skipping sync")
+					aioUserProfile.resetUserProfile()
 					return@executeInBackground
 				}
 				
 				val supabaseUser = session.user
 				if (supabaseUser == null) {
 					logger.d("Session exists but user is null, skipping sync")
+					aioUserProfile.resetUserProfile()
 					return@executeInBackground
 				}
+				
 				val isVerified =
 					supabaseUser.phoneConfirmedAt != null ||
 						supabaseUser.emailConfirmedAt != null
 				
 				if (!isVerified) {
 					logger.d("Supabase user not verified, local profile will NOT be synced")
+					aioUserProfile.resetUserProfile()
 					return@executeInBackground
 				}
 				
@@ -109,6 +117,18 @@ object AIOUserProfileManager {
 				}
 				
 				logger.d("Local user profile fully synced with Supabase")
+			}
+		)
+	}
+	
+	@JvmStatic
+	@Synchronized
+	fun updateAppSettingsFromSupabaseSettings() {
+		ThreadsUtility.executeInBackground(
+			timeOutInMilli = 1000,
+			codeBlock = {
+				logger.d("updateAppSettingsFromSupabaseSettings() called")
+
 			}
 		)
 	}
