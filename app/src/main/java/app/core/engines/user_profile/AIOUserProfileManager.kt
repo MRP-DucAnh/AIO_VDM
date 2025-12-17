@@ -135,13 +135,12 @@ object AIOUserProfileManager {
 	 * Logs the user out from both the Supabase session and the local user profile.
 	 *
 	 * This function performs a comprehensive logout by first invalidating the user's
-	 * session on the Supabase server via `supabaseClient.auth.signOut()`. Upon successful
-	 * remote logout, it then resets the local `aioUserProfile` singleton to its default,
-	 * logged-out state.
+	 * session on the Supabase server. After a successful remote logout, it proceeds
+	 * to reset the local `aioUserProfile` singleton to its default, logged-out state.
 	 *
-	 * The operation is executed asynchronously within the provided [CoroutineScope]. Any
-	 * exceptions that occur during the Supabase sign-out process are caught and logged,
-	 * preventing the application from crashing.
+	 * The entire operation is executed asynchronously within the provided [CoroutineScope].
+	 * Any exceptions during the Supabase sign-out process are caught and logged,
+	 * ensuring the local profile is reset regardless of network failures.
 	 *
 	 * @param scope The [CoroutineScope] in which to launch the asynchronous logout process.
 	 *              This is typically a scope tied to a ViewModel or a lifecycle-aware component.
@@ -151,11 +150,12 @@ object AIOUserProfileManager {
 	 */
 	@JvmStatic
 	@Synchronized
-	fun logOutFromSupabaseAndLocalUser(scope: CoroutineScope) {
+	fun logOutFromSupabaseAndLocalUser(scope: CoroutineScope, onLogout: (() -> Unit)? = null) {
 		scope.launch {
 			try {
 				supabaseClient.auth.signOut()
 				aioUserProfile.resetUserProfile()
+				onLogout?.invoke()
 			} catch (error: Exception) {
 				logger.e("Supabase logout failed", error)
 			}
