@@ -18,6 +18,7 @@ import app.core.engines.downloader.DownloadModelsDBManager.getAllDownloadsWithRe
 import app.core.engines.objectbox.*
 import app.core.engines.objectbox.ObjectBoxManager.initializeObjectBoxDB
 import app.core.engines.settings.*
+import app.core.engines.supabase.*
 import app.core.engines.supabase.SupabaseCloudServer.initializeSupabaseClient
 import app.core.engines.user_profile.*
 import app.core.engines.youtube.*
@@ -171,6 +172,56 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 		val externalDataFolder: DocumentFile? by lazy {
 			INSTANCE.getExternalFilesDir(null)?.let { fromFile(it) }
 		}
+		
+		/**
+		 * A global [CoroutineScope] tied to the application's lifecycle, designed for
+		 * managing long-running background tasks.
+		 *
+		 * This scope is automatically cancelled when the application process is terminated,
+		 * ensuring that all associated coroutines are cleaned up properly to prevent
+		 * memory leaks and orphaned jobs. It is ideal for operations that need to
+		 * persist for the duration of the application's lifetime but should not block
+		 * the main thread.
+		 *
+		 * It uses a `SupervisorJob` to ensure that the failure of one child coroutine
+		 * does not cancel the entire scope, making it resilient to isolated errors.
+		 *
+		 * ### Example Usage:
+		 * ```kotlin
+		 * AIOApp.applicationJob.launch {
+		 *     // Perform a long-running background task, e.g., data sync
+		 * }
+		 * ```
+		 *
+		 * @see CoroutineScope
+		 * @see SupervisorJob
+		 * @see Dispatchers.IO
+		 */
+		private val applicationJob = SupervisorJob()
+		
+		/**
+		 * A global [CoroutineScope] tied to the application's lifecycle.
+		 *
+		 * This scope is the primary choice for launching long-running coroutines that
+		 * need to persist for the entire duration of the application's life, independent
+		 * of any specific `Activity` or `ViewModel`. It is automatically cancelled
+		 * when the application process is terminated, ensuring that all coroutines
+		 * launched within it are properly cleaned up to prevent leaks.
+		 *
+		 * It is configured with `Dispatchers.Default` and a `SupervisorJob`, which
+		 * provides resilience: if one child coroutine fails, it will not cancel
+		 * the scope or its other children.
+		 *
+		 * ### Use Cases:
+		 * - Initiating background data synchronization.
+		 * - Running long-term monitoring services.
+		 * - Performing one-off asynchronous tasks that are not tied to a UI component.
+		 *
+		 * @see CoroutineScope
+		 * @see SupervisorJob
+		 * @see Dispatchers.Default
+		 */
+		private val applicationScope = CoroutineScope(Dispatchers.Main + applicationJob)
 		
 		/**
 		 * Global application settings and user preferences manager.
@@ -672,6 +723,7 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 			logger.d("[Startup] Loading user profile from database...")
 			aioUserProfile = AIOUserProfileDBManager.loadSettingsFromDB()
 			aioUserProfile.updateInStorage()
+			SupabaseCloudServer.observeSupabaseAuthState(applicationScope)
 		} catch (error: Exception) {
 			logger.e(
 				"[Startup] Failed to load user profile from database, " +
@@ -977,6 +1029,8 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 			logger.d("Shutdown: Cleanup completed")
 		})
 		
+		applicationScope.cancel()
+		applicationJob.cancel()
 		super.onTerminate()
 		logger.d("onTerminate: Application shutdown finished")
 	}
