@@ -1220,52 +1220,54 @@
       "relations": []
     },
     {
-      "id": "11:20975917045098968",
-      "lastPropertyId": "6:3300727228893496431",
-      "name": "UserProfileDataModel",
+      "id": "12:7569874744703568408",
+      "lastPropertyId": "6:610325315094884096",
+      "name": "AIOUserProfile",
       "properties": [
         {
-          "id": "1:8763911908649575557",
+          "id": "1:5810255168624433874",
           "name": "id",
           "type": 6,
           "flags": 1
         },
         {
-          "id": "2:4624010957096845038",
+          "id": "2:4616574885519616574",
           "name": "uniqueUserServerId",
           "type": 9
         },
         {
-          "id": "3:8448751441554402215",
+          "id": "3:4137017737296739071",
+          "name": "isUserCurrentlyLoggedIn",
+          "type": 1
+        },
+        {
+          "id": "4:3795839604334166632",
           "name": "userFullName",
           "type": 9
         },
         {
-          "id": "4:6548612220169475477",
+          "id": "5:3563065494806848623",
           "name": "userEmailAddress",
           "type": 9
         },
         {
-          "id": "5:1328303030505046394",
+          "id": "6:610325315094884096",
           "name": "userPhoneNumber",
           "type": 9
-        },
-        {
-          "id": "6:3300727228893496431",
-          "name": "isUserCurrentlyLoggedIn",
-          "type": 1
         }
       ],
       "relations": []
     }
   ],
-  "lastEntityId": "11:20975917045098968",
+  "lastEntityId": "12:7569874744703568408",
   "lastIndexId": "0:0",
   "lastRelationId": "1:8496475234812365537",
   "lastSequenceId": "0:0",
   "modelVersion": 5,
   "modelVersionParserMinimum": 5,
-  "retiredEntityUids": [],
+  "retiredEntityUids": [
+    20975917045098968
+  ],
   "retiredIndexUids": [],
   "retiredPropertyUids": [
     6998681376410707544,
@@ -1274,7 +1276,13 @@
     2728132546519396816,
     2878173129867797327,
     9019781913617655866,
-    178972667968884868
+    178972667968884868,
+    8763911908649575557,
+    4624010957096845038,
+    8448751441554402215,
+    6548612220169475477,
+    1328303030505046394,
+    3300727228893496431
   ],
   "retiredRelationUids": [],
   "version": 1
