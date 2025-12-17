@@ -142,7 +142,7 @@ class MotherActivity : BaseActivity() {
 		CoroutineScope(Dispatchers.Main).launch {
 			sideNavigation?.closeDrawerNavigation()
 			if (fragmentViewPager.currentItem != 0) {
-				fragmentViewPager.currentItem = 0
+				fragmentViewPager.setCurrentItem(0, false)
 			}
 		}
 	}
@@ -155,7 +155,7 @@ class MotherActivity : BaseActivity() {
 		CoroutineScope(Dispatchers.Main).launch {
 			sideNavigation?.closeDrawerNavigation()
 			if (fragmentViewPager.currentItem != 1) {
-				fragmentViewPager.currentItem = 1
+				fragmentViewPager.setCurrentItem(1, false)
 			}
 		}
 	}
@@ -168,7 +168,7 @@ class MotherActivity : BaseActivity() {
 		CoroutineScope(Dispatchers.Main).launch {
 			sideNavigation?.closeDrawerNavigation()
 			if (fragmentViewPager.currentItem != 2) {
-				fragmentViewPager.currentItem = 2
+				fragmentViewPager.setCurrentItem(2, false)
 			}
 		}
 	}
@@ -181,7 +181,7 @@ class MotherActivity : BaseActivity() {
 		CoroutineScope(Dispatchers.Main).launch {
 			sideNavigation?.closeDrawerNavigation()
 			if (fragmentViewPager.currentItem != 3) {
-				fragmentViewPager.currentItem = 3
+				fragmentViewPager.setCurrentItem(3, false)
 			}
 		}
 	}
@@ -203,7 +203,7 @@ class MotherActivity : BaseActivity() {
 		safeMotherActivityRef?.let {
 			fragmentViewPager = findViewById(R.id.fragment_viewpager)
 			// Keep all fragments in memory
-			fragmentViewPager.offscreenPageLimit = 4
+			fragmentViewPager.offscreenPageLimit = 1
 			fragmentViewPager.adapter = FragmentsPageAdapter(it)
 			
 			// Listener for page changes
