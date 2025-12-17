@@ -223,6 +223,21 @@ class AIOUserProfile : Serializable {
 	var lastSupabaseLoginAt: String = ""
 	
 	/**
+	 * The timestamp indicating the last time the user's data was updated on Supabase,
+	 * in ISO-8601 format.
+	 *
+	 * This value is sourced from the `user.updated_at` property and reflects server-side
+	 * changes to the user object, such as a modified email, password, or metadata.
+	 * It is useful for determining if the local user profile data is stale and needs
+	 * to be refreshed from the server.
+	 *
+	 * Remains `null` if the user's data has never been updated post-creation.
+	 */
+	@JvmField
+	@JsonAttribute(name = "lastTimeUpdatedWithSupabase")
+	var lastTimeUpdatedWithSupabase: Long = 0L
+	
+	/**
 	 * A flag indicating whether this local user profile is successfully linked
 	 * to a Supabase user account.
 	 *
@@ -497,6 +512,7 @@ class AIOUserProfile : Serializable {
 		isSupabaseLinked = false
 		supabaseUserMetadata = ""
 		supabaseAppMetadata = ""
+		lastTimeUpdatedWithSupabase = 0L
 	}
 	
 	companion object {
