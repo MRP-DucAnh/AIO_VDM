@@ -669,5 +669,6 @@
 	<string name="title_already_logged_in">User Has Already Logged In</string>
 	<string name="title_sign_out">Sign Out From AIO Cloud</string>
 	<string name="title_minutes">Minutes</string>
+	<string name="title_account_details">Account Details</string>
 
 </resources>
