@@ -61,7 +61,7 @@ object AIOUserProfileManager {
 	 *
 	 * @param updateMinInternal The minimum time interval in milliseconds that must pass
 	 *        since the last successful update for a new synchronization to occur.
-	 *        Defaults to 5000 milliseconds (5 seconds).
+	 *        Defaults to 2000 milliseconds (2 seconds).
 	 *
 	 * @see AIOUserProfile
 	 * @see ThreadsUtility.executeInBackground
