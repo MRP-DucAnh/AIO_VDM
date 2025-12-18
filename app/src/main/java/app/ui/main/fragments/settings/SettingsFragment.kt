@@ -79,7 +79,7 @@ class SettingsFragment : BaseFragment(), AuthOperationsListener {
 	 * reference is obtained by casting `safeBaseActivityRef` and is only created
 	 * upon first access.
 	 */
-	val safeMotherActivityRef get() = safeBaseActivityRef as MotherActivity
+	val safeMotherActivityRef get() = safeBaseActivityRef as? MotherActivity
 	
 	/**
 	 * Manages all user click interactions within the settings UI.
@@ -259,8 +259,8 @@ class SettingsFragment : BaseFragment(), AuthOperationsListener {
 	private fun registerSelfReferenceInMotherActivity() {
 		logger.d("Registering SettingsFragment reference with MotherActivity")
 		try {
-			safeMotherActivityRef.settingsFragment = safeSettingsFragmentRef
-			safeMotherActivityRef.sideNavigation?.closeDrawerNavigation()
+			safeMotherActivityRef?.settingsFragment = safeSettingsFragmentRef
+			safeMotherActivityRef?.sideNavigation?.closeDrawerNavigation()
 		} catch (error: Exception) {
 			logger.e("Error while registering fragment with MotherActivity", error)
 		}
@@ -277,7 +277,7 @@ class SettingsFragment : BaseFragment(), AuthOperationsListener {
 	private fun unregisterSelfReferenceInMotherActivity() {
 		logger.d("Unregistering SettingsFragment reference from MotherActivity")
 		try {
-			safeMotherActivityRef.settingsFragment = null
+			safeMotherActivityRef?.settingsFragment = null
 		} catch (error: Exception) {
 			logger.e("Error during fragment unregistration", error)
 		}
@@ -404,7 +404,7 @@ class SettingsFragment : BaseFragment(), AuthOperationsListener {
 	 *              relevant if `username` is not null.
 	 */
 	fun updateUserAccountCard(fragmentLayout: View) {
-		safeMotherActivityRef.activityScope.launch(Dispatchers.Main) {
+		safeMotherActivityRef?.activityScope?.launch(Dispatchers.Main) {
 			fragmentLayout.findViewById<TextView>(R.id.txt_connect_to_cloud).let {
 				if (AIOUserProfileManager.getAIOUserProfile().isUserAccountVerified) {
 					it.text = getText(R.string.title_view_account_details)
