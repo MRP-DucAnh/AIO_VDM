@@ -108,7 +108,7 @@ class SettingsOnClickLogic(settingsFragment: SettingsFragment) {
 	fun showLoginOrRegistrationDialog() {
 		safeSettingsFragmentRef?.let { fragmentRef ->
 			fragmentRef.safeFragmentLayoutRef?.let { fragmentLayoutRef ->
-				fragmentRef.safeMotherActivityRef.let { motherActivity ->
+				fragmentRef.safeMotherActivityRef?.let { motherActivity ->
 					if (DeviceUtility.isUserFromIndia(motherActivity)) {
 						if (!aioUserProfile.isUserAccountVerified) {
 							SupabasePhoneNumberLogIn(
@@ -124,8 +124,8 @@ class SettingsOnClickLogic(settingsFragment: SettingsFragment) {
 								.initialize()
 								.show()
 						} else {
-							logger.d("User is logged in: ${aioUserProfile.uniqueUserServerId}")
-							showToast(motherActivity, R.string.title_already_logged_in)
+							logger.d("Opening user account details activity for id: ${aioUserProfile.uniqueUserServerId}")
+							motherActivity.openActivity(UserAccountDetailsActivity::class.java, true)
 						}
 					} else {
 						logger.d("Login or registration is only available in India")
