@@ -125,22 +125,24 @@ object SupabaseCloudServer {
 	@JvmStatic
 	@Synchronized
 	fun registerAuthOperationListener(
-		listener: AuthOperationsListener,
+		listener: AuthOperationsListener?,
 		onSuccessRegister: () -> Unit = {},
 		onFailedRegister: () -> Unit = {}
 	) {
-		try {
-			val classSimpleName = listener.javaClass.simpleName
-			if (authOperationListeners.none { it.get() == listener }) {
-				authOperationListeners.add(WeakReference(listener))
-				logger.d("Auth operation listener registered: $classSimpleName")
-				onSuccessRegister.invoke()
-			} else if (authOperationListeners.any { it.get() == listener }) {
-				logger.d("Auth operation listener already registered: $classSimpleName")
+		listener?.let {
+			try {
+				val classSimpleName = listener.javaClass.simpleName
+				if (authOperationListeners.none { it.get() == listener }) {
+					authOperationListeners.add(WeakReference(listener))
+					logger.d("Auth operation listener registered: $classSimpleName")
+					onSuccessRegister.invoke()
+				} else if (authOperationListeners.any { it.get() == listener }) {
+					logger.d("Auth operation listener already registered: $classSimpleName")
+				}
+			} catch (error: Exception) {
+				logger.e("Error registering auth operation listener", error)
+				onFailedRegister.invoke()
 			}
-		} catch (error: Exception) {
-			logger.e("Error registering auth operation listener", error)
-			onFailedRegister.invoke()
 		}
 	}
 	
@@ -162,18 +164,20 @@ object SupabaseCloudServer {
 	@JvmStatic
 	@Synchronized
 	fun unregisterAuthOperationListener(
-		listener: AuthOperationsListener,
+		listener: AuthOperationsListener?,
 		onSuccessRegister: () -> Unit = {},
 		onFailedRegister: () -> Unit = {}
 	) {
-		try {
-			val classSimpleName = listener.javaClass.simpleName
-			authOperationListeners.removeIf { it.get() == listener }
-			logger.d("Auth operation listener unregistered: $classSimpleName")
-			onSuccessRegister.invoke()
-		} catch (error: Exception) {
-			logger.e("Error unregistering auth operation listener", error)
-			onFailedRegister.invoke()
+		listener?.let {
+			try {
+				val classSimpleName = listener.javaClass.simpleName
+				authOperationListeners.removeIf { it.get() == listener }
+				logger.d("Auth operation listener unregistered: $classSimpleName")
+				onSuccessRegister.invoke()
+			} catch (error: Exception) {
+				logger.e("Error unregistering auth operation listener", error)
+				onFailedRegister.invoke()
+			}
 		}
 	}
 	
