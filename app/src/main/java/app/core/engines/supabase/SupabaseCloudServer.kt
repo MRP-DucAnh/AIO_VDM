@@ -2,6 +2,8 @@ package app.core.engines.supabase
 
 import app.core.*
 import app.core.AIOApp.Companion.aioUserProfile
+import app.core.engines.supabase.SupabaseCloudServer.observeSupabaseAuthState
+import app.core.engines.supabase.SupabaseCloudServer.registerAuthOperationListener
 import app.core.engines.supabase.SupabaseCloudServer.supabaseClient
 import app.core.engines.supabase.SupabaseCloudServer.updateDataModelToSupabase
 import app.core.engines.user_profile.*
@@ -15,6 +17,8 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.json.*
 import lib.process.*
 import lib.texts.CommonTextUtils.getText
+import java.lang.ref.*
+import java.util.concurrent.*
 
 /**
  * A singleton object that acts as a client for interacting with a Supabase cloud server.
@@ -36,6 +40,21 @@ object SupabaseCloudServer {
 	 * Logger instance for this class, used for logging various events and debugging information.
 	 */
 	private val logger = LogHelperUtils.from(javaClass)
+	
+	/**
+	 * A list of listeners that react to authentication-related events.
+	 *
+	 * This list holds weak references to objects implementing the [AuthOperationsListener]
+	 * interface. Listeners in this list are notified of significant authentication events,
+	 * such as successful login or session removal. Using [WeakReference] helps prevent
+	 * memory leaks by allowing the garbage collector to reclaim listener objects if they
+	 * are no longer referenced elsewhere. The [CopyOnWriteArrayList] ensures thread-safe
+	 * modifications and iterations, which is crucial in a concurrent environment where
+	 * listeners might be added or removed from different threads.
+	 *
+	 * @see AuthOperationsListener
+	 */
+	private val authOperationListeners = CopyOnWriteArrayList<WeakReference<AuthOperationsListener>>()
 	
 	/**
 	 * A lazily initialized Supabase client instance.
@@ -90,38 +109,139 @@ object SupabaseCloudServer {
 	}
 	
 	/**
-	 * Observes the Supabase authentication state and reacts to changes.
+	 * Registers a listener to observe authentication state changes from Supabase.
+	 *
+	 * This function adds a weak reference to the provided [AuthOperationsListener] to a list
+	 * of listeners. These listeners are notified about authentication events, such as
+	 * successful authentication or session removal, which are captured by other parts
+	 * of the `SupabaseCloudServer`, like [observeSupabaseAuthState].
+	 *
+	 * Using a `WeakReference` ensures that the listener does not cause memory leaks. If the
+	 * listener object is garbage collected, the reference will be automatically removed
+	 * from the list upon the next iteration.
+	 *
+	 * @param listener The [AuthOperationsListener] instance to be notified of auth events.
+	 */
+	@JvmStatic
+	@Synchronized
+	fun registerAuthOperationListener(
+		listener: AuthOperationsListener,
+		onSuccessRegister: () -> Unit = {},
+		onFailedRegister: () -> Unit = {}
+	) {
+		try {
+			val classSimpleName = listener.javaClass.simpleName
+			if (authOperationListeners.none { it.get() == listener }) {
+				authOperationListeners.add(WeakReference(listener))
+				logger.d("Auth operation listener registered: $classSimpleName")
+				onSuccessRegister.invoke()
+			} else if (authOperationListeners.any { it.get() == listener }) {
+				logger.d("Auth operation listener already registered: $classSimpleName")
+			}
+		} catch (error: Exception) {
+			logger.e("Error registering auth operation listener", error)
+			onFailedRegister.invoke()
+		}
+	}
+	
+	/**
+	 * Unregisters an authentication operation listener.
+	 *
+	 * This function removes a listener from the `authOperationListeners` list, preventing it
+	 * from receiving future authentication event notifications. It iterates through the list
+	 * of weak references and removes the entry whose referenced object matches the provided
+	 * `listener`. This ensures that the listener is properly cleaned up and no longer held
+	 * in memory by this class, which is crucial for preventing memory leaks, especially
+	 * in lifecycle-aware components.
+	 *
+	 * The removal process is thread-safe due to the use of `CopyOnWriteArrayList`.
+	 *
+	 * @param listener The `AuthOperationsListener` instance to be removed.
+	 * @see registerAuthOperationListener
+	 */
+	@JvmStatic
+	@Synchronized
+	fun unregisterAuthOperationListener(
+		listener: AuthOperationsListener,
+		onSuccessRegister: () -> Unit = {},
+		onFailedRegister: () -> Unit = {}
+	) {
+		try {
+			val classSimpleName = listener.javaClass.simpleName
+			authOperationListeners.removeIf { it.get() == listener }
+			logger.d("Auth operation listener unregistered: $classSimpleName")
+			onSuccessRegister.invoke()
+		} catch (error: Exception) {
+			logger.e("Error unregistering auth operation listener", error)
+			onFailedRegister.invoke()
+		}
+	}
+	
+	/**
+	 * Observes the Supabase authentication state and reacts to changes in real-time.
 	 *
 	 * This function launches a coroutine that collects the `sessionStatus` flow from the
-	 * Supabase `Auth` client. It is used to monitor the user's authentication status in real-time.
+	 * Supabase `Auth` client, allowing the app to monitor the user's authentication status
+	 * continuously.
 	 *
-	 * - When the status is `Authenticated`, it calls [AIOUserProfileManager.updateLocalUserWithSupabaseUser]
-	 *   to synchronize the local user profile with the authenticated Supabase user's data.
-	 * - When the status is `NotAuthenticated` (e.g., after a logout), it resets the local
-	 *   user profile by calling [aioUserProfile.resetUserProfile].
-	 * - For any other status, it does nothing.
+	 * It handles the following states:
+	 * - **`Authenticated`**: When a user is successfully signed in, it triggers
+	 *   [AIOUserProfileManager.updateLocalUserWithSupabaseUser] to synchronize the local user
+	 *   profile with the data from the authenticated Supabase user.
+	 * - **`NotAuthenticated`**: When the user is signed out or the session becomes invalid,
+	 *   it calls [aioUserProfile.resetUserProfile] to clear the local user data, ensuring
+	 *   the app state reflects the logged-out status.
+	 * - **Other statuses**: It logs any other authentication status changes for debugging purposes
+	 *   but performs no specific actions.
 	 *
-	 * This allows the application to dynamically update its state based on whether a user
-	 * is signed in or out of Supabase.
+	 * This mechanism is crucial for maintaining a consistent user state across the application,
+	 * automatically updating the UI and data when the user's session changes.
 	 *
 	 * @param scope The [CoroutineScope] in which to launch the observer coroutine. This scope
-	 *              should typically be tied to a lifecycle that allows the observation to
-	 *              persist as long as needed (e.g., a ViewModel's `viewModelScope` or a
-	 *              service's scope).
+	 *              should be tied to a lifecycle that allows the observation to persist as
+	 *              long as needed (e.g., a `ViewModel`'s `viewModelScope` or a service's scope).
 	 */
 	@JvmStatic
 	fun observeSupabaseAuthState(scope: CoroutineScope) {
 		scope.launch {
 			supabaseClient.auth.sessionStatus.collect { status ->
+				val iterator = authOperationListeners.iterator()
+				while (iterator.hasNext()) {
+					val listenerRef = iterator.next()
+					if (listenerRef.get() == null) {
+						authOperationListeners.remove(listenerRef)
+					}
+				}
+				
 				when (status) {
 					is SessionStatus.Authenticated -> {
 						logger.d("Supabase session authenticated, updating local user.")
 						updateLocalUserWithSupabaseUser(0L)
+						authOperationListeners.forEach { listenerRef ->
+							listenerRef.get()?.let { listener ->
+								val classSimpleName = listener.javaClass.simpleName
+								try {
+									listener.onSuccessfulAuthentication()
+								} catch (error: Exception) {
+									logger.e("Error in auth operation listener callback: $classSimpleName", error)
+								}
+							}
+						}
 					}
 					
 					is SessionStatus.NotAuthenticated -> {
 						logger.d("Supabase session authenticated failed, updating local user.")
 						aioUserProfile.resetUserProfile()
+						authOperationListeners.forEach { listenerRef ->
+							listenerRef.get()?.let { listener ->
+								val classSimpleName = listener.javaClass.simpleName
+								try {
+									listener.onAuthenticationRemoved()
+								} catch (error: Exception) {
+									logger.e("Error in auth operation listener callback: $classSimpleName", error)
+								}
+							}
+						}
 					}
 					
 					else -> {
@@ -244,5 +364,4 @@ object SupabaseCloudServer {
 			}
 		}
 	}
-	
 }
