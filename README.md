@@ -5,11 +5,10 @@
 
 ### 🚀 All-in-One Video Solution: Download, Play, Protect - Simple, Fast & Private
 
-[![Download AIO Video Downloader](https://a.fsdn.com/con/app/sf-download-button)](https://sourceforge.net/projects/aio-video-downloader/files/latest/download)
+[![Download AIO Video Downloader](https://a.fsdn.com/con/app/sf-download-button)](https://github.com/shibaFoss/AIO-Video-Downloader/releases/download/v2026.02.02/app-arm64-v8a-release.apk)
 ----
 [![Release version](https://img.shields.io/github/v/release/shibaFoss/AIO-Video-Downloader?color=brightgreen&label=Stable-Download&style=for-the-badge)](https://github.com/shibaFoss/AIO-Video-Downloader/releases/latest/)
 [![GitHub all releases](https://img.shields.io/github/downloads/shibafoss/AIO-Video-Downloader/total?color=brightgreen&label=Total-Downloads&style=for-the-badge)](https://github.com/shibafoss/AIO-Video-Downloader/releases/)
-[![Download AIO-Video-Downloader](https://img.shields.io/sourceforge/dm/aio-video-downloader.svg?color=brightgreen&label=Monthy-Downloads&style=for-the-badge)](https://sourceforge.net/projects/aio-video-downloader/files/latest/download)
 [![Follow on Instagram](https://img.shields.io/badge/Follow-%40shibafoss-ff69b4?logo=instagram&style=for-the-badge)](https://instagram.com/shibafoss)
 
 
