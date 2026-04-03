@@ -5,8 +5,10 @@
 ### 🚀 Premium All-in-One Media Hub for Android
 
 **Download • Play • Protect • Simple • Fast • Private**
+<div align="center">
+    <a href="https://ytder.com"><img src="https://openclipart.org/image/400px/201887"></a>
+</div>
 
-[![Official Website](https://img.shields.io/badge/Official_Website-ytder.com-6200EE?style=for-the-badge&logo=google-chrome&logoColor=white)](https://ytder.com)
 [![Download APK](https://img.shields.io/github/v/release/shibaFoss/AIO-Video-Downloader?color=brightgreen&label=Direct-Download&style=for-the-badge&logo=android)](https://github.com/shibaFoss/AIO-Video-Downloader/releases/latest/)
 
 ---
