@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:id="@+id/container_browser_auto_suggestion"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:layout_centerInParent="true"
+	android:layout_marginStart="@dimen/_10"
+	android:layout_marginTop="@dimen/_5"
+	android:layout_marginEnd="@dimen/_10"
+	android:layout_marginBottom="@dimen/_5"
+	android:background="@drawable/ic_webtab_selector_background"
+	android:clickable="true"
+	android:elevation="@dimen/_1"
+	tools:ignore="TouchTargetSizeCheck">
+
+	<ImageView
+		android:id="@+id/img_site_favicon"
+		android:layout_width="@dimen/_20"
+		android:layout_height="wrap_content"
+		android:layout_centerVertical="true"
+		android:layout_marginStart="@dimen/_10"
+		android:layout_marginEnd="@dimen/_8"
+		android:adjustViewBounds="true"
+		android:importantForAccessibility="no"
+		android:scaleType="centerCrop"
+		android:src="@drawable/ic_image_search"
+		android:visibility="visible"
+		tools:ignore="ImageContrastCheck" />
+
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_centerVertical="true"
+		android:layout_marginStart="@dimen/_5"
+		android:layout_marginTop="@dimen/_5"
+		android:layout_marginEnd="@dimen/_10"
+		android:layout_marginBottom="@dimen/_5"
+		android:layout_toEndOf="@+id/img_site_favicon"
+		android:orientation="vertical">
+
+		<TextView
+			android:id="@+id/txt_suggestion_title"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:ellipsize="end"
+			android:fontFamily="@font/font_family_semibold"
+			android:gravity="center_vertical"
+			android:maxLines="1"
+			android:singleLine="true"
+			android:text="@string/title_google"
+			android:textSize="@dimen/message_text_size" />
+
+		<TextView
+			android:id="@+id/txt_suggestion_subtitle"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:ellipsize="end"
+			android:fontFamily="@font/font_family_medium"
+			android:gravity="center_vertical"
+			android:maxLines="1"
+			android:singleLine="true"
+			android:text="@string/text_https_google_com"
+			android:textColor="@color/color_text_hint"
+			android:textSize="@dimen/smaller_text_size"
+			tools:ignore="TextContrastCheck" />
+	</LinearLayout>
+</RelativeLayout>
