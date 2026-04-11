@@ -32,8 +32,11 @@
 </details>
 
 <br>
+
 ![AIO Video Downloader Logo](others/graphics/feature_cover.png)
 </div>
+
+---
 
 ## 📌 Introduction
 
@@ -41,6 +44,7 @@
 
 Built on the robust **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** core, it supports over **1000+ websites** with optimized parallel connections for maximum speed.
 
+---
 
 ## 🤝 Join the Core Team (Maintainers Wanted)
 
@@ -64,6 +68,7 @@ We are looking for **Project Maintainers** to help drive the technical future of
 
 > **Interested?** Please open a [New Issue](https://github.com/shibaFoss/AIO-Video-Downloader/issues) with the tag `[Maintainer]` to discuss onboarding.
 
+---
 
 ## ✨ Key Features
 
@@ -74,6 +79,7 @@ We are looking for **Project Maintainers** to help drive the technical future of
 * 🌐 **Universal Support:** Works with 1000+ sites via built-in secure browser.
 * 🛡️ **Ad-Free & Open Source:** Transparent, safe, and privacy-respecting.
 
+---
 
 ## 📱 Screenshots
 
@@ -87,6 +93,7 @@ We are looking for **Project Maintainers** to help drive the technical future of
   <img src="others/graphics/screenshots/6.0.jpg" width="30%" />
 </div>
 
+---
 
 ## 🚀 Getting Started
 
@@ -95,6 +102,7 @@ We are looking for **Project Maintainers** to help drive the technical future of
 3.  **Choose & Download:** Select your resolution (up to 4K) and download.
 4.  **Secure:** Move downloads to the **Private Folder** to hide them from the gallery.
 
+---
 
 ## 🔧 Technical Specifications
 
@@ -103,6 +111,7 @@ We are looking for **Project Maintainers** to help drive the technical future of
 * **Language:** Kotlin
 * **License:** Custom Open Source License
 
+---
 
 <div align="center">
   <b>Made with ❤️ in India 🇮🇳</b>
