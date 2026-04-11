@@ -15,11 +15,36 @@
 ![AIO Video Downloader Logo](others/graphics/feature_cover.png)
 </div>
 
+---
+
+## 🤝 Join the Core Team (Maintainers Wanted)
+
+AIO Video Downloader is evolving, and we are looking for **Project Maintainers** to help lead its development. We aren't just looking for translations—we need developers who want to help shape the technical core of the project.
+
+### 🛠 What we're looking for:
+* **Core Maintenance:** Maintain and optimize our independent core modules.
+* **Extraction Specialists:** Work with our `yt-dlp` and `NewPipe Extractor` integrations.
+* **UI/UX Developers:** Refine our custom-themed interface and high-performance UI logic.
+* **Code Reviewers:** Review Pull Requests and ensure the stability of the main branch.
+
+### 💻 Tech Stack & Architecture
+* **Language:** 100% Kotlin
+* **Architecture:** Modular MVVM with strict separation of concerns:
+    * **Independent Core Modules:** Business logic is decoupled from the UI.
+    * **Data & Model Layers:** Robust handling of video metadata and file states.
+    * **Custom UI Logic:** Performance-first, custom-themed interface (not strictly Material Design).
+* **Primary Libraries:**
+    * [ytdlp-android-wrapper](https://github.com/yausername/youtubedl-android) - The engine for high-speed downloads.
+    * [NewPipe Extractor](https://github.com/TeamNewPipe/NewPipeExtractor) - Lightweight streaming data extraction.
+
+#### Interested in contributing? Please open a [New Issue](https://github.com/shibaFoss/AIO-Video-Downloader/issues) with the tag `[Maintainer]` to discuss how you can help. Let’s build the ultimate downloader together! 🚀
+---
+
 ## 📌 Introduction
 
 **AIO Video Downloader** is your ultimate all-in-one media companion - combining powerful video downloading, a full-featured video player, and secure private file protection in one simple, elegant app.
 
-Built on the robust **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** engine, AIO delivers **super-fast download speeds** and can grab virtually any video that plays online. With support for **1000+ websites**, you'll never miss your favorite content again.
+Built on the robust **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** engine, AIO delivers **superfast download speeds** and can grab virtually any video that plays online. With support for **1000+ websites**, you'll never miss your favorite content again.
 
 No more switching between multiple apps - download, play, and protect your media files all in one place!
 
@@ -101,7 +126,7 @@ No more switching between multiple apps - download, play, and protect your media
 1. **Download**: Copy any video URL or use the built-in browser
 2. **Grab**: AIO automatically detects downloadable content
 3. **Choose**: Select your preferred quality and format
-4. **Download**: Enjoy super-fast download speeds
+4. **Download**: Enjoy superfast download speeds
 5. **Play**: Use the built-in player or move to private storage
 
 ## 🔧 Technical Details
