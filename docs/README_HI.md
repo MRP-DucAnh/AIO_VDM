@@ -1,5 +1,5 @@
 <div align="center">
-<img src="app/src/main/res/drawable/ic_launcher_logo_v4.png" width=120 height=120 alt="AIO Video Downloader Logo">
+<img src="../app/src/main/res/drawable/ic_launcher_logo_v4.png" width=120 height=120 alt="AIO Video Downloader Logo">
 
 # AIO Video Downloader (AIO वीडियो डाउनलोडर)
 
@@ -22,13 +22,13 @@
   <summary>🌐 <b>भाषा चुनें (Select Language)</b></summary>
   <p align="center">
     <a href="../README.md">English</a> | 
-    <a href="README_ZH.md">简体中文</a> | 
-    <a href="README_HI.md">हिन्दी</a> | 
-    <a href="README_ES.md">Español</a> | 
-    <a href="README_FR.md">Français</a> | 
-    <a href="README_ID.md">Bahasa Indonesia</a> | 
-    <a href="README_RU.md">Русский</a> | 
-    <a href="README_VI.md">Tiếng Việt</a>
+    <a href="docs/README_ZH.md">简体中文</a> | 
+    <a href="docs/README_HI.md">हिन्दी</a> | 
+    <a href="docs/README_ES.md">Español</a> | 
+    <a href="docs/README_FR.md">Français</a> | 
+    <a href="docs/README_ID.md">Bahasa Indonesia</a> | 
+    <a href="docs/README_RU.md">Русский</a> | 
+    <a href="docs/README_VI.md">Tiếng Việt</a>
   </p>
 </details>
 
