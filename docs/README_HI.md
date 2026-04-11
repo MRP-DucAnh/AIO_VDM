@@ -34,7 +34,8 @@
 </details>
 
 <br>
-![AIO Video Downloader Logo](../others/graphics/feature_cover.png)
+
+![AIO Video Downloader Logo](/others/graphics/feature_cover.png)
 </div>
 
 ---
