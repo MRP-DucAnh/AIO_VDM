@@ -1,57 +1,72 @@
 package lib.ui
 
-import android.content.Context
-import android.view.View
-import android.view.View.GONE
-import android.view.View.OnClickListener
-import android.widget.RelativeLayout
-import android.widget.TextView
+import android.content.*
+import android.view.View.*
+import android.widget.*
 import app.core.AIOApp.Companion.INSTANCE
-import app.core.bases.interfaces.BaseActivityInf
-import com.aio.R
+import app.core.bases.interfaces.*
+import com.aio.*
+import lib.process.*
 import lib.texts.CommonTextUtils.getText
-import lib.ui.builders.DialogBuilder
-import java.lang.ref.WeakReference
+import lib.ui.MsgDialogUtils.getMessageDialog
+import lib.ui.builders.*
+import java.lang.ref.*
 
 /**
- * A utility object for displaying customizable message dialogs in the application.
+ * A utility object providing high-level helper methods for constructing and displaying
+ * custom application dialogs.
  *
- * This object provides methods to create and show dialogs with various options such as
- * custom titles, messages, button texts, and more. The dialog can be customized through various
- * callback functions for styling the views and handling button click actions.
+ * This singleton provides a simplified API for interacting with [DialogBuilder],
+ * abstracting away the boilerplate code required for view inflation and component
+ * lookup. It facilitates the creation of standardized message alerts while
+ * maintaining the flexibility to inject custom styling and behavior via
+ * functional callbacks.
  */
 object MsgDialogUtils {
 
 	/**
-	 * The application context reference, retrieved through [AIOApp.INSTANCE].
+	 * Provides access to the global application [Context].
+	 * * This property acts as a bridge to the singleton application instance,
+	 * ensuring that resource strings and system services are accessible
+	 * even when a specific Activity context is not immediately available.
 	 */
 	private val applicationContext: Context
 		get() = INSTANCE
 
 	/**
-	 * Displays a customizable message dialog with the specified options.
+	 * Orchestrates the creation and immediate display of a customizable message dialog
+	 * on the UI thread.
 	 *
-	 * @param baseActivityInf The base activity interface, used to access the activity context.
-	 * @param isCancelable Whether the dialog can be dismissed by clicking outside of it. Default is true.
-	 * @param isTitleVisible Whether the dialog's title should be visible. Default is false.
-	 * @param titleText The title text for the dialog. Default is a placeholder text.
-	 * @param messageTxt The message text to be displayed in the dialog. Default is a placeholder text.
-	 * @param positiveButtonText Text for the positive button. Default is "OK".
-	 * @param negativeButtonText Text for the negative button. Default is "Cancel".
-	 * @param isNegativeButtonVisible Whether the negative button should be visible. Default is true.
-	 * @param onPositiveButtonClickListener The click listener for the positive button.
-	 * @param onNegativeButtonClickListener The click listener for the negative button.
-	 * @param messageTextViewCustomize A callback for customizing the message TextView.
-	 * @param titleTextViewCustomize A callback for customizing the title TextView.
-	 * @param dialogBuilderCustomize A callback for customizing the DialogBuilder.
-	 * @param positiveButtonTextCustomize A callback for customizing the positive button TextView.
-	 * @param negativeButtonTextCustomize A callback for customizing the negative button TextView.
-	 * @param positiveButtonContainerCustomize A callback for customizing the positive button container.
-	 * @param negativeButtonContainerCustomize A callback for customizing the negative button container.
-	 * @return The created [DialogBuilder] instance, which can be used to show the dialog.
+	 * This function serves as the high-level entry point for showing alerts or information
+	 * pop-ups. It wraps the [getMessageDialog] factory logic within a [withMainContext] block
+	 * to guarantee that view inflation, property assignment, and the final [DialogBuilder.show]
+	 * call occur on the Main thread, preventing potential threading exceptions.
+	 *
+	 * It inherits all the deep customization hooks from the underlying builder logic,
+	 * allowing for fine-grained control over typography, container layouts, and
+	 * visibility rules while maintaining a concise call site for standard use cases.
+	 *
+	 * @param baseActivityInf The activity interface used to derive the hosting [app.core.bases.BaseActivity].
+	 * @param isCancelable Whether the dialog can be dismissed by back-press or outside touch.
+	 * @param isTitleVisible Toggle to force-display the title section.
+	 * @param titleText The text sequence for the dialog header.
+	 * @param messageTxt The primary descriptive text content.
+	 * @param positiveButtonText The label for the primary confirmation action.
+	 * @param negativeButtonText The label for the secondary dismissal action.
+	 * @param isNegativeButtonVisible Toggle to hide the secondary action button entirely.
+	 * @param onPositiveButtonClickListener Lambda for the primary button; defaults to [DialogBuilder.close].
+	 * @param onNegativeButtonClickListener Lambda for the secondary button; defaults to [DialogBuilder.close].
+	 * @param messageTextViewCustomize Styling hook for the message body [TextView].
+	 * @param titleTextViewCustomize Styling hook for the title [TextView].
+	 * @param dialogBuilderCustomize Direct access to the [DialogBuilder] instance before [DialogBuilder.show] is called.
+	 * @param positiveButtonTextCustomize Styling hook for the positive button text.
+	 * @param negativeButtonTextCustomize Styling hook for the negative button text.
+	 * @param positiveButtonContainerCustomize Styling hook for the positive button's [RelativeLayout] wrapper.
+	 * @param negativeButtonContainerCustomize Styling hook for the negative button's [RelativeLayout] wrapper.
+	 * @return The active [DialogBuilder] instance being displayed, or null if context was lost.
 	 */
 	@JvmStatic
-	fun showMessageDialog(
+	suspend fun showMessageDialog(
 		baseActivityInf: BaseActivityInf?,
 		isCancelable: Boolean = true,
 		isTitleVisible: Boolean = false,
@@ -70,53 +85,64 @@ object MsgDialogUtils {
 		positiveButtonContainerCustomize: ((RelativeLayout) -> Unit)? = {},
 		negativeButtonContainerCustomize: ((RelativeLayout) -> Unit)? = {}
 	): DialogBuilder? {
-		val dialogBuilder = getMessageDialog(
-			baseActivityInf = baseActivityInf,
-			isCancelable = isCancelable,
-			isTitleVisible = isTitleVisible,
-			titleText = titleText,
-			messageTxt = messageTxt,
-			positiveButtonText = positiveButtonText,
-			negativeButtonText = negativeButtonText,
-			isNegativeButtonVisible = isNegativeButtonVisible,
-			onPositiveButtonClickListener = onPositiveButtonClickListener,
-			onNegativeButtonClickListener = onNegativeButtonClickListener,
-			messageTextViewCustomize = messageTextViewCustomize,
-			titleTextViewCustomize = titleTextViewCustomize,
-			dialogBuilderCustomize = dialogBuilderCustomize,
-			positiveButtonTextCustomize = positiveButtonTextCustomize,
-			positiveButtonContainerCustomize = positiveButtonContainerCustomize,
-			negativeButtonTextCustomize = negativeButtonTextCustomize,
-			negativeButtonContainerCustomize = negativeButtonContainerCustomize
-		)
-		dialogBuilder?.show()
-		return dialogBuilder
+		return withMainContext {
+			val dialogBuilder = getMessageDialog(
+				baseActivityInf = baseActivityInf,
+				isCancelable = isCancelable,
+				isTitleVisible = isTitleVisible,
+				titleText = titleText,
+				messageTxt = messageTxt,
+				positiveButtonText = positiveButtonText,
+				negativeButtonText = negativeButtonText,
+				isNegativeButtonVisible = isNegativeButtonVisible,
+				onPositiveButtonClickListener = onPositiveButtonClickListener,
+				onNegativeButtonClickListener = onNegativeButtonClickListener,
+				messageTextViewCustomize = messageTextViewCustomize,
+				titleTextViewCustomize = titleTextViewCustomize,
+				dialogBuilderCustomize = dialogBuilderCustomize,
+				positiveButtonTextCustomize = positiveButtonTextCustomize,
+				positiveButtonContainerCustomize = positiveButtonContainerCustomize,
+				negativeButtonTextCustomize = negativeButtonTextCustomize,
+				negativeButtonContainerCustomize = negativeButtonContainerCustomize
+			)
+			dialogBuilder?.show()
+			dialogBuilder
+		}
 	}
 
 	/**
-	 * Constructs a customizable message dialog and returns the [DialogBuilder] instance for further manipulation.
+	 * Constructs and configures a highly customizable message dialog based on a specific layout template.
 	 *
-	 * @param baseActivityInf The base activity interface, used to access the activity context.
-	 * @param isCancelable Whether the dialog can be dismissed by clicking outside of it. Default is true.
-	 * @param isTitleVisible Whether the dialog's title should be visible. Default is false.
-	 * @param titleText The title text for the dialog. Default is a placeholder text.
-	 * @param messageTxt The message text to be displayed in the dialog. Default is a placeholder text.
-	 * @param positiveButtonText Text for the positive button. Default is "OK".
-	 * @param negativeButtonText Text for the negative button. Default is "Cancel".
-	 * @param isNegativeButtonVisible Whether the negative button should be visible. Default is true.
-	 * @param onPositiveButtonClickListener The click listener for the positive button.
-	 * @param onNegativeButtonClickListener The click listener for the negative button.
-	 * @param messageTextViewCustomize A callback for customizing the message TextView.
-	 * @param titleTextViewCustomize A callback for customizing the title TextView.
-	 * @param dialogBuilderCustomize A callback for customizing the DialogBuilder.
-	 * @param positiveButtonTextCustomize A callback for customizing the positive button TextView.
-	 * @param negativeButtonTextCustomize A callback for customizing the negative button TextView.
-	 * @param positiveButtonContainerCustomize A callback for customizing the positive button container.
-	 * @param negativeButtonContainerCustomize A callback for customizing the negative button container.
-	 * @return The created [DialogBuilder] instance, which can be used to show the dialog.
+	 * This utility function acts as a factory for [DialogBuilder], providing a comprehensive set of
+	 * parameters to control visibility, text content, and click behavior for a standard message dialog.
+	 * It uses a [WeakReference] to the provided [BaseActivityInf] to prevent memory leaks during
+	 * the dialog construction process.
+	 *
+	 * The function allows for "deep customization" through lambda hooks, enabling the caller to
+	 * modify specific UI components (like [TextView]s or [RelativeLayout] containers) without
+	 * needing to subclass the dialog logic.
+	 *
+	 * @param baseActivityInf The activity interface used to retrieve the underlying [app.core.bases.BaseActivity] context.
+	 * @param isCancelable Defines whether the dialog can be dismissed by tapping outside or pressing back.
+	 * @param isTitleVisible Explicit toggle for the title visibility.
+	 * @param titleText The text displayed in the title section.
+	 * @param messageTxt The primary content text for the dialog.
+	 * @param positiveButtonText Label for the primary action button.
+	 * @param negativeButtonText Label for the secondary action button.
+	 * @param isNegativeButtonVisible Toggle to show or hide the secondary action button.
+	 * @param onPositiveButtonClickListener Lambda to execute on positive action; defaults to closing the dialog.
+	 * @param onNegativeButtonClickListener Lambda to execute on negative action; defaults to closing the dialog.
+	 * @param messageTextViewCustomize Hook to apply custom styles/properties to the message [TextView].
+	 * @param titleTextViewCustomize Hook to apply custom styles/properties to the title [TextView].
+	 * @param dialogBuilderCustomize Hook to modify the [DialogBuilder] instance itself.
+	 * @param positiveButtonTextCustomize Hook for styling the positive button's text.
+	 * @param negativeButtonTextCustomize Hook for styling the negative button's text.
+	 * @param positiveButtonContainerCustomize Hook for styling the positive button's clickable container.
+	 * @param negativeButtonContainerCustomize Hook for styling the negative button's clickable container.
+	 * @return A fully configured [DialogBuilder] instance, or null if the activity context is no longer available.
 	 */
 	@JvmStatic
-	fun getMessageDialog(
+	suspend fun getMessageDialog(
 		baseActivityInf: BaseActivityInf?,
 		isCancelable: Boolean = true,
 		isTitleVisible: Boolean = false,
@@ -135,48 +161,49 @@ object MsgDialogUtils {
 		positiveButtonContainerCustomize: ((RelativeLayout) -> Unit)? = {},
 		negativeButtonContainerCustomize: ((RelativeLayout) -> Unit)? = {},
 	): DialogBuilder? {
-		return WeakReference(baseActivityInf).get()?.getActivity()?.let { safeContextRef ->
-			DialogBuilder(safeContextRef).apply {
-				// View Configuration
-				setView(R.layout.dialog_basic_message_1)
-				setCancelable(isCancelable)
+		return withMainContext {
+			baseActivityInf?.getActivity()?.let { activityRef ->
+				DialogBuilder(activityRef).apply {
+					setView(R.layout.dialog_basic_message_1)
+					setCancelable(isCancelable)
 
-				// Component References
-				val titleTextView = view.findViewById<TextView>(R.id.txt_dialog_title)
-				val messageTextView = view.findViewById<TextView>(R.id.txt_dialog_message)
-				val btnNegativeTextView = view.findViewById<TextView>(R.id.button_dialog_negative)
-				val btnNegativeContainer = view.findViewById<RelativeLayout>(R.id.button_dialog_negative_container)
-				val btnPositiveTextView = view.findViewById<TextView>(R.id.btn_dialog_positive)
-				val btnPositiveContainer = view.findViewById<RelativeLayout>(R.id.btn_dialog_positive_container)
+					val titleTextView = view.findViewById<TextView>(R.id.txt_dialog_title)
+					val messageTextView = view.findViewById<TextView>(R.id.txt_dialog_message)
+					val btnNegativeTextView = view.findViewById<TextView>(R.id.button_dialog_negative)
+					val btnNegativeContainer = view.findViewById<RelativeLayout>(R.id.button_dialog_negative_container)
+					val btnPositiveTextView = view.findViewById<TextView>(R.id.btn_dialog_positive)
+					val btnPositiveContainer = view.findViewById<RelativeLayout>(R.id.btn_dialog_positive_container)
 
-				// Set Text Content
-				titleTextView.text = titleText
-				messageTextView.text = messageTxt
-				btnPositiveTextView.text = positiveButtonText
-				btnNegativeTextView.text = negativeButtonText
+					titleTextView.text = titleText
+					messageTextView.text = messageTxt
+					btnPositiveTextView.text = positiveButtonText
+					btnNegativeTextView.text = negativeButtonText
 
-				// Apply Custom Styling
-				messageTextViewCustomize?.invoke(messageTextView)
-				titleTextViewCustomize?.invoke(titleTextView)
-				dialogBuilderCustomize?.invoke(this)
-				positiveButtonTextCustomize?.invoke(btnPositiveTextView)
-				positiveButtonContainerCustomize?.invoke(btnPositiveContainer)
-				negativeButtonTextCustomize?.invoke(btnNegativeTextView)
-				negativeButtonContainerCustomize?.invoke(btnNegativeContainer)
+					messageTextViewCustomize?.invoke(messageTextView)
+					titleTextViewCustomize?.invoke(titleTextView)
+					dialogBuilderCustomize?.invoke(this)
+					positiveButtonTextCustomize?.invoke(btnPositiveTextView)
+					positiveButtonContainerCustomize?.invoke(btnPositiveContainer)
+					negativeButtonTextCustomize?.invoke(btnNegativeTextView)
+					negativeButtonContainerCustomize?.invoke(btnNegativeContainer)
 
-				// Set Visibility Rules
-				btnNegativeTextView.visibility = if (isNegativeButtonVisible) View.VISIBLE else GONE
-				btnNegativeContainer.visibility = if (isNegativeButtonVisible) View.VISIBLE else GONE
+					btnNegativeTextView.visibility = if (isNegativeButtonVisible) VISIBLE else GONE
+					btnNegativeContainer.visibility = if (isNegativeButtonVisible) VISIBLE else GONE
 
-				titleTextView.visibility = when {
-					!isTitleVisible -> GONE
-					titleTextView.text.toString() == getText(R.string.title_title_goes_here) -> GONE
-					else -> View.VISIBLE
+					titleTextView.visibility = when {
+						!isTitleVisible -> GONE
+						titleTextView.text.toString() == getText(R.string.title_title_goes_here) -> GONE
+						else -> VISIBLE
+					}
+
+					btnNegativeContainer.setOnClickListener(
+						onNegativeButtonClickListener ?: OnClickListener { close() }
+					)
+
+					btnPositiveContainer.setOnClickListener(
+						onPositiveButtonClickListener ?: OnClickListener { close() }
+					)
 				}
-
-				// Set Click Handling
-				btnNegativeContainer.setOnClickListener(onNegativeButtonClickListener ?: OnClickListener { close() })
-				btnPositiveContainer.setOnClickListener(onPositiveButtonClickListener ?: OnClickListener { close() })
 			}
 		}
 	}

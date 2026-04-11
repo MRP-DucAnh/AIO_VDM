@@ -15,90 +15,112 @@ import androidx.media3.common.util.UnstableApi;
 import androidx.media3.ui.DefaultTimeBar;
 
 /**
- * Custom implementation of a time bar with rounded corners, extending the {@link DefaultTimeBar}.
- * This class overrides the drawing behavior to clip the corners of the time bar for a smoother, rounded appearance.
- *
- * <p>It also provides customization options for the time bar's appearance through paint and clip paths.
- * The corner radius is configurable and is defined in density-independent pixels (DIP).
- * </p>
+ * A customized version of {@link DefaultTimeBar} that implements rounded corner clipping
+ * for its visual components.
+ * * This class extends the standard media controller time bar to provide a more refined,
+ * modern aesthetic by applying a geometric clip path to its drawing surface. It is marked
+ * with {@link UnstableApi} as it relies on internal ExoPlayer/Media3 UI components which
+ * may change in future releases.
+ * * The rounding logic is typically handled by intercepting {@code onSizeChanged} to
+ * define the clipping bounds and {@code onDraw} to enforce the rounded boundary
+ * before the superclass renders the progress, scrubber, and markers.
  */
 @UnstableApi
 public class RoundedTimeBar extends DefaultTimeBar {
-	// Paint object used to configure the rendering of the time bar
+	/**
+	 * Configuration for the paint used to render rounded elements.
+	 * Initialized with the {@link Paint#ANTI_ALIAS_FLAG} to ensure smooth edges
+	 * during drawing operations on the {@link Canvas}.
+	 */
 	private final Paint roundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-	// Path used to define the clipping area with rounded corners
+	/**
+	 * The geometric path used to define the clipping region for rounded corners.
+	 * This path is calculated once per size change to optimize the {@code onDraw} cycle.
+	 */
 	private final Path clipPath = new Path();
 
-	// RectF object representing the bounds of the time bar
+	/**
+	 * A mutable rectangle used to hold the bounds of the view during path calculations.
+	 * Reusing a single {@link RectF} instance prevents frequent object allocations
+	 * and reduces Garbage Collection overhead during layout passes.
+	 */
 	private final RectF rectF = new RectF();
 
-	// Corner radius for the rounded corners of the time bar
+	/**
+	 * The radius used for the rounded corners, calculated in pixels.
+	 * This value is derived from a density-independent (dp) unit to ensure
+	 * visual consistency across devices with different screen densities.
+	 */
 	private final float cornerRadius;
 
 	/**
-	 * Constructor that initializes the RoundedTimeBar with context and attributes.
+	 * Constructs a new {@code RoundedTimeBar} and initializes the corner radius.
+	 * * This constructor extracts the display metrics to convert a baseline of 10dp
+	 * into the appropriate pixel value for the current device.
 	 *
-	 * @param context The context used to access resources
-	 * @param attrs   The set of attributes that may customize the view (such as corner radius, etc.)
+	 * @param context The {@link Context} the view is running in.
+	 * @param attrs   The attributes of the XML tag that is inflating the view.
 	 */
 	public RoundedTimeBar(Context context, AttributeSet attrs) {
 		super(context, attrs);
-
-		// Get the display metrics for the current screen to calculate the corner radius in DIP
 		DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
-
-		// Set the corner radius (default value of 10 DIP)
 		cornerRadius = applyDimension(COMPLEX_UNIT_DIP, 10, displayMetrics);
 	}
 
 	/**
-	 * Called when the size of the view has changed. This method updates the clipping path
-	 * to reflect the new size of the time bar.
+	 * Callback invoked when the size of this view has changed.
+	 * <p>
+	 * This implementation updates the internal [RectF] to match the new dimensions and
+	 * regenerates the [Path] used for clipping. By updating the path here rather than in
+	 * [onDraw], we ensure that expensive path calculations are only performed when
+	 * the layout actually changes, optimizing rendering performance.
 	 *
-	 * @param w    The new width of the time bar
-	 * @param h    The new height of the time bar
-	 * @param oldw The old width of the time bar
-	 * @param oldh The old height of the time bar
+	 * @param w    Current width of this view.
+	 * @param h    Current height of this view.
+	 * @param oldw Old width of this view.
+	 * @param oldh Old height of this view.
 	 */
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		super.onSizeChanged(w, h, oldw, oldh);
 
-		// Set the bounds of the time bar to match the new width and height
+		// Update the bounding rectangle to the new dimensions
 		rectF.set(0, 0, w, h);
 
-		// Reset and redefine the clipping path with rounded corners
+		// Reset and re-calculate the rounded clipping path based on the updated radius
 		clipPath.reset();
 		clipPath.addRoundRect(rectF, cornerRadius, cornerRadius, Path.Direction.CW);
 	}
 
 	/**
-	 * Draws the time bar with rounded corners by clipping the canvas to the rounded path
-	 * before drawing the default time bar content.
+	 * Renders the view's content while applying a rounded corner clip.
+	 * <p>
+	 * This function handles the drawing cycle by:
+	 * 1. Saving the current canvas state.
+	 * 2. Applying the pre-calculated [clipPath] to the canvas, ensuring all content
+	 * (including children or backgrounds) is constrained within the rounded bounds.
+	 * 3. Invoking the superclass draw logic to render the view's actual content.
+	 * 4. Restoring the canvas to its original state to avoid affecting subsequent
+	 * drawing operations.
 	 *
-	 * @param canvas The canvas to draw the time bar on
+	 * @param canvas The [Canvas] on which the background and content will be drawn.
 	 */
 	@Override
 	public void onDraw(Canvas canvas) {
-		// Save the current canvas state
 		canvas.save();
-
-		// Apply the clipping path to the canvas
 		canvas.clipPath(clipPath);
-
-		// Call the super method to draw the default time bar
 		super.onDraw(canvas);
-
-		// Restore the canvas state
 		canvas.restore();
 	}
 
 	/**
-	 * Returns the {@link Paint} object used to configure the appearance of the time bar.
-	 * The {@link Paint} is set to use anti-aliasing, but can be customized further if desired.
+	 * Retrieves the {@link Paint} object used for rendering rounded UI elements.
+	 * * This instance contains the styling configurations such as color, antialiasing,
+	 * and stroke settings applied when drawing rounded rectangles or circles
+	 * within the view.
 	 *
-	 * @return The {@link Paint} object used for rendering the time bar
+	 * @return The current {@link Paint} instance used for rounded drawing operations.
 	 */
 	public Paint getRoundPaint() {
 		return roundPaint;
