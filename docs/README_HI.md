@@ -1,5 +1,5 @@
 <div align="center">
-<img src="app/src/main/res/drawable/ic_launcher_logo_v4.png" width=120 height=120 alt="AIO Video Downloader Logo">
+<img src="/app/src/main/res/drawable/ic_launcher_logo_v4.png" width=120 height=120 alt="AIO Video Downloader Logo">
 
 # AIO Video Downloader (AIO वीडियो डाउनलोडर)
 
