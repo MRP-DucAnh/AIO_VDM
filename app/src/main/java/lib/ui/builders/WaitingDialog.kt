@@ -31,9 +31,6 @@ import lib.ui.builders.DialogBuilder.*
  * @property shouldHideOkayButton Whether to hide the confirmation button
  * @property isCancelable Whether the dialog can be dismissed by tapping outside or back button
  * @property dialogCancelListener Optional listener for dialog cancellation events
- *
- * @author Generated
- * @since 1.0
  */
 class WaitingDialog(
 	private val baseActivityInf: BaseActivityInf?,
