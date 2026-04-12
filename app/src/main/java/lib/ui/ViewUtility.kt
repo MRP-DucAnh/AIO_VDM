@@ -213,6 +213,8 @@ object ViewUtility {
 	 * specified [reductionFactor]. The heavy text analysis is performed on an IO context,
 	 * with the final UI update occurring on the Main thread.
 	 *
+	 * @param originalText The expected text state of the TextView when the coroutine
+	 *                      was launched; used for identity verification.
 	 * @param reductionFactor The scale factor to apply to non-Latin symbols (defaults to 0.8f).
 	 * @param onDone An optional callback triggered on the Main thread with the final
 	 * [Spannable] after processing is finished.

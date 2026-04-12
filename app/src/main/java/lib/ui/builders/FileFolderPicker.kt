@@ -19,26 +19,27 @@ import java.text.*
 import java.util.*
 
 /**
- * A high-performance File and Folder picker that bypasses the Storage Access Framework (SAF)
- * in favor of direct filesystem access via `java.io.File`.
+ * A sophisticated, customizable file and folder picker component for Android.
  *
- * This builder provides a responsive browsing experience with the following key features:
- * - **Optimized Performance**: Uses direct I/O and `FileFilter` to minimize memory overhead during directory scans.
- * - **Thread Safety**: Offloads all filesystem operations to background threads to ensure zero UI jank.
- * - **Flexible Modes**: Configurable for folder-only, file-only, or mixed-mode selection.
- * - **Multi-Selection**: Supports picking multiple items when [isMultiSelection] is enabled.
- * - **Breadcrumb Navigation**: Visual path tracking with an interactive breadcrumb trail for quick navigation.
+ * This class manages a directory-browsing dialog that allows users to navigate the
+ * filesystem and select one or more files or directories. It supports specific
+ * picking modes (files-only, folders-only, or mixed), multi-selection, and
+ * provides a breadcrumb-based navigation system.
  *
- * @property baseActivity The context used to instantiate the dialog and manage UI-thread synchronization.
- * @property initialPath The starting directory path. Defaults to external storage if null, empty, or inaccessible.
- * @property isCancellable Whether the dialog can be dismissed via back-press or clicking outside the window.
- * @property isFolderPickerOnly If true, filters the view to prioritize and allow the selection of directories.
- * @property isFilePickerOnly If true, limits selection capabilities strictly to files.
- * @property isMultiSelection Enables a checkbox-based selection mode for picking multiple items.
+ * It is designed to be memory-safe by using weak references to the host activity
+ * and leverages a state-driven rendering approach to keep the UI synchronized
+ * with the filesystem.
+ *
+ * @property baseActivity The parent activity context; used for UI inflation and scope management.
+ * @property initialPath The starting directory path. If null or invalid, defaults to a safe storage root.
+ * @property isCancellable Whether the user can dismiss the picker without making a selection.
+ * @property isFolderPickerOnly When true, restricts the final selection to directories only.
+ * @property isFilePickerOnly When true, restricts the final selection to files only.
+ * @property isMultiSelection Enables the selection of multiple items via checkboxes.
  * @property titleText The header text displayed at the top of the picker dialog.
- * @property positiveButtonText The label for the confirmation action button.
- * @property onUserAbortedProcess Callback invoked if the user closes the picker without confirming a selection.
- * @property onFileSelection Callback invoked with a list of absolute paths once the user confirms their selection.
+ * @property positiveButtonText The label for the confirmation/action button.
+ * @property onUserAbortedProcess Callback triggered if the picker is canceled or dismissed.
+ * @property onFileSelection Callback that returns the list of absolute paths chosen by the user.
  */
 class FileFolderPicker(
 	private val baseActivity: BaseActivity?,
@@ -92,15 +93,19 @@ class FileFolderPicker(
 	private var browserState = BrowserState()
 
 	/**
-	 * Represents the internal state of the file browser at a specific point in time.
+	 * Represents the immutable UI state of the file browser at any given moment.
 	 *
-	 * This state object is immutable and used to track the user's current position within
-	 * the filesystem, the breadcrumb history for navigation, and the prepared list of
-	 * files and folders to be displayed in the UI.
+	 * This data class encapsulates the current navigational context, the history of
+	 * visited directories (the breadcrumb trail), and the list of items currently
+	 * visible to the user. Using an immutable state object facilitates "unidirectional
+	 * data flow," making it easier to track changes and debug navigation logic.
 	 *
-	 * @property currentDir The directory currently being viewed by the user.
-	 * @property history A persistent stack of directories visited, used to facilitate robust back-navigation.
-	 * @property items The list of files and folders contained within the [currentDir] after filtering and sorting.
+	 * @property currentDir The [File] object representing the directory currently being viewed.
+	 * Null if the browser hasn't initialized a starting path.
+	 * @property history An ordered list of [File] objects representing the folder hierarchy
+	 * traversed by the user, used for navigating "back" or via breadcrumbs.
+	 * @property items The processed list of [BrowserItem] models currently displayed in the
+	 * browser's list view.
 	 */
 	private data class BrowserState(
 		val currentDir: File? = null,
@@ -109,14 +114,19 @@ class FileFolderPicker(
 	)
 
 	/**
-	 * Represents a single entry in the file browser (either a file or a directory).
+	 * A UI model representing a single entry (file or folder) in the browser list.
 	 *
-	 * @property file The underlying [File] object.
-	 * @property name The display name of the file or folder.
+	 * This data class decouples the raw filesystem [File] object from the specific
+	 * strings and states required for display in the [BrowserAdapter]. It tracks
+	 * essential properties like the display name, calculated metadata [info],
+	 * and the current selection status.
+	 *
+	 * @property file The underlying [File] object from the filesystem.
+	 * @property name The display name of the item (usually the filename).
 	 * @property path The absolute filesystem path to the item.
-	 * @property isDirectory True if the item is a folder, false if it is a file.
-	 * @property info Formatted metadata string (e.g., "Size • Date" for files, "Date" for folders).
-	 * @property isSelected Current selection state in the UI, used for multi-selection mode.
+	 * @property isDirectory True if the item represents a folder, false if it is a file.
+	 * @property info A pre-formatted string containing metadata (e.g., "2 MB • Oct 12, 2026").
+	 * @property isSelected A mutable state flag indicating if the user has selected this item.
 	 */
 	private data class BrowserItem(
 		val file: File,
@@ -127,6 +137,12 @@ class FileFolderPicker(
 		var isSelected: Boolean = false
 	)
 
+	/**
+	 * The primary initialization block for the class.
+	 * * This block is executed immediately when the object is instantiated. It triggers
+	 * the [initializeUI] function to set up layout configurations, click listeners,
+	 * and initial state before any data loading begins.
+	 */
 	init {
 		initializeUI()
 	}
@@ -148,7 +164,7 @@ class FileFolderPicker(
 	 * Closes the picker dialog and performs a full cleanup of the internal state.
 	 *
 	 * This method ensures that the dialog is dismissed, references to UI components
-	 * (like the adapter and dialog builder) are nulled out to prevent memory leaks,
+	 * (like the adapter and dialog builder) are pulled out to prevent memory leaks,
 	 * and the navigation history and selection sets are cleared.
 	 */
 	suspend fun close() {
@@ -196,9 +212,8 @@ class FileFolderPicker(
 				}
 			}
 
-			view.findViewById<TextView>(R.id.btn_go_to_previous_dir)?.setOnClickListener {
-				navigateUp()
-			}
+			view.findViewById<TextView>(R.id.btn_go_to_previous_dir)
+				?.setOnClickListener { navigateUp() }
 		}
 	}
 
@@ -252,15 +267,20 @@ class FileFolderPicker(
 	}
 
 	/**
-	 * Reads the contents of the specified [directory], applies filters, and prepares items for display.
+	 * Reads and processes the contents of a filesystem directory to be displayed in the UI.
 	 *
-	 * This method executes the following steps:
-	 * 1. Filters filesystem entries based on the current picker mode ([isFolderPickerOnly] or [isFilePickerOnly]).
-	 * 2. Formats metadata for each item (file size for files, last modified date for all).
-	 * 3. Sorts the resulting list to prioritize directories first, followed by an alphabetical sort of names.
-	 * 4. Switches to the UI thread to trigger [renderState] and update the display.
+	 * This function performs the following operations:
+	 * 1. **Filtering:** Uses a [FileFilter] to include or exclude files based on the picker
+	 * configuration ([isFolderPickerOnly], [isFilePickerOnly]).
+	 * 2. **Metadata Generation:** Formats file sizes and modification dates into human-readable
+	 * strings.
+	 * 3. **Mapping:** Transforms raw [File] objects into [BrowserItem] UI models, checking
+	 * against [selectedPaths] to maintain selection state.
+	 * 4. **Sorting:** Organizes the final list so that directories appear at the top, followed
+	 * by files in alphabetical order.
+	 * 5. **State Rendering:** Dispatches the final list to [renderState] on the UI thread.
 	 *
-	 * @param directory The filesystem directory to scan and display.
+	 * @param directory The [File] object representing the directory to scan.
 	 */
 	private fun loadDirectory(directory: File) {
 		val activity = weakReferenceOfActivity.get() ?: return
@@ -322,16 +342,15 @@ class FileFolderPicker(
 	}
 
 	/**
-	 * Updates the user interface to reflect the current directory contents and navigation state.
+	 * Updates the UI components to reflect the current directory and its contents.
 	 *
-	 * This function performs the following UI updates:
-	 * 1. Updates or initializes the [ListView] adapter with the provided [items].
-	 * 2. Refreshes the breadcrumb navigation bar to show the current path of the [directory].
-	 * 3. Toggles the visibility of the "Back" navigation button based on the navigation history.
-	 * 4. Refreshes the state of action buttons (e.g., selection counts).
+	 * This function synchronizes the [browserState] with the provided [items], initializes
+	 * or updates the [BrowserAdapter], and refreshes navigational elements like
+	 * breadcrumbs and the back button. It ensures that the [ListView] is properly
+	 * populated and that the action buttons reflect the current selection state.
 	 *
-	 * @param directory The current [File] directory being displayed.
-	 * @param items The list of [BrowserItem] objects (files and folders) within the current directory.
+	 * @param directory The current [File] directory being rendered.
+	 * @param items The list of [BrowserItem] objects found within the directory.
 	 */
 	private fun renderState(directory: File, items: List<BrowserItem>) {
 		val activityRef = weakReferenceOfActivity.get() ?: return
@@ -339,7 +358,7 @@ class FileFolderPicker(
 
 		browserState = browserState.copy(items = items)
 
-		// 1. Adapter
+		// 1. Adapter initialization or data swap
 		val listView = view.findViewById<ListView>(R.id.list_of_files_folders)
 		if (browserAdapter == null) {
 			browserAdapter = BrowserAdapter(activityRef, items) {
@@ -352,44 +371,42 @@ class FileFolderPicker(
 			browserAdapter?.swapData(items)
 		}
 
+		// Update navigation breadcrumbs
 		updateBreadcrumbs(view, activityRef, directory)
+
+		// Manage visibility of the 'back' button based on navigation history depth
 		val backBtn = view.findViewById<TextView>(R.id.btn_go_to_previous_dir)
 		backBtn?.visibility = if (browserState.history.size > 1) View.VISIBLE else View.GONE
+
 		updateActionButtons()
 	}
 
 	/**
-	 * Orchestrates the logic when a user clicks on an item in the file browser.
+	 * Handles user interaction with a specific item in the browser list.
 	 *
-	 * If the item is a directory, it updates the [browserState] history and triggers a
-	 * background load of the new directory contents.
-	 *
-	 * If the item is a file:
-	 * - In multi-selection mode, it toggles the file's selection state and refreshes the UI.
+	 * If the item is a directory, the browser navigates into it and updates the navigation
+	 * history. If the item is a file, the behavior depends on the selection mode:
+	 * - In multi-selection mode, it toggles the selection state of the file and updates the UI.
 	 * - In single-selection mode, it immediately finalizes the selection with that file.
 	 *
-	 * @param item The [BrowserItem] that the user interacted with.
+	 * @param item The [BrowserItem] that was clicked or interacted with.
 	 */
 	private suspend fun handleItemInteraction(item: BrowserItem) {
 		if (item.isDirectory) {
-			// Navigate Down
 			val newHistory = browserState.history + item.file
 			browserState = browserState.copy(
 				currentDir = item.file,
 				history = newHistory
 			)
-			executeInBackground {
-				loadDirectory(item.file)
-			}
+			loadDirectory(item.file)
 		} else {
-			// Select File
+			// Select File logic
 			if (isMultiSelection) {
 				if (selectedPaths.contains(item.path)) {
 					selectedPaths.remove(item.path)
 				} else {
 					selectedPaths.add(item.path)
 				}
-				// Optimistic UI update
 				item.isSelected = !item.isSelected
 				browserAdapter?.notifyDataSetChanged()
 				updateActionButtons()
@@ -423,22 +440,17 @@ class FileFolderPicker(
 	}
 
 	/**
-	 * Processes the final selection logic based on the current picker mode and user interaction.
-	 *
-	 * The priority logic is as follows:
-	 * 1. If the user has explicitly selected items (files or folders) via checkboxes/clicks,
-	 *    those items are finalized.
-	 * 2. If no items are selected and the picker is in "Folder Picker" mode, the current
-	 *    directory being browsed is treated as the selection.
+	 * Processes the user's selection confirmation based on the current picker mode.
+	 * * This function evaluates the state of [selectedPaths]. If specific paths are selected,
+	 * they are prioritized. In "Folder Picker Only" mode, if no specific items are selected,
+	 * it defaults to selecting the currently viewed directory.
 	 */
 	private suspend fun handleConfirmSelection() {
-		// Priority 1: User selection
 		if (selectedPaths.isNotEmpty()) {
 			finalizeSelection(selectedPaths.toList())
 			return
 		}
 
-		// Priority 2: Current folder (Folder Picker Mode)
 		if (isFolderPickerOnly && !isFilePickerOnly) {
 			browserState.currentDir?.let { dir ->
 				finalizeSelection(listOf(dir.absolutePath))
@@ -447,10 +459,9 @@ class FileFolderPicker(
 	}
 
 	/**
-	 * Concludes the selection process by passing the list of selected file system paths
-	 * to the callback and dismissing the picker.
+	 * Completes the selection process by emitting the chosen paths and closing the browser.
 	 *
-	 * @param paths A list of absolute paths representing the selected files or directories.
+	 * @param paths A list of absolute file or directory paths to be returned to the caller.
 	 */
 	private suspend fun finalizeSelection(paths: List<String>) {
 		if (paths.isNotEmpty()) {
