@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-	<string name="text_supabase_client_key" translatable="false">https://qfqmuohhmhxgvuapktuy.supabase.co</string>
-	<string name="text_supabase_client_anon_key" translatable="false">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmcW11b2hobWh4Z3Z1YXBrdHV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MjY3OTksImV4cCI6MjA4MTAwMjc5OX0.Ype5ZHlU_CRxEzTyVSHAxLoA3wP5XWN_WtRSkQogYRI</string>
-	<string name="text_onesignal_app_id_key" translatable="false">6f7d3ed2-cb2b-4822-ae7f-6645b08601b5</string>
-</resources>
