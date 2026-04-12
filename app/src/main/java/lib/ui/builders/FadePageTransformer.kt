@@ -1,6 +1,6 @@
 package lib.ui.builders
 
-import androidx.viewpager.widget.ViewPager
+import androidx.viewpager.widget.*
 
 /**
  * A [ViewPager.PageTransformer] implementation that provides a cross-fading transition effect.
@@ -10,7 +10,7 @@ import androidx.viewpager.widget.ViewPager
  * the alpha transparency of each page based on its distance from the center, creating
  * a smooth fade-in and fade-out transition.
  */
-class FadeViewPageTransformer : ViewPager.PageTransformer {
+class FadePageTransformer : ViewPager.PageTransformer {
 
 	/**
 	 * Applies a fade transformation to the page, neutralizing the default sliding transition.
