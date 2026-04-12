@@ -1,22 +1,19 @@
 package lib.ui.builders
 
-import android.graphics.drawable.Drawable
+import android.graphics.drawable.*
+import android.view.*
 import android.view.Gravity.NO_GRAVITY
-import android.view.LayoutInflater
-import android.view.MotionEvent.ACTION_OUTSIDE
-import android.view.MotionEvent.ACTION_UP
-import android.view.View
+import android.view.MotionEvent.*
 import android.view.View.*
-import android.view.View.MeasureSpec.UNSPECIFIED
-import android.view.WindowManager
-import android.widget.PopupWindow
-import androidx.core.content.res.ResourcesCompat
-import app.core.bases.interfaces.BaseActivityInf
-import com.aio.R
-import lib.process.LogHelperUtils
+import android.view.View.MeasureSpec.*
+import android.widget.*
+import androidx.core.content.res.*
+import app.core.bases.interfaces.*
+import com.aio.*
+import lib.process.*
 import lib.ui.builders.PopupBuilder.PopupPosition.LEFT
 import lib.ui.builders.PopupBuilder.PopupPosition.RIGHT
-import java.lang.ref.WeakReference
+import java.lang.ref.*
 
 /**
  * Popup Builder
@@ -157,13 +154,15 @@ class PopupBuilder(
 	 * @see enableImmersiveMode For immersive mode implementation
 	 * @see showPopupWindow For positioning logic
 	 */
-	fun show(shouldHideStatusAndNavbar: Boolean = false) {
-		try {
-			if (popupWindow.isShowing) return
-			if (shouldHideStatusAndNavbar) enableImmersiveMode()
-			showPopupWindow()
-		} catch (error: Exception) {
-			logger.e("Error found while showing popup-view:", error)
+	suspend fun show(shouldHideStatusAndNavbar: Boolean = false) {
+		withMainContext {
+			try {
+				if (popupWindow.isShowing) return@withMainContext
+				if (shouldHideStatusAndNavbar) enableImmersiveMode()
+				showPopupWindow()
+			} catch (error: Exception) {
+				logger.e("Error found while showing popup-view:", error)
+			}
 		}
 	}
 
@@ -178,14 +177,16 @@ class PopupBuilder(
 	 * The activity validation prevents crashes when trying to dismiss a popup
 	 * after the parent activity has been destroyed or finished.
 	 */
-	fun close() {
-		try {
-			val activity = weakReferenceOfActivityInf.get() ?: return
-			if (activity.isValidForWindowManagement() && popupWindow.isShowing) {
-				popupWindow.dismiss()
+	suspend fun close() {
+		withMainContext {
+			try {
+				val activity = weakReferenceOfActivityInf.get() ?: return@withMainContext
+				if (activity.isValidForWindowManagement() && popupWindow.isShowing) {
+					popupWindow.dismiss()
+				}
+			} catch (error: Exception) {
+				logger.e("Error found while closing popup-view:", error)
 			}
-		} catch (error: Exception) {
-			logger.e("Error found while closing popup-view:", error)
 		}
 	}
 
@@ -197,7 +198,7 @@ class PopupBuilder(
 	 *
 	 * @return The View object that serves as the popup's content
 	 */
-	fun getPopupView(): View = popupWindow.contentView
+	suspend fun getPopupView(): View = withMainContext { popupWindow.contentView }
 
 	/**
 	 * Returns the underlying PopupWindow instance.
@@ -207,7 +208,9 @@ class PopupBuilder(
 	 *
 	 * @return The configured PopupWindow instance
 	 */
-	fun getPopupWindow(): PopupWindow = popupWindow
+	suspend fun getPopupWindow(): PopupWindow = withMainContext {
+		popupWindow
+	}
 
 	/**
 	 * Initializes the popup content from the provided source.

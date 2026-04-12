@@ -2,45 +2,50 @@
 
 package lib.ui.builders
 
-import android.annotation.SuppressLint
-import android.content.Context
-import android.view.LayoutInflater
-import android.widget.ImageView
-import android.widget.TextView
-import android.widget.Toast
+import android.annotation.*
+import android.content.*
+import android.view.*
+import android.widget.*
 import androidx.appcompat.view.ContextThemeWrapper
-import app.core.bases.BaseActivity
-import app.core.bases.interfaces.BaseActivityInf
-import com.aio.R
-import kotlinx.coroutines.launch
-import lib.networks.URLUtility.isValidURL
+import app.core.bases.*
+import app.core.bases.interfaces.*
+import com.aio.*
+import kotlinx.coroutines.*
+import lib.networks.URLUtility.*
+import lib.process.*
 import lib.texts.CommonTextUtils.getText
 
 class ToastView(context: Context) : Toast(context) {
 
-	fun setIcon(iconResId: Int) {
-		view?.findViewById<ImageView>(R.id.img_toast_app_icon)
-			?.apply { setImageResource(iconResId) }
+	suspend fun setIcon(iconResId: Int) {
+		withMainContext {
+			view?.findViewById<ImageView>(R.id.img_toast_app_icon)
+				?.apply { setImageResource(iconResId) }
+		}
 	}
 
 	companion object {
 
 		@JvmStatic
-		fun showToast(activityInf: BaseActivityInf?, msg: String? = null, msgId: Int = -1) {
-			if (activityInf == null) return
-			activityInf.getAttachedCoroutineScope().launch {
-				when {
-					msgId != -1 -> showResourceToast(activityInf, msgId)
-					msg != null -> showTextToast(activityInf, msg)
+		suspend fun showToast(activityInf: BaseActivityInf?, msg: String? = null, msgId: Int = -1) {
+			withMainContext {
+				if (activityInf == null) return@withMainContext
+				activityInf.getAttachedCoroutineScope().launch {
+					when {
+						msgId != -1 -> showResourceToast(activityInf, msgId)
+						msg != null -> showTextToast(activityInf, msg)
+					}
 				}
 			}
 		}
 
 		@JvmStatic
-		fun showToast(activityInf: BaseActivityInf?, msgId: Int = -1) {
-			if (activityInf == null) return
-			activityInf.getAttachedCoroutineScope().launch {
-				showResourceToast(activityInf, msgId)
+		suspend fun showToast(activityInf: BaseActivityInf?, msgId: Int = -1) {
+			withMainContext {
+				if (activityInf == null) return@withMainContext
+				activityInf.getAttachedCoroutineScope().launch {
+					showResourceToast(activityInf, msgId)
+				}
 			}
 		}
 
