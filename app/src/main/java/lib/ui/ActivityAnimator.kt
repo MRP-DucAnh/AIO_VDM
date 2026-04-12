@@ -2,140 +2,218 @@
 
 package lib.ui
 
-import android.app.Activity
-import androidx.core.app.ActivityOptionsCompat
-import com.aio.R
-import java.lang.ref.WeakReference
+import android.app.*
+import androidx.core.app.*
+import app.core.bases.*
+import com.aio.*
+import lib.process.*
+import java.lang.ref.*
 
 /**
- * A utility object to handle different types of activity transition animations.
+ * A utility singleton providing a centralized suite of activity transition animations.
  *
- * This object provides a set of functions to apply various animation effects during
- * activity transitions. These animations are applied using the `overridePendingTransition` method,
- * which specifies the animation for entering and exiting the activity.
+ * This object simplifies the application of custom `overridePendingTransition` logic
+ * across the application. It contains both synchronous and asynchronous (suspend)
+ * methods to handle various navigation styles—such as swipes, slides, and fades—ensuring
+ * a consistent and fluid user experience.
+ *
+ * Most methods within this object utilize [withMainContext] or [WeakReference]
+ * patterns to ensure thread safety and prevent memory leaks, making it suitable for
+ * use within modern coroutine-based architectures.
  */
 object ActivityAnimator {
 
 	/**
-	 * Applies a fade-in and fade-out animation for the activity transition.
+	 * Applies a smooth "Fade" transition animation to the provided activity on the Main thread.
 	 *
-	 * @param activity The activity where the transition animation is applied.
+	 * This animation provides a subtle cross-fade effect where the incoming screen gradually
+	 * becomes opaque while the outgoing screen becomes transparent. By utilizing [withMainContext],
+	 * this function ensures that the transition override is executed safely on the UI thread,
+	 * even when called from an asynchronous coroutine.
+	 *
+	 * @param activity The [BaseActivity] instance providing the context to override
+	 * pending transitions.
 	 */
 	@JvmStatic
-	fun animActivityFade(activity: Activity?) {
-		WeakReference(activity).get()?.overridePendingTransition(
-			R.anim.anim_fade_enter,
-			R.anim.anim_fade_exit
-		)
-	}
-
-	/**
-	 * Applies an in-and-out slide animation for the activity transition.
-	 *
-	 * @param activity The activity where the transition animation is applied.
-	 */
-	@JvmStatic
-	fun animActivityInAndOut(activity: Activity?) {
-		WeakReference(activity).get()?.overridePendingTransition(
-			R.anim.anim_in_out_enter,
-			R.anim.anim_in_out_exit
-		)
-	}
-
-	/**
-	 * Applies a slide-down animation for the activity transition.
-	 *
-	 * @param activity The activity where the transition animation is applied.
-	 */
-	@JvmStatic
-	fun animActivitySlideDown(activity: Activity?) {
-		WeakReference(activity).get()?.overridePendingTransition(
-			R.anim.anim_slide_down_enter,
-			R.anim.anim_slide_down_exit
-		)
-	}
-
-	/**
-	 * Applies a slide-left animation for the activity transition.
-	 *
-	 * @param activity The activity where the transition animation is applied.
-	 */
-	@JvmStatic
-	fun animActivitySlideLeft(activity: Activity?) {
-		WeakReference(activity).get()?.overridePendingTransition(
-			R.anim.anim_slide_left_enter,
-			R.anim.anim_slide_left_exit
-		)
-	}
-
-	/**
-	 * Applies a swipe-right animation for the activity transition.
-	 *
-	 * @param activity The activity where the transition animation is applied.
-	 */
-	@JvmStatic
-	fun animActivitySwipeRight(activity: Activity?) {
-		WeakReference(activity).get()?.overridePendingTransition(
-			R.anim.anim_swipe_right_enter,
-			R.anim.anim_swipe_right_exit
-		)
-	}
-
-	/**
-	 * Applies a slide-up animation for the activity transition.
-	 *
-	 * @param activity The activity where the transition animation is applied.
-	 */
-	@JvmStatic
-	fun animActivitySlideUp(activity: Activity?) {
-		WeakReference(activity).get()?.overridePendingTransition(
-			R.anim.anim_slide_up_enter,
-			R.anim.anim_slide_up_exit
-		)
-	}
-
-	/**
-	 * Applies a swipe-left animation for the activity transition.
-	 *
-	 * @param activity The activity where the transition animation is applied.
-	 */
-	@JvmStatic
-	fun animActivitySwipeLeft(activity: Activity?) {
-		WeakReference(activity).get()?.overridePendingTransition(
-			R.anim.anim_swipe_left_enter,
-			R.anim.anim_swipe_left_exit
-		)
-	}
-
-	/**
-	 * Applies a slide-in-left and slide-out-right animation for the activity transition.
-	 *
-	 * @param activity The activity where the transition animation is applied.
-	 */
-	@JvmStatic
-	fun animActivitySlideRight(activity: Activity?) {
-		WeakReference(activity).get()?.overridePendingTransition(
-			R.anim.anim_slide_in_left,
-			R.anim.anim_slide_out_right
-		)
-	}
-
-	/**
-	 * Creates a material slide animation for activity transition.
-	 * This uses a sliding in from the left and sliding out to the right animation.
-	 *
-	 * @param activity The activity where the transition animation is applied.
-	 * @return An [ActivityOptionsCompat] object with the specified animation options,
-	 * or `null` if the activity is null.
-	 */
-	@JvmStatic
-	fun getMaterialSlideOptions(activity: Activity?): ActivityOptionsCompat? {
-		return WeakReference(activity).get()?.let { safeContextRef ->
-			ActivityOptionsCompat.makeCustomAnimation(
-				safeContextRef,
-				android.R.anim.slide_in_left,
-				android.R.anim.slide_out_right
+	suspend fun animActivityFade(activity: BaseActivity?) {
+		withMainContext {
+			activity?.getActivity()?.overridePendingTransition(
+				R.anim.anim_fade_enter,
+				R.anim.anim_fade_exit
 			)
-		} ?: run { null }
+		}
+	}
+
+	/**
+	 * Applies a custom "In and Out" scaling or specialized transition to the provided activity
+	 * on the Main thread.
+	 *
+	 * This animation typically involves the new activity expanding "in" while the current
+	 * activity transitions "out," often used for emphasizing the depth of navigation or
+	 * opening specific media components. The [withMainContext] wrapper guarantees
+	 * that the framework's transition logic is invoked on the appropriate thread.
+	 *
+	 * @param activity The [BaseActivity] instance providing the context to override
+	 * pending transitions.
+	 */
+	@JvmStatic
+	suspend fun animActivityInAndOut(activity: BaseActivity?) {
+		withMainContext {
+			activity?.getActivity()?.overridePendingTransition(
+				R.anim.anim_in_out_enter,
+				R.anim.anim_in_out_exit
+			)
+		}
+	}
+
+	/**
+	 * Applies a custom "Slide Down" transition animation to the provided activity on the Main thread.
+	 *
+	 * This animation is typically used when dismissing a modal-style screen or a top-down
+	 * overlay, causing the current content to move toward the bottom of the display.
+	 * Wrapping the logic in [withMainContext] ensures the transition is safely
+	 * handled by the UI thread.
+	 *
+	 * @param activity The [BaseActivity] instance providing the context to override
+	 * pending transitions.
+	 */
+	@JvmStatic
+	suspend fun animActivitySlideDown(activity: BaseActivity?) {
+		withMainContext {
+			activity?.getActivity()?.overridePendingTransition(
+				R.anim.anim_slide_down_enter,
+				R.anim.anim_slide_down_exit
+			)
+		}
+	}
+
+	/**
+	 * Applies a custom "Slide Left" transition animation to the provided activity on the Main thread.
+	 *
+	 * This motion creates a horizontal transition where content slides toward the left side
+	 * of the screen. The [withMainContext] block guarantees that the framework's
+	 * [Activity.overridePendingTransition] is called on the appropriate thread to
+	 * prevent rendering glitches.
+	 *
+	 * @param activity The [BaseActivity] instance providing the context to override
+	 * pending transitions.
+	 */
+	@JvmStatic
+	suspend fun animActivitySlideLeft(activity: BaseActivity?) {
+		withMainContext {
+			activity?.getActivity()?.overridePendingTransition(
+				R.anim.anim_slide_left_enter,
+				R.anim.anim_slide_left_exit
+			)
+		}
+	}
+
+	/**
+	 * Applies a custom "Swipe Right" transition animation to the provided activity on the Main thread.
+	 *
+	 * This animation is commonly used for "Back" gestures or navigating to a previous
+	 * screen in a sequence, with content entering from the left. Using [withMainContext]
+	 * ensures this UI-specific operation is safely performed when called from a
+	 * background coroutine scope.
+	 *
+	 * @param activity The [BaseActivity] instance providing the context to override
+	 * pending transitions.
+	 */
+	@JvmStatic
+	suspend fun animActivitySwipeRight(activity: BaseActivity?) {
+		withMainContext {
+			activity?.getActivity()?.overridePendingTransition(
+				R.anim.anim_swipe_right_enter,
+				R.anim.anim_swipe_right_exit
+			)
+		}
+	}
+
+	/**
+	 * Applies a custom "Slide Up" transition animation to the provided activity on the Main thread.
+	 *
+	 * This animation is typically used for presenting a new screen as a modal or bottom-up
+	 * overlay. By wrapping the transition in [withMainContext], this function ensures
+	 * thread safety when triggered from background coroutines.
+	 *
+	 * @param activity The [BaseActivity] instance providing the context to override
+	 * pending transitions.
+	 */
+	@JvmStatic
+	suspend fun animActivitySlideUp(activity: BaseActivity?) {
+		withMainContext {
+			activity?.getActivity()?.overridePendingTransition(
+				R.anim.anim_slide_up_enter,
+				R.anim.anim_slide_up_exit
+			)
+		}
+	}
+
+	/**
+	 * Applies a custom "Swipe Left" transition animation to the provided activity on the Main thread.
+	 *
+	 * This motion is generally used for forward navigation where the new content enters
+	 * from the right side. The use of [withMainContext] guarantees the UI transition is
+	 * executed on the appropriate thread.
+	 *
+	 * @param activity The [BaseActivity] instance providing the context to override
+	 * pending transitions.
+	 */
+	@JvmStatic
+	suspend fun animActivitySwipeLeft(activity: BaseActivity?) {
+		withMainContext {
+			activity?.getActivity()?.overridePendingTransition(
+				R.anim.anim_swipe_left_enter,
+				R.anim.anim_swipe_left_exit
+			)
+		}
+	}
+
+	/**
+	 * Applies a custom "Slide Right" transition animation to the provided activity on the Main thread.
+	 *
+	 * This transition creates a backward navigation effect, where the incoming screen slides
+	 * in from the left. Execution is forced onto the Main thread via [withMainContext]
+	 * to ensure UI stability.
+	 *
+	 * @param activity The [BaseActivity] instance providing the context to override
+	 * pending transitions.
+	 */
+	@JvmStatic
+	suspend fun animActivitySlideRight(activity: BaseActivity?) {
+		withMainContext {
+			activity?.getActivity()?.overridePendingTransition(
+				R.anim.anim_slide_in_left,
+				R.anim.anim_slide_out_right
+			)
+		}
+	}
+
+	/**
+	 * Creates a set of transition options to perform a horizontal sliding animation
+	 * during an Activity transition.
+	 *
+	 * This function utilizes a [WeakReference] to the provided [Activity] to prevent
+	 * memory leaks if the animation options outlive the activity's lifecycle. It
+	 * leverages standard Android framework resources to achieve a "Slide In Left"
+	 * and "Slide Out Right" motion, providing a familiar Material Design navigation
+	 * feel.
+	 *
+	 * @param activity The [Activity] context required to load and initialize
+	 * the animation resources.
+	 * @return An [ActivityOptionsCompat] object containing the animation bundle,
+	 * or null if the activity context is no longer valid or was not provided.
+	 */
+	@JvmStatic
+	suspend fun getMaterialSlideOptions(activity: BaseActivity?): ActivityOptionsCompat? {
+		return withMainContext {
+			activity?.getActivity()?.let { activityRef ->
+				ActivityOptionsCompat.makeCustomAnimation(
+					activityRef,
+					android.R.anim.slide_in_left,
+					android.R.anim.slide_out_right
+				)
+			} ?: run { null }
+		}
 	}
 }
