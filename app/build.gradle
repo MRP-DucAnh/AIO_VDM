@@ -106,14 +106,7 @@ dependencies {
 	implementation libs.objectbox.android
 	implementation libs.objectbox.kotlin
 
-	implementation libs.fst
 	implementation libs.jsoup
-	implementation libs.gson
-	implementation libs.string.lz4
-	implementation(libs.dsljson)
-	kapt(libs.dsljson)
-	compileOnly(libs.jsonbind.api)
-
 	implementation libs.retrofit
 	implementation libs.retrofit.converter.gson
 	implementation libs.okhttp
@@ -130,6 +123,5 @@ dependencies {
 	implementation libs.newpipe.extractor
 
 	implementation libs.mp4.iso.parser
-
 	coreLibraryDesugaring libs.desugar.jdk.libs.nio
 }

@@ -24,11 +24,6 @@ objectbox_android = "5.0.1"
 storage = "2.2.0"
 desugar_jdk_libs_nio = "2.1.5"
 
-string_lz4 = "1.8.0"
-gson = "2.13.2"
-dsljson = "2.0.2"
-jsonbind = "1.0"
-fst = "3.0.3"
 jsoup = "1.22.1"
 
 lottie = "6.7.1"
@@ -71,11 +66,6 @@ objectbox-kotlin = { module = "io.objectbox:objectbox-kotlin", version.ref = "ob
 saf-storage = { module = "com.anggrayudi:storage", version.ref = "storage" }
 desugar-jdk-libs-nio = { module = "com.android.tools:desugar_jdk_libs_nio", version.ref = "desugar_jdk_libs_nio" }
 
-string_lz4 = { module = "org.lz4:lz4-java", version.ref = "string_lz4" }
-gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
-dsljson = { module = "com.dslplatform:dsl-json", version.ref = "dsljson" }
-jsonbind-api = { module = "javax.json.bind:javax.json.bind-api", version.ref = "jsonbind" }
-fst = { module = "de.ruedigermoeller:fst", version.ref = "fst" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 
 lottie = { module = "com.airbnb.android:lottie", version.ref = "lottie" }
