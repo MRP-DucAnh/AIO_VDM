@@ -1,25 +1,22 @@
 package lib.ui.builders
 
-import android.app.Activity
-import android.os.Environment
+import android.app.*
+import android.os.*
 import android.text.format.Formatter
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.*
-import app.core.bases.BaseActivity
-import com.aio.R
-import lib.process.AsyncJobUtils.executeInBackground
-import lib.process.LogHelperUtils
-import lib.process.withMainContext
+import androidx.lifecycle.*
+import app.core.bases.*
+import com.aio.*
+import kotlinx.coroutines.*
+import lib.process.*
+import lib.process.AsyncJobUtils.*
 import lib.texts.CommonTextUtils.getText
 import lib.ui.ViewUtility.normalizeTallSymbols
-import java.io.File
-import java.io.FileFilter
-import java.lang.ref.WeakReference
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.io.*
+import java.lang.ref.*
+import java.text.*
+import java.util.*
 
 /**
  * A high-performance File and Folder picker that bypasses the Storage Access Framework (SAF)
@@ -194,7 +191,9 @@ class FileFolderPicker(
 			}
 
 			setOnClickForPositiveButton {
-				handleConfirmSelection()
+				activity.lifecycleScope.launch {
+					handleConfirmSelection()
+				}
 			}
 
 			view.findViewById<TextView>(R.id.btn_go_to_previous_dir)?.setOnClickListener {
@@ -334,8 +333,8 @@ class FileFolderPicker(
 	 * @param directory The current [File] directory being displayed.
 	 * @param items The list of [BrowserItem] objects (files and folders) within the current directory.
 	 */
-	private suspend fun renderState(directory: File, items: List<BrowserItem>) {
-		val activity = weakReferenceOfActivity.get() ?: return
+	private fun renderState(directory: File, items: List<BrowserItem>) {
+		val activityRef = weakReferenceOfActivity.get() ?: return
 		val view = dialogBuilder?.view ?: return
 
 		browserState = browserState.copy(items = items)
@@ -343,19 +342,19 @@ class FileFolderPicker(
 		// 1. Adapter
 		val listView = view.findViewById<ListView>(R.id.list_of_files_folders)
 		if (browserAdapter == null) {
-			browserAdapter = BrowserAdapter(activity, items) { handleItemInteraction(it) }
+			browserAdapter = BrowserAdapter(activityRef, items) {
+				activityRef.lifecycleScope.launch {
+					handleItemInteraction(it)
+				}
+			}
 			listView.adapter = browserAdapter
 		} else {
 			browserAdapter?.swapData(items)
 		}
 
-		// 2. Breadcrumbs
-		updateBreadcrumbs(view, activity, directory)
-
-		// 3. Navigation Buttons
+		updateBreadcrumbs(view, activityRef, directory)
 		val backBtn = view.findViewById<TextView>(R.id.btn_go_to_previous_dir)
 		backBtn?.visibility = if (browserState.history.size > 1) View.VISIBLE else View.GONE
-
 		updateActionButtons()
 	}
 
@@ -501,9 +500,10 @@ class FileFolderPicker(
 			}
 		}
 
-		root.findViewById<HorizontalScrollView>(R.id.container_breadcrumb_scroll)?.let { scroll ->
-			scroll.post { scroll.fullScroll(View.FOCUS_RIGHT) }
-		}
+		root.findViewById<HorizontalScrollView>(R.id.container_breadcrumb_scroll)
+			?.let { scroll ->
+				scroll.post { scroll.fullScroll(View.FOCUS_RIGHT) }
+			}
 	}
 
 	/**
@@ -514,47 +514,170 @@ class FileFolderPicker(
 	 * selected or multi-selection is disabled, it displays the default [positiveButtonText].
 	 */
 	private fun updateActionButtons() {
-		val btn = dialogBuilder?.view?.findViewById<TextView>(R.id.btn_dialog_positive) ?: return
+		val btn = dialogBuilder?.view
+			?.findViewById<TextView>(R.id.btn_dialog_positive) ?: return
+
 		val count = selectedPaths.size
-		btn.text = if (isMultiSelection && count > 0) "$positiveButtonText ($count)" else positiveButtonText
+		btn.text = if (isMultiSelection && count > 0)
+			"$positiveButtonText ($count)" else positiveButtonText
 	}
 
-
+	/**
+	 * A private [BaseAdapter] implementation specifically designed for displaying a list of
+	 * files and folders within a browser or picker interface.
+	 *
+	 * This adapter utilizes a [WeakReference] to the [BaseActivity] to ensure memory safety
+	 * when launching coroutines for UI tasks like text normalization. It follows the
+	 * ViewHolder pattern for optimal scrolling performance and provides a clean interface
+	 * for handling item clicks and data swaps.
+	 *
+	 * @property activity The host [BaseActivity] context, used for inflation and coroutine scope access.
+	 * @property items The initial data set of [BrowserItem] objects to be rendered.
+	 * @property onClick A high-order function invoked when an item in the list is clicked.
+	 */
 	private class BrowserAdapter(
-		activity: Activity,
+		activity: BaseActivity,
 		private var items: List<BrowserItem>,
 		private val onClick: (BrowserItem) -> Unit
 	) : BaseAdapter() {
 
+		/**
+		 * A private container used to cache View references for the [BrowserAdapter].
+		 *
+		 * By storing references to the internal UI components of a list row, the [ViewHolder]
+		 * pattern avoids repeated and expensive [View.findViewById] calls during scrolling,
+		 * ensuring a smooth frame rate.
+		 *
+		 * @param view The root [View] of the layout, from which child views are extracted.
+		 */
+		private class ViewHolder(view: View) {
+			/**
+			 * [TextView] responsible for displaying the filename or folder name.
+			 * Used to provide a human-readable label for the item.
+			 */
+			val nameText: TextView = view.findViewById(R.id.txt_file_folder_name)
+
+			/**
+			 * [TextView] responsible for displaying metadata such as file size or date modified.
+			 * Used to provide additional information about the item.
+			 */
+			val metaText: TextView = view.findViewById(R.id.txt_file_folder_metadata)
+
+			/**
+			 * [ImageView] representing the file type (e.g., folder icon or file icon).
+			 * Used to differentiate between files and folders.
+			 */
+			val icon: ImageView = view.findViewById(R.id.img_file_type_indicator)
+
+			/**
+			 * [ImageView] acting as a selection indicator (checkbox) for the item.
+			 * Only visible when [isMultiSelection] is enabled.
+			 */
+			val checkbox: ImageView = view.findViewById(R.id.img_checkbox_selection)
+		}
+
+		/**
+		 * [WeakReference] to the parent activity to prevent memory leaks.
+		 * Since adapters can outlive their activities (e.g., during long-running background tasks),
+		 * this ensures the Activity can be reclaimed by the Garbage Collector.
+		 */
 		private val weakReferenceOfActivity = WeakReference(activity)
+
+		/**
+		 * Safely retrieves the activity instance from the [WeakReference].
+		 * Returns null if the activity has been destroyed.
+		 */
 		private val safeActivityRef get() = weakReferenceOfActivity.get()
+
+		/**
+		 * The [LayoutInflater] used to instantiate layout XML files into their
+		 * corresponding [View] objects. It is initialized using the context retrieved
+		 * from the [safeActivityRef].
+		 */
 		private val inflater = LayoutInflater.from(safeActivityRef)
 
+		/**
+		 * Updates the adapter's data set with a new list of items and refreshes the UI.
+		 *
+		 * @param newItems The updated list of [BrowserItem] objects to be displayed.
+		 */
 		fun swapData(newItems: List<BrowserItem>) {
 			this.items = newItems
 			notifyDataSetChanged()
 		}
 
+		/**
+		 * Returns the total number of items currently held in the adapter's data set.
+		 *
+		 * @return The size of the [items] list.
+		 */
 		override fun getCount() = items.size
+
+		/**
+		 * Retrieves the data item associated with a specified position in the data set.
+		 *
+		 * @param position The index of the item to retrieve.
+		 * @return The [BrowserItem] at the specified [position].
+		 */
 		override fun getItem(position: Int) = items[position]
+
+		/**
+		 * Returns a row ID for the specified position.
+		 * In this implementation, the position itself is used as the unique ID.
+		 *
+		 * @param position The index of the item.
+		 * @return The position as a [Long].
+		 */
 		override fun getItemId(position: Int) = position.toLong()
 
-
+		/**
+		 * Provides a view for a specific data item in the adapter's data set.
+		 *
+		 * This implementation follows the ViewHolder pattern to optimize performance by reducing
+		 * [View.findViewById] calls. It handles item recycling, sets standard file/folder
+		 * metadata synchronously, and initiates an asynchronous text normalization process
+		 * for non-Latin symbols.
+		 *
+		 * @param position The position of the item within the adapter's data set.
+		 * @param convertView The old view to reuse, if possible.
+		 * @param parent The parent that this view will eventually be attached to.
+		 * @return A [View] corresponding to the data at the specified position.
+		 */
 		override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
-			val view = convertView ?: inflater.inflate(R.layout.dialog_file_folder_picker_item_1, parent, false)
+			val view: View
+			val holder: ViewHolder
+
+			// Handle View recycling and ViewHolder assignment
+			if (convertView == null) {
+				view = inflater.inflate(R.layout.dialog_file_folder_picker_item_1, parent, false)
+				holder = ViewHolder(view)
+				view.tag = holder
+			} else {
+				view = convertView
+				holder = view.tag as ViewHolder
+			}
+
 			val item = getItem(position)
+			val currentName = item.name
 
-			view.findViewById<TextView>(R.id.txt_file_folder_name)?.text = item.name
-			view.findViewById<TextView>(R.id.txt_file_folder_name)?.normalizeTallSymbols()
-			view.findViewById<TextView>(R.id.txt_file_folder_metadata)?.text = item.info
-
-			view.findViewById<ImageView>(R.id.img_file_type_indicator)?.setImageResource(
+			// Synchronous UI updates: Clear old data and set primary text/icons
+			holder.nameText.text = currentName
+			holder.metaText.text = item.info
+			holder.icon.setImageResource(
 				if (item.isDirectory) R.drawable.img_folder_indicator
 				else R.drawable.img_file_indicator
 			)
 
-			view.findViewById<ImageView>(R.id.img_checkbox_selection)?.visibility =
-				if (item.isSelected) View.VISIBLE else View.GONE
+			holder.checkbox.visibility = if (item.isSelected) View.VISIBLE else View.GONE
+
+			/*
+			 * Launch character normalization in the background.
+			 * We pass currentName to the extension function to verify that the TextView
+			 * hasn't been recycled for another item before the UI is updated.
+			 */
+			safeActivityRef?.lifecycleScope?.launch {
+				holder.nameText.normalizeTallSymbols(currentName)
+			}
 
 			view.setOnClickListener { onClick(item) }
 

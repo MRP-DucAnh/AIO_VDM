@@ -219,6 +219,7 @@ object ViewUtility {
 	 */
 	@JvmStatic
 	suspend fun TextView.normalizeTallSymbols(
+		originalText: String = text.toString(),
 		reductionFactor: Float = 0.8f,
 		onDone: (Spannable) -> Unit = {}
 	) {
@@ -258,8 +259,10 @@ object ViewUtility {
 			}
 
 			withMainContext {
-				this@normalizeTallSymbols.text = spannable
-				onDone(spannable)
+				if (this@normalizeTallSymbols.text.toString() == originalText) {
+					this@normalizeTallSymbols.text = spannable
+					onDone(spannable)
+				}
 			}
 		}
 	}
