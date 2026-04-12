@@ -11,6 +11,7 @@ import app.core.bases.BaseActivity
 import com.aio.R
 import lib.process.AsyncJobUtils.executeInBackground
 import lib.process.LogHelperUtils
+import lib.process.withMainContext
 import lib.texts.CommonTextUtils.getText
 import lib.ui.ViewUtility.normalizeTallSymbols
 import java.io.File
@@ -139,9 +140,11 @@ class FileFolderPicker(
 	 * This method triggers the UI to be shown to the user and initializes the
 	 * filesystem crawler to load the starting directory.
 	 */
-	fun show() {
-		dialogBuilder?.show()
-		initiateBrowsing()
+	suspend fun show() {
+		withMainContext {
+			dialogBuilder?.show()
+			initiateBrowsing()
+		}
 	}
 
 	/**
@@ -151,15 +154,17 @@ class FileFolderPicker(
 	 * (like the adapter and dialog builder) are nulled out to prevent memory leaks,
 	 * and the navigation history and selection sets are cleared.
 	 */
-	fun close() {
-		try {
-			dialogBuilder?.close()
-			browserState = BrowserState()
-			selectedPaths.clear()
-			dialogBuilder = null
-			browserAdapter = null
-		} catch (error: Exception) {
-			logger.e("Cleanup failed: ${error.message}")
+	suspend fun close() {
+		withMainContext {
+			try {
+				dialogBuilder?.close()
+				browserState = BrowserState()
+				selectedPaths.clear()
+				dialogBuilder = null
+				browserAdapter = null
+			} catch (error: Exception) {
+				logger.e("Cleanup failed: ${error.message}")
+			}
 		}
 	}
 
@@ -329,7 +334,7 @@ class FileFolderPicker(
 	 * @param directory The current [File] directory being displayed.
 	 * @param items The list of [BrowserItem] objects (files and folders) within the current directory.
 	 */
-	private fun renderState(directory: File, items: List<BrowserItem>) {
+	private suspend fun renderState(directory: File, items: List<BrowserItem>) {
 		val activity = weakReferenceOfActivity.get() ?: return
 		val view = dialogBuilder?.view ?: return
 
@@ -366,7 +371,7 @@ class FileFolderPicker(
 	 *
 	 * @param item The [BrowserItem] that the user interacted with.
 	 */
-	private fun handleItemInteraction(item: BrowserItem) {
+	private suspend fun handleItemInteraction(item: BrowserItem) {
 		if (item.isDirectory) {
 			// Navigate Down
 			val newHistory = browserState.history + item.file
@@ -427,7 +432,7 @@ class FileFolderPicker(
 	 * 2. If no items are selected and the picker is in "Folder Picker" mode, the current
 	 *    directory being browsed is treated as the selection.
 	 */
-	private fun handleConfirmSelection() {
+	private suspend fun handleConfirmSelection() {
 		// Priority 1: User selection
 		if (selectedPaths.isNotEmpty()) {
 			finalizeSelection(selectedPaths.toList())
@@ -448,7 +453,7 @@ class FileFolderPicker(
 	 *
 	 * @param paths A list of absolute paths representing the selected files or directories.
 	 */
-	private fun finalizeSelection(paths: List<String>) {
+	private suspend fun finalizeSelection(paths: List<String>) {
 		if (paths.isNotEmpty()) {
 			onFileSelection(paths)
 			close()
@@ -514,95 +519,27 @@ class FileFolderPicker(
 		btn.text = if (isMultiSelection && count > 0) "$positiveButtonText ($count)" else positiveButtonText
 	}
 
-	/**
-	 * A private [BaseAdapter] implementation responsible for rendering the list of files and folders.
-	 *
-	 * This adapter manages the visual representation of [BrowserItem] objects, handling:
-	 * - Layout inflation for individual list items.
-	 * - Dynamic icon switching based on file type (directory vs. file).
-	 * - Visual feedback for selection states.
-	 * - Interaction delegation via the [onClick] callback.
-	 *
-	 * @param activity The context used to inflate layouts and resolve resources.
-	 * @param items The initial list of [BrowserItem] to display.
-	 * @param onClick A callback triggered when a list item is clicked.
-	 */
+
 	private class BrowserAdapter(
 		activity: Activity,
 		private var items: List<BrowserItem>,
 		private val onClick: (BrowserItem) -> Unit
 	) : BaseAdapter() {
-		/**
-		 * A weak reference to the [BaseActivity] context used to access UI components and system services.
-		 * Using a [WeakReference] prevents memory leaks if the activity is destroyed while background tasks
-		 * or the picker instance are still active.
-		 */
+
 		private val weakReferenceOfActivity = WeakReference(activity)
+		private val safeActivityRef get() = weakReferenceOfActivity.get()
+		private val inflater = LayoutInflater.from(safeActivityRef)
 
-		/**
-		 * Safely retrieves the underlying [BaseActivity] from its [WeakReference].
-		 * Returns null if the activity has been reclaimed by the garbage collector.
-		 */
-		private val safeActivity get() = weakReferenceOfActivity.get()
-
-		/**
-		 * The system layout inflater used to instantiate layout XML files into their corresponding View objects.
-		 *
-		 * Provides the mechanism to inflate the individual row layouts for the file and folder items
-		 * within the picker's list view.
-		 */
-		private val inflater = LayoutInflater.from(safeActivity)
-
-		/**
-		 * Updates the adapter's data source with a new list of [BrowserItem]s
-		 * and refreshes the underlying [ListView].
-		 *
-		 * @param newItems The updated list of files and folders to display.
-		 */
 		fun swapData(newItems: List<BrowserItem>) {
 			this.items = newItems
 			notifyDataSetChanged()
 		}
 
-		/**
-		 * Returns the total number of items currently available in the browser's list.
-		 *
-		 * @return The size of the current directory's file and folder collection.
-		 */
 		override fun getCount() = items.size
-
-		/**
-		 * Gets the [BrowserItem] at the specified [position] in the current list.
-		 *
-		 * @param position The index of the item to retrieve.
-		 * @return The [BrowserItem] representing the file or folder at that position.
-		 */
 		override fun getItem(position: Int) = items[position]
-
-		/**
-		 * Returns the identifier for the item at the specified [position].
-		 *
-		 * Since this adapter uses a dynamic list where the [position] is inherently stable
-		 * for the current view state, it returns the position converted to a [Long].
-		 *
-		 * @param position The index of the item within the adapter's data set.
-		 * @return The ID of the item at the specified position.
-		 */
 		override fun getItemId(position: Int) = position.toLong()
 
-		/**
-		 * Provides a view for the list item at the specified [position].
-		 *
-		 * This implementation handles the inflation of the item layout and populates it with
-		 * the corresponding [BrowserItem] data, including the name, metadata, and
-		 * file type indicators (folder vs. file). It also manages the visibility of the
-		 * selection checkmark based on the item's state.
-		 *
-		 * @param position The position of the item within the adapter's data set.
-		 * @param convertView The old view to reuse, if possible.
-		 * @param parent The parent view that this view will eventually be attached to.
-		 * @return A [View] corresponding to the data at the specified position.
-		 */
+
 		override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
 			val view = convertView ?: inflater.inflate(R.layout.dialog_file_folder_picker_item_1, parent, false)
 			val item = getItem(position)

@@ -1,42 +1,36 @@
 package lib.ui.listeners
 
-import android.text.Editable
-import android.text.TextWatcher
+import android.text.*
 
 /**
- * A simplified abstract implementation of [TextWatcher] to observe text changes in an EditText.
- *
- * This class provides default empty implementations for `beforeTextChanged` and `onTextChanged`,
- * so you only need to override and implement the `afterTextChanged` method.
- *
- * Use this listener when you're only interested in reacting to text changes **after** they occur.
- *
- * Example usage:
- * ```
- * editText.addTextChangedListener(object : EditTextListener() {
- *     override fun afterTextChanged(editable: Editable) {
- *         // Handle updated text
- *     }
- * })
- * ```
+ * A skeletal implementation of the [TextWatcher] interface to reduce boilerplate in
+ * [android.widget.EditText] listeners. By extending this class, you only need to override
+ * the specific text change events that are relevant to your logic. This is ideal for scenarios
+ * where you only care about the final state of the text (via [afterTextChanged]) and wish to ignore
+ * the intermediate [beforeTextChanged] and [onTextChanged] callbacks.
  */
 abstract class EditTextListener : TextWatcher {
 
 	/**
-	 * Called after the text is changed. Must be implemented by subclasses.
+	 * Invoked after the text has been modified.
+	 * * This is the primary method to override when you need to react to the final state
+	 * of the text in an [android.widget.EditText]. It is called after the underlying buffer has
+	 * been updated, making it suitable for validation or UI updates based on the
+	 * resulting string.
 	 *
-	 * @param editable The text after the change.
+	 * @param editable The editable text that has just been changed.
 	 */
 	abstract override fun afterTextChanged(editable: Editable)
 
 	/**
-	 * Called to notify you that the characters within `charSequence` are about to be replaced
-	 * with new text. Default implementation is empty.
+	 * Invoked to notify you that text is about to be replaced.
+	 * * Default implementation is empty. Use this if you need to inspect the
+	 * [charSequence] before the change is committed.
 	 *
-	 * @param charSequence The text before the change.
-	 * @param start The start position of the change.
-	 * @param count The number of characters about to be replaced.
-	 * @param after The number of characters that will replace the old text.
+	 * @param charSequence The current text before the change.
+	 * @param start The position of the beginning of the cursor.
+	 * @param count The number of characters to be replaced.
+	 * @param after The length of the new text being added.
 	 */
 	override fun beforeTextChanged(
 		charSequence: CharSequence,
@@ -44,12 +38,13 @@ abstract class EditTextListener : TextWatcher {
 	) = Unit
 
 	/**
-	 * Called to notify you that somewhere within `charSequence`, the text has been replaced.
-	 * Default implementation is empty.
+	 * Invoked to notify you that text has been replaced.
+	 * * Default implementation is empty. Use this if you need to know which specific
+	 * characters within [charSequence] were modified during the transition.
 	 *
-	 * @param charSequence The updated text.
-	 * @param start The start position of the change.
-	 * @param before The number of characters replaced.
+	 * @param charSequence The current text after the change.
+	 * @param start The position where the change began.
+	 * @param before The length of the text that was replaced.
 	 * @param count The number of new characters added.
 	 */
 	override fun onTextChanged(

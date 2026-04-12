@@ -3,7 +3,6 @@ package lib.ui.builders;
 import static android.view.LayoutInflater.from;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
-import static lib.ui.ViewUtility.hideOnScreenKeyboard;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -331,20 +330,6 @@ public class DialogBuilder {
 	public Activity getActivity() {
 		BaseActivityInf inf = weakReferenceBaseActivity.get();
 		return inf != null ? inf.getActivity() : null;
-	}
-
-	/**
-	 * Hides the on-screen keyboard from specified focused views.
-	 * <p>
-	 * This is particularly useful when closing dialogs that contain input fields
-	 * to ensure the keyboard doesn't persist after dialog dismissal.
-	 *
-	 * @param focusedView One or more views that may have input focus
-	 */
-	public void hideKeyboard(@NonNull View... focusedView) {
-		Activity act = getActivity();
-		if (act == null) return;
-		for (View view : focusedView) hideOnScreenKeyboard(act, view);
 	}
 
 	/**

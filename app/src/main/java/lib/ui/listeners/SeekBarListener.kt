@@ -1,63 +1,50 @@
 package lib.ui.listeners
 
-import android.widget.SeekBar
-import android.widget.SeekBar.OnSeekBarChangeListener
+import android.widget.*
+import android.widget.SeekBar.*
 
 /**
- * An abstract implementation of [OnSeekBarChangeListener] that simplifies the usage of SeekBar listeners.
+ * A boilerplate-reduction class for [SeekBar.OnSeekBarChangeListener] that simplifies
+ * progress tracking.
  *
- * This class provides default implementations for `onStartTrackingTouch` and `onStopTrackingTouch`,
- * so you only need to override and implement the `onProgressChange` method to handle progress updates.
- *
- * Use this listener when you only care about the progress change and want to avoid dealing with the
- * start and stop tracking events.
- *
- * Example usage:
- * ```
- * seekBar.setOnSeekBarChangeListener(object : SeekBarListener() {
- *     override fun onProgressChange(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
- *         // Handle progress change
- *     }
- * })
- * ```
+ * This abstract class provides a cleaner interface for monitoring [SeekBar] interactions
+ * by providing empty default implementations for touch tracking callbacks. By extending
+ * this class, developers can focus solely on implementing the [onProgressChange]
+ * logic without the need to override every method in the listener interface.
  */
 abstract class SeekBarListener : OnSeekBarChangeListener {
 
 	/**
-	 * Called when the progress of the SeekBar has changed.
-	 * This is the method that needs to be implemented by subclasses.
+	 * Invoked when the progress level of the [SeekBar] has changed.
+	 * * This abstract method provides a cleaner signature for reacting to progress updates.
+	 * It allows the implementation to distinguish between manual user adjustments
+	 * and programmatic changes via the [fromUser] flag.
 	 *
-	 * @param seekBar The SeekBar whose progress has changed.
-	 * @param progress The current progress of the SeekBar.
-	 * @param fromUser True if the progress change was initiated by the user, false if it was programmatically.
+	 * @param seekBar The [SeekBar] whose progress has changed.
+	 * @param progress The current progress level, scaled between the min and max values.
+	 * @param fromUser True if the progress change was initiated by a user touch gesture.
 	 */
 	abstract fun onProgressChange(seekBar: SeekBar?, progress: Int, fromUser: Boolean)
 
 	/**
-	 * Called when the progress of the SeekBar has changed.
-	 * This implementation forwards the event to [onProgressChange].
-	 *
-	 * @param seekBar The SeekBar whose progress has changed.
-	 * @param progress The current progress of the SeekBar.
-	 * @param fromUser True if the progress change was initiated by the user, false if it was programmatically.
+	 * Internal proxy that routes the standard [SeekBar.OnSeekBarChangeListener] callback
+	 * to the simplified [onProgressChange] method.
 	 */
 	override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
 		onProgressChange(seekBar, progress, fromUser)
 	}
 
 	/**
-	 * Called when the user starts touching the SeekBar.
-	 * This implementation is empty, and can be overridden if needed.
-	 *
-	 * @param seekBar The SeekBar that is being tracked.
+	 * Default implementation that ignores the notification that the user has started
+	 * a touch gesture. Override this if you need to pause background updates or
+	 * change the UI state during tracking.
 	 */
 	override fun onStartTrackingTouch(seekBar: SeekBar) = Unit
 
 	/**
-	 * Called when the user stops touching the SeekBar.
-	 * This implementation is empty, and can be overridden if needed.
-	 *
-	 * @param seekBar The SeekBar that is being tracked.
+	 * Default implementation that ignores the notification that the user has finished
+	 * a touch gesture. Override this if you need to commit changes or resume
+	 * updates once the user releases the seek bar.
 	 */
 	override fun onStopTrackingTouch(seekBar: SeekBar) = Unit
 }
