@@ -1,81 +1,93 @@
 package lib.process
 
-import android.annotation.SuppressLint
-import android.content.Context
-import android.os.Build
-import android.provider.Settings
-import java.security.MessageDigest
+import android.annotation.*
+import android.content.*
+import android.os.*
+import android.provider.*
+import lib.process.DeviceIdProvider.Companion.APP_SALT
+import java.security.*
 
 /**
- * A utility class responsible for generating a unique, stable device identifier that persists
- * across application reinstall.
+ * Provides a unique, stable, and persistent identifier for the device.
+ * * This class generates a device-specific fingerprint by hashing hardware metadata
+ * with an application-specific salt. The resulting ID is deterministic,
+ * meaning it will remain consistent across app restarts.
  *
- * This generator creates a SHA-256 fingerprint by combining hardware-specific metadata
- * ([Build.MANUFACTURER], [Build.MODEL], [Build.BOARD]), the [Settings.Secure.ANDROID_ID],
- * the application's package name, and a predefined internal salt.
+ * ### Security & Privacy
+ * - Uses **SHA-256** to ensure the original device hardware IDs are irreversible.
+ * - Incorporates [APP_SALT] to prevent the ID from being cross-referenced by other apps.
+ * - Filters out known "garbage" IDs (like the emulator-specific `9774d56d682e549c`).
  *
- * Note: While this ID remains stable across reinstall, it may change if the device
- * undergoes a factory reset or if the [Settings.Secure.ANDROID_ID] is modified (e.g., on rooted devices).
- *
- * @property context The application context used to retrieve the Android ID and package name.
+ * @property context The context used to access [Settings.Secure]. The class internally
+ * extracts the application context to prevent memory leaks.
  */
 class DeviceIdProvider(private val context: Context) {
 
+	/**
+	 * Application context extracted from the provided context.
+	 * Using application context instead of Activity context prevents memory leaks
+	 * when the DeviceIdProvider outlives the Activity lifecycle.
+	 */
 	private val appContext = context.applicationContext
 
 	companion object {
 		/**
-		 * A hardcoded string used as a cryptographic salt to ensure the generated device ID
-		 * is unique to this specific application and remains consistent across different versions.
+		 * Application-specific salt value used to make the device ID unique to this app.
+		 * Different apps using the same device will generate different IDs even if all
+		 * other components are identical.
 		 */
-		private const val APP_SALT = "com.aio.video_downloader"
+		private const val APP_SALT = "com.tubeaio.pro"
 
 		/**
-		 * Stores the computed device identifier in memory to avoid redundant SHA-256
-		 * hashing operations on subsequent calls.
+		 * Cached device ID to avoid regeneration on subsequent calls.
+		 * Marked as volatile to ensure visibility across multiple threads.
+		 * Null until the first successful generation.
 		 */
 		@Volatile private var cachedId: String? = null
 	}
 
 	/**
-	 * Generates a unique SHA-256 hash representing the device's identity.
+	 * Generates a unique device identifier or returns the cached version if already generated.
+	 * This method is a suspend function that executes on an IO thread to avoid blocking
+	 * the main thread during hash computation and system calls.
 	 *
-	 * The identifier is constructed by concatenating the Android ID, hardware metadata
-	 * (Manufacturer, Model, Board), the application's package name, and a static salt.
-	 * This ensures the resulting string is unique to the device-app combination.
-	 *
-	 * @return A hex-encoded SHA-256 string representing the device fingerprint.
+	 * @return AN SHA-256 hex string representing the unique device identifier.
+	 *         The same device will always return the same ID (unless factory reset
+	 *         or app reinstalled).
+	 * @throws SecurityException if SHA-256 algorithm is not available
+	 *         (extremely rare on Android devices)
+	 * @see #androidId()
+	 * @see #sha256(String)
 	 */
-	fun generate(): String {
-		cachedId?.let { return it }
+	suspend fun generate(): String {
+		return withIOContext {
+			cachedId?.let { return@withIOContext it }
 
-		synchronized(this) {
-			cachedId?.let { return it }
+			synchronized(this) {
+				cachedId?.let { return@withIOContext it }
 
-			val fingerprint = listOf(
-				androidId(),
-				Build.MANUFACTURER,
-				Build.MODEL,
-				Build.BOARD,
-				appContext.packageName,
-				APP_SALT
-			).joinToString("|")
+				val fingerprint = listOf(
+					androidId(),
+					Build.MANUFACTURER,
+					Build.MODEL,
+					Build.BOARD,
+					appContext.packageName,
+					APP_SALT
+				).joinToString("|")
 
-			val hash = sha256(fingerprint)
-			cachedId = hash
-			return hash
+				val hash = sha256(fingerprint)
+				cachedId = hash
+				return@withIOContext hash
+			}
 		}
 	}
 
 	/**
-	 * Retrieves the hardware-based Android ID from the system settings.
+	 * Retrieves the Android ID (Settings.Secure.ANDROID_ID) for the device.
+	 * This method handles edge cases where the Android ID might be invalid or missing.
 	 *
-	 * This method includes logic to handle common edge cases, such as returning "unknown"
-	 * for null/blank values and identifying the well-known "9774d56d682e549c"
-	 * ID used by the Android emulator.
-	 *
-	 * @return A unique 64-bit hex string for the device, or a fallback string if the ID
-	 *         is unavailable or identified as an emulator.
+	 * @return The Android ID if valid and available, otherwise "fallback"
+	 * @see Settings.Secure#ANDROID_ID
 	 */
 	@SuppressLint("HardwareIds")
 	private fun androidId(): String {
@@ -87,11 +99,17 @@ class DeviceIdProvider(private val context: Context) {
 	}
 
 	/**
-	 * Computes a SHA-256 hash of the provided input string and returns the result as a
-	 * lowercase hexadecimal string.
+	 * Generates an SHA-256 hash of the input string.
+	 * SHA-256 is a cryptographic hash function that produces a 256-bit (32-byte) hash value.
+	 * The resulting hash is deterministic (same input always produces same output) and
+	 * collision-resistant.
 	 *
-	 * @param input The string to be hashed.
-	 * @return A 64-character hexadecimal representation of the SHA-256 hash.
+	 * @param input The input string to hash (typically the composite fingerprint)
+	 * @return A 64-character hex string representing the SHA-256 hash of the input
+	 * @throws NoSuchAlgorithmException if SHA-256 is not available
+	 *         (should never happen on standard Android devices)
+	 * @see MessageDigest
+	 * @see <a href="https://en.wikipedia.org/wiki/SHA-2">SHA-256 on Wikipedia</a>
 	 */
 	private fun sha256(input: String): String {
 		val digest = MessageDigest.getInstance("SHA-256")

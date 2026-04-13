@@ -58,7 +58,7 @@ android {
 	 */
 	defaultConfig {
 		// Unique identifier for the app on the Google Play Store.
-		applicationId "com.aio.video_downloader"
+		applicationId "com.tubeaio.pro"
 
 		// Minimum Android version required to run the app (Android 9.0 Pie).
 		minSdk 28
