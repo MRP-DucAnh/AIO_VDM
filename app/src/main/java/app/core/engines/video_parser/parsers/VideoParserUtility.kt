@@ -18,7 +18,6 @@ import lib.networks.DownloaderUtils.generateNetscapeFormattedCookieString
 import lib.networks.URLUtilityKT.getBaseDomain
 import lib.networks.URLUtilityKT.getWebpageTitleOrDescription
 import lib.process.LogHelperUtils
-import lib.process.UniqueNumberUtils.getUniqueNumberForDownloadModels
 import lib.texts.CommonTextUtils.getText
 import lib.texts.CommonTextUtils.removeEmptyLines
 import lib.texts.CommonTextUtils.safeCutString

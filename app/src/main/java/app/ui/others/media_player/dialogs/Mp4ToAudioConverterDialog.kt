@@ -17,7 +17,6 @@ import lib.files.VideoToAudioConverter.*
 import lib.networks.DownloaderUtils.getHumanReadableFormat
 import lib.process.*
 import lib.process.CopyObjectUtils.deepCopy
-import lib.process.UniqueNumberUtils.getUniqueNumberForDownloadModels
 import lib.texts.CommonTextUtils.getText
 import lib.ui.ViewUtility.setLeftSideDrawable
 import lib.ui.builders.*
