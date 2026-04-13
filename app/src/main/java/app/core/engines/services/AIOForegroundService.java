@@ -2,6 +2,7 @@ package app.core.engines.services;
 
 import static androidx.core.app.NotificationCompat.Builder;
 import static app.core.AIOApp.INSTANCE;
+import static app.core.AIODefaultsKt.AIO_DEFAULT_FULL_NAME;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -15,6 +16,7 @@ import androidx.annotation.Nullable;
 
 import com.aio.R;
 
+import app.core.AIODefaultsKt;
 import app.ui.main.MotherActivity;
 
 /**
@@ -145,7 +147,7 @@ public class AIOForegroundService extends Service {
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, flags);
 
         return new Builder(this, CHANNEL_ID)
-                .setContentTitle(getString(R.string.title_aio_video_downloader))
+                .setContentTitle(AIO_DEFAULT_FULL_NAME)
                 .setContentText(getString(R.string.title_search_and_download_your_videos))
                 .setSmallIcon(R.drawable.ic_launcher_logo_v4)
                 .setContentIntent(pendingIntent)

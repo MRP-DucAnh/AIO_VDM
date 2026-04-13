@@ -145,11 +145,11 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 					?.absolutePath
 					.orEmpty()
 
-			val finalAIODownloadDir = removeDuplicateSlashes("$basePath/AIO Downloads")
+			val finalAIODownloadDir = removeDuplicateSlashes("$basePath/$AIO_DOWNLOADS")
 			if (finalAIODownloadDir.isNullOrEmpty() == false) {
 				finalAIODownloadDir
 			} else {
-				"/storage/emulated/0/Download/AIO Downloads"
+				AIO_DEFAULT_DOWNLOAD_PATH
 			}
 		}
 

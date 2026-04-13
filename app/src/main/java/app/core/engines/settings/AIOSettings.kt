@@ -1,6 +1,7 @@
 package app.core.engines.settings
 
 import androidx.documentfile.provider.*
+import app.core.*
 import app.core.AIOApp.Companion.AIO_DEFAULT_DOWNLOAD_PATH
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioSettings
@@ -411,8 +412,8 @@ class AIOSettings : Serializable {
 	private suspend fun setupDefaultDownloadDir(): Boolean {
 		return withIOContext {
 			runCatching {
-				val dirPath = getText(R.string.title_default_application_folder)
-				val dir = INSTANCE.getPublicDownloadDir()?.makeFolder(INSTANCE, dirPath)
+				val dirName = AIO_DOWNLOADS
+				val dir = INSTANCE.getPublicDownloadDir()?.makeFolder(INSTANCE, dirName)
 				dir?.exists() == true
 			}.getOrDefault(false)
 		}
