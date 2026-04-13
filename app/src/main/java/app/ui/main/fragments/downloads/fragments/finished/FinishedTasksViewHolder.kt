@@ -33,7 +33,7 @@ import lib.files.FileSystemUtility.isDocumentByName
 import lib.files.FileSystemUtility.isImageByName
 import lib.files.FileSystemUtility.isProgramByName
 import lib.files.FileSystemUtility.isVideoByName
-import lib.networks.DownloaderUtils.getAudioPlaybackTimeIfAvailable
+import lib.networks.DownloaderUtils.getMediaPlaybackTimeIfAvailable
 import lib.process.LogHelperUtils
 import lib.texts.CommonTextUtils.fromHtmlStringToSpanned
 import lib.texts.CommonTextUtils.getText
@@ -445,7 +445,7 @@ class FinishedTasksViewHolder(layout: View) {
 		val fileSize = humanReadableSizeOf(dataModel.fileSize.toDouble())
 
 		val playbackTime = dataModel.mediaFilePlaybackDuration.ifEmpty {
-			getAudioPlaybackTimeIfAvailable(dataModel)
+			getMediaPlaybackTimeIfAvailable(dataModel)
 		}
 
 		val modelInfoEmpty = dataModel.mediaFilePlaybackDuration.isEmpty()

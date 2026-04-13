@@ -1,74 +1,42 @@
 package lib.networks
 
-import android.content.Context
-import android.media.MediaMetadataRetriever
-import android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT
-import android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH
-import android.os.Build
-import android.os.Environment.DIRECTORY_DOWNLOADS
-import android.os.Environment.getExternalStoragePublicDirectory
-import androidx.documentfile.provider.DocumentFile
-import androidx.documentfile.provider.DocumentFile.fromFile
+import android.media.*
+import android.media.MediaMetadataRetriever.*
+import androidx.documentfile.provider.*
+import androidx.documentfile.provider.DocumentFile.*
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.IS_PREMIUM_USER
-import app.core.engines.downloader.AIODownload
-import com.aio.R
-import lib.device.DateTimeUtils.calculateTime
+import app.core.engines.downloader.*
 import lib.device.DateTimeUtils.formatVideoDuration
-import lib.files.FileSystemUtility.getPrimaryStoragePathFallback
 import lib.files.FileSystemUtility.isAudio
 import lib.files.FileSystemUtility.isVideo
 import lib.files.FileSystemUtility.isWritableFile
-import lib.process.LogHelperUtils
+import lib.process.*
 import lib.texts.CommonTextUtils.removeDuplicateSlashes
-import java.io.File
-import java.text.DecimalFormat
-import java.util.Locale
-import kotlin.math.ln
-import kotlin.math.pow
+import java.io.*
+import java.text.*
+import java.util.*
+import kotlin.math.*
 
-/**
- * Utility class for download-related operations including formatting, calculations,
- * file handling, and metadata extraction.
- */
 object DownloaderUtils {
 
-	/** Logger instance for debug messages and error tracking */
 	private val logger = LogHelperUtils.from(javaClass)
-
-	/** Decimal formatter for consistent number formatting */
 	private val decimalFormat = DecimalFormat("##.##")
 
-	/**
-	 * Formats the download progress percentage.
-	 * @param model The download data model containing progress information
-	 * @return Formatted percentage string
-	 */
 	@JvmStatic
 	fun getFormattedPercentage(model: AIODownload): String {
 		return decimalFormat.format(model.progressPercentage.toDouble())
 	}
 
-	/**
-	 * Formats a double value using the standard decimal format.
-	 * @param input The double value to format
-	 * @return Formatted string
-	 */
-	@JvmStatic fun getFormatted(input: Double): String = decimalFormat.format(input)
+	@JvmStatic fun getFormatted(input: Double): String {
+		val format = decimalFormat.format(input)
+		return format
+	}
 
-	/**
-	 * Formats a float value using the standard decimal format.
-	 * @param input The float value to format
-	 * @return Formatted string
-	 */
-	@JvmStatic fun getFormatted(input: Float): String = decimalFormat.format(input.toDouble())
+	@JvmStatic fun getFormatted(input: Float): String {
+		return decimalFormat.format(input.toDouble())
+	}
 
-	/**
-	 * Determines the optimal number of download parts based on file size and user premium status.
-	 * Premium users get more parts for better performance.
-	 * @param totalFileLength The total size of the file to download
-	 * @return Optimal number of download parts
-	 */
 	@JvmStatic
 	fun getOptimalNumberOfDownloadParts(totalFileLength: Long): Int {
 		val mb1 = 1000000
@@ -100,152 +68,45 @@ object DownloaderUtils {
 		}
 	}
 
-	/**
-	 * Returns the default system download directory path as a string.
-	 *
-	 * On Android 10 (API 29) and above, it returns the app-specific external downloads
-	 * directory or falls back to a custom "AIO Downloads" folder in internal storage.
-	 * On older versions, it returns a custom "AIO Downloads" folder within the
-	 * standard public downloads directory.
-	 *
-	 * @param context The application or activity context.
-	 * @return The absolute path to the designated downloads directory.
-	 */
 	@JvmStatic
-	fun getDefaultDownloadPath(context: Context): String {
-		return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-			context.getExternalFilesDir(DIRECTORY_DOWNLOADS)?.path
-				?: "${getPrimaryStoragePathFallback()}/AIO Downloads"
-		} else {
-			val publicDownloads = getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS)
-			File(publicDownloads, "AIO Downloads").apply { mkdirs() }.path
+	suspend fun getMediaPlaybackTimeIfAvailable(downloadDataModel: AIODownload): String {
+		return withIOContext {
+			val downloadedFile: DocumentFile = downloadDataModel.getDestinationDocumentFile()
+			if (isAudio(downloadedFile) || isVideo(downloadedFile)) {
+				try {
+					if (!isWritableFile(downloadedFile)) return@withIOContext ""
+					val mediaFileUri = downloadedFile.uri
+					val retriever = MediaMetadataRetriever()
+					retriever.setDataSource(INSTANCE, mediaFileUri)
+
+					val extractCode = METADATA_KEY_DURATION
+					val durationMs = retriever.extractMetadata(extractCode)?.toLongOrNull()
+					retriever.release()
+
+					val formattedDuration = formatVideoDuration(durationMs)
+					return@withIOContext "($formattedDuration)"
+				} catch (error: Exception) {
+					error.printStackTrace()
+					return@withIOContext ""
+				}
+			} else return@withIOContext ""
 		}
 	}
 
-	/**
-	 * Calculates the chunk size for each download part.
-	 * @param isResumable Whether the download is resumable
-	 * @param totalFileLength Total size of the file
-	 * @param numberOfParts Number of parts to divide the download into
-	 * @return Size of each download chunk
-	 */
-	@JvmStatic
-	fun generateDownloadPartChunkSize(
-		isResumable: Boolean,
-		totalFileLength: Long, numberOfParts: Int
-	): Long {
-		return if (isResumable) totalFileLength / numberOfParts else totalFileLength
-	}
-
-	/**
-	 * Extracts and formats the playback duration of an audio or video file if available.
-	 * @param downloadDataModel The download model containing file information
-	 * @return Formatted duration string or empty string if not available
-	 */
-	@JvmStatic
-	fun getAudioPlaybackTimeIfAvailable(downloadDataModel: AIODownload): String {
-		val downloadedFile: DocumentFile = downloadDataModel.getDestinationDocumentFile()
-		if (isAudio(downloadedFile) || isVideo(downloadedFile)) {
-			try {
-				if (!isWritableFile(downloadedFile)) return ""
-				val mediaFileUri = downloadedFile.uri
-				val retriever = MediaMetadataRetriever()
-				retriever.setDataSource(INSTANCE, mediaFileUri)
-
-				val extractCode = MediaMetadataRetriever.METADATA_KEY_DURATION
-				val durationMs = retriever.extractMetadata(extractCode)?.toLongOrNull()
-				retriever.release()
-
-				val formattedDuration = formatVideoDuration(durationMs)
-				return "($formattedDuration)"
-			} catch (error: Exception) {
-				error.printStackTrace()
-				return ""
-			}
-		} else return ""
-	}
-
-	/**
-	 * Calculates and formats the remaining download time.
-	 * @param bytesRemaining Bytes left to download
-	 * @param downloadSpeed Current download speed in bytes per second
-	 * @return Formatted time string or "calculating" if speed is 0
-	 */
-	@JvmStatic
-	fun getRemainingDownloadTimeInFormat(
-		bytesRemaining: Long, downloadSpeed: Long
-	): String {
-		if (downloadSpeed <= 0) return INSTANCE.getString(R.string.title_calculating)
-		val remainingMillis = (bytesRemaining * 1000) / downloadSpeed
-		return calculateTime(remainingMillis.toFloat())
-	}
-
-	/**
-	 * Calculates the remaining download time in milliseconds.
-	 * @param bytesRemaining Bytes left to download
-	 * @param downloadSpeed Current download speed in bytes per second
-	 * @return Remaining time in milliseconds or 0 if speed is 0
-	 */
-	@JvmStatic
-	fun getRemainingDownloadTime(
-		bytesRemaining: Long, downloadSpeed: Long
-	): Long {
-		if (downloadSpeed <= 0) return 0
-		val remainingMillis = (bytesRemaining * 1000) / downloadSpeed
-		return remainingMillis
-	}
-
-	/**
-	 * Converts bytes to a human-readable format (KB, MB, GB, etc.).
-	 * @param downloadedByte Number of bytes
-	 * @return Formatted string with appropriate unit
-	 */
 	@JvmStatic
 	fun getHumanReadableFormat(
-		downloadedByte: Long
+		fileSizeInByte: Long
 	): String {
-		if (downloadedByte < 1024) return "$downloadedByte B"
-		val exp = (ln(downloadedByte.toDouble()) / ln(1024.0)).toInt()
+		if (fileSizeInByte < 1024) return "$fileSizeInByte B"
+		val exp = (ln(fileSizeInByte.toDouble()) / ln(1024.0)).toInt()
 		val pre = "KMGTPE"[exp - 1] + "B"
 		return String.format(
-			Locale.US, "%.1f %s", downloadedByte / 1024.0.pow(exp.toDouble()), pre
+			Locale.US, "%.1f %s", fileSizeInByte / 1024.0.pow(exp.toDouble()), pre
 		)
 	}
 
-	/**
-	 * Calculates and formats the current download speed.
-	 * @param bytesDownloaded Bytes downloaded so far
-	 * @param timeMillis Time taken in milliseconds
-	 * @return Formatted speed string with appropriate unit
-	 */
 	@JvmStatic
-	fun calculateDownloadSpeedInFormat(
-		bytesDownloaded: Long, timeMillis: Long
-	): String {
-		if (timeMillis == 0L) return "0B/s"
-		val speedBytesPerSecond = (bytesDownloaded * 1000).toDouble() / timeMillis
-		return formatDownloadSpeedInSimpleForm(speedBytesPerSecond)
-	}
-
-	/**
-	 * Calculates the current download speed in bytes per second.
-	 * @param bytesDownloaded Bytes downloaded so far
-	 * @param timeMillis Time taken in milliseconds
-	 * @return Speed in bytes per second
-	 */
-	@JvmStatic
-	fun calculateDownloadSpeed(bytesDownloaded: Long, timeMillis: Long): Long {
-		if (timeMillis == 0L) return 0L
-		return ((bytesDownloaded * 1000) / timeMillis)
-	}
-
-	/**
-	 * Formats download speed with appropriate unit (B/s, KB/s, MB/s, etc.).
-	 * @param speedBytesPerSecond Speed in bytes per second
-	 * @return Formatted speed string
-	 */
-	@JvmStatic
-	fun formatDownloadSpeedInSimpleForm(
+	fun getHumanReadableSpeed(
 		speedBytesPerSecond: Double
 	): String {
 		val oneKB: Long = 1024
@@ -262,11 +123,6 @@ object DownloaderUtils {
 		}
 	}
 
-	/**
-	 * Generates a unique filename by appending a timestamp to prevent conflicts.
-	 * @param baseFileName Original filename
-	 * @return Unique filename with timestamp
-	 */
 	@JvmStatic
 	fun generateUniqueDownloadFileName(baseFileName: String): String {
 		val timestamp = System.currentTimeMillis()
@@ -280,180 +136,143 @@ object DownloaderUtils {
 		}
 	}
 
-	/**
-	 * Updates the download directory path based on smart catalog settings.
-	 * Creates subdirectories if smart catalog is enabled.
-	 * @param downloadModel The download model to update
-	 */
 	@JvmStatic
-	fun updateSmartCatalogDownloadDir(downloadModel: AIODownload) {
-		if (isSmartDownloadCatalogEnabled(downloadModel)) {
-			val fileCategoryName = downloadModel.getUpdatedCategoryName()
-			val aioRootDir = File(downloadModel.fileDirectory)
-			val aioSubDir = fromFile(aioRootDir).createDirectory(fileCategoryName)
-			aioSubDir?.canWrite().let { canWrite ->
-				if (canWrite == true) {
-					downloadModel.fileCategoryName = fileCategoryName
+	suspend fun updateSmartCatalogDownloadDir(download: AIODownload) {
+		withIOContext {
+			if (isSmartDownloadCatalogEnabled(download)) {
+				val fileCategoryName = download.getUpdatedCategoryName()
+				val aioRootDir = File(download.fileDirectory)
+				val aioSubDir = fromFile(aioRootDir).createDirectory(fileCategoryName)
+				aioSubDir?.canWrite().let { canWrite ->
+					if (canWrite == true) {
+						download.fileCategoryName = fileCategoryName
+					}
 				}
-			}
-		} else downloadModel.fileCategoryName = ""
+			} else download.fileCategoryName = ""
 
-		val finalDirWithCategory = removeDuplicateSlashes(
-			"${downloadModel.fileDirectory}/${
-				if (downloadModel.fileCategoryName.isNotEmpty())
-					downloadModel.fileCategoryName + "/" else ""
-			}"
-		)
+			val finalDirWithCategory = removeDuplicateSlashes(
+				"${download.fileDirectory}/${
+					if (download.fileCategoryName.isNotEmpty())
+						download.fileCategoryName + "/" else ""
+				}"
+			)
 
-		finalDirWithCategory?.let { downloadModel.fileDirectory = it }
-	}
-
-	/**
-	 * Renames the download file if a file with the same name already exists.
-	 * Adds a numeric prefix to prevent conflicts.
-	 * @param downloadModel The download model containing file information
-	 */
-	@JvmStatic
-	fun renameIfDownloadFileExistsWithSameName(downloadModel: AIODownload) {
-		var index: Int
-		val regex = Regex("^(\\d+)_")
-
-		while (downloadModel.getDestinationDocumentFile().exists()) {
-			val matchResult = regex.find(downloadModel.fileName)
-			if (matchResult != null) {
-				val currentIndex = matchResult.groupValues[1].toInt()
-				downloadModel.fileName = downloadModel.fileName.replaceFirst(regex, "")
-				index = currentIndex + 1
-			} else index = 1
-			downloadModel.fileName = "${index}_${downloadModel.fileName}"
+			finalDirWithCategory?.let { download.fileDirectory = it }
 		}
 	}
 
-	/**
-	 * Validates and modifies a filename if it already exists in the directory.
-	 * @param directory The target directory
-	 * @param fileName Original filename
-	 * @return Modified filename that doesn't conflict with existing files
-	 */
 	@JvmStatic
-	fun validateExistedDownloadedFileName(directory: String, fileName: String): String {
-		var index: Int
-		val regex = Regex("^(\\d+)_")
-		var modifiedName = fileName
+	suspend fun renameIfDownloadFileExistsWithSameName(download: AIODownload) {
+		withIOContext {
+			var index: Int
+			val regex = Regex("^(\\d+)_")
 
-		while (File(directory, modifiedName).exists()) {
-			val matchResult = regex.find(modifiedName)
-			if (matchResult != null) {
-				val currentIndex = matchResult.groupValues[1].toInt()
-				modifiedName = modifiedName.replaceFirst(regex, "")
-				index = currentIndex + 1
-			} else index = 1
-			modifiedName = "${index}_${modifiedName}"
-		}; return modifiedName
+			while (download.getDestinationDocumentFile().exists()) {
+				val matchResult = regex.find(download.fileName)
+				if (matchResult != null) {
+					val currentIndex = matchResult.groupValues[1].toInt()
+					download.fileName = download.fileName.replaceFirst(regex, "")
+					index = currentIndex + 1
+				} else index = 1
+				download.fileName = "${index}_${download.fileName}"
+			}
+		}
 	}
 
-	/**
-	 * Checks if smart download catalog feature is enabled for the download.
-	 * @param downloadModel The download model to check
-	 * @return True if smart catalog is enabled, false otherwise
-	 */
+	@JvmStatic
+	suspend fun validateExistedDownloadedFileName(directory: String, fileName: String): String {
+		return withIOContext {
+			var index: Int
+			val regex = Regex("^(\\d+)_")
+			var modifiedName = fileName
+
+			while (File(directory, modifiedName).exists()) {
+				val matchResult = regex.find(modifiedName)
+				if (matchResult != null) {
+					val currentIndex = matchResult.groupValues[1].toInt()
+					modifiedName = modifiedName.replaceFirst(regex, "")
+					index = currentIndex + 1
+				} else index = 1
+				modifiedName = "${index}_${modifiedName}"
+			}
+			return@withIOContext modifiedName
+		}
+	}
+
 	@JvmStatic
 	fun isSmartDownloadCatalogEnabled(downloadModel: AIODownload): Boolean {
 		return downloadModel.config.downloadAutoFolderCatalog
 	}
 
-	/**
-	 * Converts a standard cookie string to Netscape HTTP Cookie File format.
-	 * @param cookieString Standard cookie string
-	 * @return Formatted Netscape cookie file content
-	 */
 	@JvmStatic
-	fun generateNetscapeFormattedCookieString(cookieString: String): String {
-		val cookies = cookieString.split(";").map { it.trim() }
-		val domain = ""
-		val path = "/"
-		val secure = "FALSE"
-		val expiry = "2147483647"
+	suspend fun generateNetscapeFormattedCookieString(cookieString: String): String {
+		return withIOContext {
+			val cookies = cookieString.split(";").map { it.trim() }
+			val domain = ""
+			val path = "/"
+			val secure = "FALSE"
+			val expiry = "2147483647"
 
-		val stringBuilder = StringBuilder()
-		stringBuilder.append("# Netscape HTTP Cookie File\n")
-		stringBuilder.append("# This file was generated by the app.\n\n")
+			val stringBuilder = StringBuilder()
+			stringBuilder.append("# Netscape HTTP Cookie File\n")
+			stringBuilder.append("# This file was generated by the app.\n\n")
 
-		for (cookie in cookies) {
-			val parts = cookie.split("=", limit = 2)
-			if (parts.size == 2) {
-				val name = parts[0].trim()
-				val value = parts[1].trim()
-				val pattern = "$domain\tFALSE\t$path\t$secure\t$expiry\t$name\t$value\n"
-				stringBuilder.append(pattern)
+			for (cookie in cookies) {
+				val parts = cookie.split("=", limit = 2)
+				if (parts.size == 2) {
+					val name = parts[0].trim()
+					val value = parts[1].trim()
+					val pattern = "$domain\tFALSE\t$path\t$secure\t$expiry\t$name\t$value\n"
+					stringBuilder.append(pattern)
+				}
 			}
-		}
-		return stringBuilder.toString()
-	}
-
-	/**
-	 * Extracts the resolution (width x height) of a video from its URL using MediaMetadataRetriever.
-	 *
-	 * This function attempts to fetch video metadata directly from the provided URL.
-	 * If successful, it returns a [Pair] containing width and height in pixels.
-	 * Returns null if the metadata cannot be retrieved or an error occurs.
-	 *
-	 * @param videoUrl The URL or file path of the video
-	 * @return Pair(width, height) in pixels, or null if resolution cannot be determined
-	 */
-	@JvmStatic
-	fun getVideoResolutionFromUrl(videoUrl: String): Pair<Int, Int>? {
-		val retriever = MediaMetadataRetriever()
-		return try {
-			retriever.setDataSource(videoUrl, HashMap<String, String>())
-			val width = retriever.extractMetadata(METADATA_KEY_VIDEO_WIDTH)?.toInt()
-			val height = retriever.extractMetadata(METADATA_KEY_VIDEO_HEIGHT)?.toInt()
-			if (width != null && height != null) {
-				logger.d("Video resolution for $videoUrl: ${width}x$height")
-				Pair(width, height)
-			} else {
-				logger.d("Unable to extract video resolution for $videoUrl")
-				null
-			}
-		} catch (error: Exception) {
-			logger.e("Error extracting video resolution: ${error.message}", error)
-			null
-		} finally {
-			retriever.release()
+			return@withIOContext stringBuilder.toString()
 		}
 	}
 
-	/**
-	 * Retrieves the duration of a remote video file in milliseconds.
-	 *
-	 * Uses MediaMetadataRetriever to extract metadata from a video URL.
-	 * Logs detailed information for debugging and handles all exceptions safely.
-	 *
-	 * @param videoUrl The direct HTTP/HTTPS URL of the video file.
-	 * @return Duration in milliseconds, or 0 if retrieval fails.
-	 */
 	@JvmStatic
-	fun getVideoDurationFromUrl(videoUrl: String): Long {
-		logger.d("Attempting to extract video duration from URL: $videoUrl")
-
-		return try {
+	suspend fun getVideoResolutionFromUrl(videoUrl: String): Pair<Int, Int>? {
+		return withIOContext {
 			val retriever = MediaMetadataRetriever()
+			return@withIOContext try {
+				retriever.setDataSource(videoUrl, HashMap())
+				val width = retriever.extractMetadata(METADATA_KEY_VIDEO_WIDTH)?.toInt()
+				val height = retriever.extractMetadata(METADATA_KEY_VIDEO_HEIGHT)?.toInt()
+				if (width != null && height != null) {
+					logger.d("Video resolution for $videoUrl: ${width}x$height")
+					Pair(width, height)
+				} else {
+					logger.d("Unable to extract video resolution for $videoUrl")
+					null
+				}
+			} catch (error: Exception) {
+				logger.e("Error extracting video resolution: ${error.message}", error)
+				null
+			} finally {
+				retriever.release()
+			}
+		}
+	}
 
-			// Set the video source (remote URL)
-			retriever.setDataSource(videoUrl, HashMap())
-			logger.d("MediaMetadataRetriever initialized successfully")
+	@JvmStatic
+	suspend fun getVideoDurationFromUrl(videoUrl: String): Long {
+		return withIOContext {
+			try {
+				val retriever = MediaMetadataRetriever()
+				retriever.setDataSource(videoUrl, HashMap())
 
-			// Extract duration metadata
-			val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-			val durationMs = durationStr?.toLongOrNull() ?: 0L
-			logger.d("Video duration extracted: ${durationMs}ms")
+				// Extract duration metadata
+				val durationStr = retriever.extractMetadata(METADATA_KEY_DURATION)
+				val durationMs = durationStr?.toLongOrNull() ?: 0L
+				logger.d("Video duration extracted: ${durationMs}ms")
 
-			// Release retriever resources
-			retriever.release()
-			durationMs
-		} catch (error: Exception) {
-			logger.e("Error extracting video duration from remote URL: $videoUrl", error)
-			0L
+				retriever.release()
+				durationMs
+			} catch (error: Exception) {
+				logger.e("Error extracting video duration: ${error.message}", error)
+				logger.d("Video duration extracted: 0ms")
+				0L
+			}
 		}
 	}
 }

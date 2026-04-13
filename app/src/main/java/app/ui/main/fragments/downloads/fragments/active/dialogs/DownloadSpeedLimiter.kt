@@ -6,7 +6,7 @@ import android.widget.TextView
 import app.core.bases.BaseActivity
 import app.core.engines.downloader.AIODownload
 import com.aio.R
-import lib.networks.DownloaderUtils.formatDownloadSpeedInSimpleForm
+import lib.networks.DownloaderUtils.getHumanReadableSpeed
 import lib.process.LogHelperUtils
 import lib.texts.CommonTextUtils.getText
 import lib.ui.builders.DialogBuilder
@@ -81,7 +81,7 @@ class DownloadSpeedLimiter(
 
 		// Display the current download speed in the text view
 		val speedBytesPerSecond = downloadSettings.downloadMaxNetworkSpeed.toDouble()
-		val seekbarPreview: String = formatDownloadSpeedInSimpleForm(speedBytesPerSecond)
+		val seekbarPreview: String = getHumanReadableSpeed(speedBytesPerSecond)
 
 		sliderPrev.text = seekbarPreview
 
@@ -94,7 +94,7 @@ class DownloadSpeedLimiter(
 		seekBar.setOnSeekBarChangeListener(object : SeekBarListener() {
 			override fun onProgressChange(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
 				val speed = seekBar!!.progress
-				sliderPrev.text = formatDownloadSpeedInSimpleForm(speed.toDouble())
+				sliderPrev.text = getHumanReadableSpeed(speed.toDouble())
 			}
 		})
 

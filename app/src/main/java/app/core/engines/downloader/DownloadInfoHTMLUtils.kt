@@ -3,7 +3,7 @@ package app.core.engines.downloader
 import app.core.*
 import com.aio.*
 import lib.files.FileSizeFormatter.humanReadableSizeOf
-import lib.networks.DownloaderUtils.formatDownloadSpeedInSimpleForm
+import lib.networks.DownloaderUtils.getHumanReadableSpeed
 import lib.process.*
 import lib.texts.CommonTextUtils.getText
 
@@ -156,7 +156,7 @@ object DownloadInfoHTMLUtils {
 	 * @return Formatted speed limit (e.g., "1.0 MB/s") or "Unlimited".
 	 */
 	private fun formatNetworkSpeedLimit(downloadModel: AIODownload): String {
-		return formatDownloadSpeedInSimpleForm(
+		return getHumanReadableSpeed(
 			downloadModel.config.downloadMaxNetworkSpeed.toDouble()
 		)
 	}

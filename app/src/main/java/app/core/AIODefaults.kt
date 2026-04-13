@@ -1,0 +1,4 @@
+package app.core
+
+const val AIO_DEFAULT_NAME = "TubeAIO"
+const val AIO_DOWNLOADS = "AIO Downloads"

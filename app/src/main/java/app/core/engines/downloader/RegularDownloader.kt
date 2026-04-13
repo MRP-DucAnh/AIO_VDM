@@ -17,14 +17,11 @@ import kotlinx.coroutines.launch
 import lib.device.DateTimeUtils.calculateTime
 import lib.device.DateTimeUtils.millisToDateTimeString
 import lib.files.FileSizeFormatter.humanReadableSizeOf
-import lib.networks.DownloaderUtils.calculateDownloadSpeed
-import lib.networks.DownloaderUtils.calculateDownloadSpeedInFormat
-import lib.networks.DownloaderUtils.formatDownloadSpeedInSimpleForm
-import lib.networks.DownloaderUtils.getAudioPlaybackTimeIfAvailable
+import lib.networks.DownloaderUtils.getHumanReadableSpeed
+import lib.networks.DownloaderUtils.getMediaPlaybackTimeIfAvailable
 import lib.networks.DownloaderUtils.getFormattedPercentage
 import lib.networks.DownloaderUtils.getHumanReadableFormat
 import lib.networks.DownloaderUtils.getOptimalNumberOfDownloadParts
-import lib.networks.DownloaderUtils.getRemainingDownloadTime
 import lib.networks.NetworkUtility.isNetworkAvailable
 import lib.networks.NetworkUtility.isWifiEnabled
 import lib.networks.URLUtility.getOriginalURL
@@ -289,7 +286,7 @@ class RegularDownloader(
 			logger.d("All download parts completed successfully")
 			downloadDataModel.mediaFilePlaybackDuration.ifEmpty {
 				downloadDataModel.mediaFilePlaybackDuration =
-					getAudioPlaybackTimeIfAvailable(downloadDataModel)
+					getMediaPlaybackTimeIfAvailable(downloadDataModel)
 			}
 
 			if (downloadSettings.downloadPlayNotificationSound) {
@@ -1131,7 +1128,7 @@ class RegularDownloader(
 
 			downloadDataModel.realtimeSpeed = if (currentSpeed < 0) 0 else currentSpeed
 			downloadDataModel.realtimeSpeedInFormat = if (currentSpeed < 0)
-				formatDownloadSpeedInSimpleForm(0.0) else it.getFormattedSpeed()
+				getHumanReadableSpeed(0.0) else it.getFormattedSpeed()
 
 			if (!downloadDataModel.isRunning) {
 				downloadDataModel.realtimeSpeed = 0
@@ -1150,7 +1147,7 @@ class RegularDownloader(
 		if (downloadDataModel.realtimeSpeed > downloadDataModel.maxSpeed) {
 			downloadDataModel.maxSpeed = downloadDataModel.realtimeSpeed
 			downloadDataModel.maxSpeedInFormat =
-				formatDownloadSpeedInSimpleForm(downloadDataModel.maxSpeed.toDouble())
+				getHumanReadableSpeed(downloadDataModel.maxSpeed.toDouble())
 			logger.d("Max download speed updated: ${downloadDataModel.maxSpeedInFormat}")
 		}
 	}
@@ -1215,5 +1212,26 @@ class RegularDownloader(
 				logger.d("Network restored, retrying all download threads")
 			}
 		}
+	}
+
+	fun getRemainingDownloadTime(
+		bytesRemaining: Long, downloadSpeed: Long
+	): Long {
+		if (downloadSpeed <= 0) return 0
+		val remainingMillis = (bytesRemaining * 1000) / downloadSpeed
+		return remainingMillis
+	}
+
+	fun calculateDownloadSpeedInFormat(
+		bytesDownloaded: Long, timeMillis: Long
+	): String {
+		if (timeMillis == 0L) return "0B/s"
+		val speedBytesPerSecond = (bytesDownloaded * 1000).toDouble() / timeMillis
+		return getHumanReadableSpeed(speedBytesPerSecond)
+	}
+
+	fun calculateDownloadSpeed(bytesDownloaded: Long, timeMillis: Long): Long {
+		if (timeMillis == 0L) return 0L
+		return ((bytesDownloaded * 1000) / timeMillis)
 	}
 }

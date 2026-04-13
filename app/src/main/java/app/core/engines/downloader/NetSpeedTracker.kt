@@ -1,6 +1,6 @@
 package app.core.engines.downloader
 
-import lib.networks.DownloaderUtils.formatDownloadSpeedInSimpleForm
+import lib.networks.DownloaderUtils.getHumanReadableSpeed
 
 /**
  * Utility class that tracks and calculates the current download speed over time.
@@ -53,5 +53,5 @@ class NetSpeedTracker(initialBytesDownloaded: Long) {
 	 *
 	 * @return A human-readable string of the current download speed.
 	 */
-	fun getFormattedSpeed(): String = formatDownloadSpeedInSimpleForm(currentSpeed.toDouble())
+	fun getFormattedSpeed(): String = getHumanReadableSpeed(currentSpeed.toDouble())
 }
