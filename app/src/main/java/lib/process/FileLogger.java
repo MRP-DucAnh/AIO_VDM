@@ -15,7 +15,6 @@ import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 
 import app.core.AIOApp;
-import lib.texts.CommonTextUtils;
 
 /**
  * A thread-safe file logging utility for persistent log storage.
@@ -64,7 +63,8 @@ public final class FileLogger {
 		if (writer == null) {
 			try {
 				// Define configuration directory path for log storage
-				String aioConfigDirPath = AIOApp.Companion.getAIO_DEFAULT_DOWNLOAD_PATH() + "/.configs";
+				String aioConfigDirPath = AIOApp.Companion
+					.getAIO_DEFAULT_DOWNLOAD_PATH() + "/.configs";
 				aioConfigDirPath = removeDuplicateSlashes(aioConfigDirPath);
 
 				// Create directory structure if it doesn't exist
