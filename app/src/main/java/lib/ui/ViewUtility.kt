@@ -34,7 +34,8 @@ import app.core.engines.settings.AIOSettings.Companion.DARK_MODE_INDICATOR_FIE
 import com.aio.R
 import com.bumptech.glide.*
 import kotlinx.coroutines.*
-import lib.files.*
+import lib.files.FileSystemUtility.isAudioByName
+import lib.files.FileSystemUtility.isImageByName
 import lib.process.*
 import java.io.*
 import java.net.*
@@ -195,7 +196,9 @@ object ViewUtility {
 	}
 
 	@JvmStatic
-	suspend fun tintDrawableWithProvidedColor(targetDrawable: Drawable?, colorResId: Int) {
+	suspend fun tintDrawableWithProvidedColor(
+		targetDrawable: Drawable?, colorResId: Int
+	) {
 		withMainContext {
 			if (targetDrawable == null) return@withMainContext
 			val tintColor = getColor(INSTANCE, colorResId)
@@ -229,14 +232,19 @@ object ViewUtility {
 		withMainContext {
 			if (shouldAnimate) {
 				if (targetView.isVisible) {
-					targetView.animate().alpha(0f)
+					targetView
+						.animate()
+						.alpha(0f)
 						.setDuration(animTimeout)
 						.withEndAction { targetView.visibility = GONE }
 
 				} else {
 					targetView.alpha = 0f
 					targetView.visibility = VISIBLE
-					targetView.animate().alpha(1f).setDuration(animTimeout)
+					targetView
+						.animate()
+						.alpha(1f)
+						.setDuration(animTimeout)
 				}
 			} else {
 				targetView.visibility = if (targetView.isVisible) GONE
@@ -255,12 +263,12 @@ object ViewUtility {
 			if (!targetView.isVisible) return@withMainContext
 
 			if (shouldAnimate) {
-				targetView.animate().alpha(0f)
+				targetView
+					.animate()
+					.alpha(0f)
 					.setDuration(animTimeout)
 				targetView.visibility = visibility
-			} else {
-				targetView.visibility = visibility
-			}
+			} else targetView.visibility = visibility
 		}
 	}
 
@@ -276,7 +284,8 @@ object ViewUtility {
 			if (shouldAnimate) {
 				targetView.alpha = 0f
 				targetView.visibility = VISIBLE
-				targetView.animate().alpha(1f).setDuration(animTimeout)
+				targetView.animate().alpha(1f)
+					.setDuration(animTimeout)
 			} else {
 				targetView.visibility = VISIBLE
 			}
@@ -341,9 +350,8 @@ object ViewUtility {
 		withMainContext {
 			if (targetView == null) return@withMainContext
 			val current = targetView.animation
-			if (current != null && !current.hasEnded()) {
+			if (current != null && !current.hasEnded())
 				return@withMainContext
-			}
 
 			val anim = AlphaAnimation(0f, 1f).apply {
 				duration = 500
@@ -367,7 +375,6 @@ object ViewUtility {
 	) {
 		withMainContext {
 			if (view == null) return@withMainContext
-
 			val fadeOut = AlphaAnimation(1.0f, 0.0f).apply {
 				this.duration = duration
 				fillAfter = true
@@ -415,17 +422,13 @@ object ViewUtility {
 
 				connection.disconnect()
 			} catch (error: Exception) {
+				logger.e("Error loading thumbnail from a remote url:", error)
 				withMainContext {
-					logger.e("Error while loading thumbnail from a remote url:", error)
-					if (placeHolderDrawableId != null) {
-						targetImageView.setImageResource(placeHolderDrawableId)
-					}
+					if (placeHolderDrawableId == null) return@withMainContext
+					targetImageView.setImageResource(placeHolderDrawableId)
 				}
 			} finally {
-				try {
-					input?.close()
-				} catch (e: Exception) {
-				}
+				runCatching { input?.close() }
 			}
 		}
 	}
@@ -452,12 +455,17 @@ object ViewUtility {
 		requiredThumbWidth: Int
 	): Bitmap? {
 		return withIOContext {
-			if (FileSystemUtility.isAudioByName(targetFile.name)) {
-				extractAudioAlbumArt(targetFile)?.let { return@withIOContext it }
-			} else if (FileSystemUtility.isImageByName(targetFile.name)) {
-				getBitmapFromFile(imageFile = targetFile)?.let {
-					return@withIOContext scaleBitmap(it, requiredThumbWidth)
-				}
+			if (isAudioByName(targetFile.name)) {
+				extractAudioAlbumArt(targetFile)
+					?.let { return@withIOContext it }
+
+			} else if (isImageByName(targetFile.name)) {
+				getBitmapFromFile(imageFile = targetFile)
+					?.let {
+						val scaleBitmap = scaleBitmap(it, requiredThumbWidth)
+						return@withIOContext scaleBitmap
+					}
+
 			} else if (targetFile.name.endsWith(".apk", true)) {
 				var apkBitmap: Bitmap? = null
 				getApkThumbnail(
@@ -474,7 +482,8 @@ object ViewUtility {
 			try {
 				var originalBitmap: Bitmap? = null
 				if (!fallbackThumbUrl.isNullOrEmpty()) {
-					originalBitmap = getBitmapFromThumbnailUrl(fallbackThumbUrl)
+					originalBitmap =
+						getBitmapFromThumbnailUrl(fallbackThumbUrl)
 				}
 
 				if (originalBitmap == null) {
@@ -488,12 +497,13 @@ object ViewUtility {
 					if (it.width <= 0) return@withIOContext null
 					val aspectRatio = it.height.toFloat() / it.width
 					val targetHeight = (requiredThumbWidth * aspectRatio).toInt()
-					return@withIOContext it.scale(requiredThumbWidth, targetHeight, false)
+					val scaledBitmap = it.scale(requiredThumbWidth, targetHeight, false)
+					return@withIOContext scaledBitmap
 				}
 			} catch (error: Exception) {
-				logger.e("Error while retrieving thumbnail from a file:", error)
+				logger.e("Error retrieving thumbnail from a file:", error)
 			} finally {
-				retriever.release()
+				runCatching { retriever.release() }
 			}
 
 			return@withIOContext null
@@ -508,12 +518,10 @@ object ViewUtility {
 	): Boolean {
 		return withIOContext {
 			val apkExtension = ".apk".lowercase(Locale.ROOT)
+			val centerInside = ImageView.ScaleType.CENTER_INSIDE
+
 			if (!apkFile.exists() || !apkFile.name.endsWith(apkExtension)) {
-				withMainContext {
-					imageViewHolder?.apply {
-						scaleType = ImageView.ScaleType.CENTER_INSIDE
-					}
-				}
+				withMainContext { imageViewHolder?.apply { scaleType = centerInside } }
 				return@withIOContext false
 			}
 
@@ -530,12 +538,10 @@ object ViewUtility {
 					val drawableIcon = appInfo.loadIcon(packageManager)
 					withMainContext {
 						imageViewHolder?.setImageDrawable(drawableIcon)
-						imageViewHolder?.scaleType = ImageView.ScaleType.CENTER_INSIDE
+						imageViewHolder?.scaleType = centerInside
 						imageViewHolder?.setPadding(0, 0, 0, 0)
 						val bitmap = drawableToBitmap(drawableIcon)
-						if (bitmap != null) {
-							onApkIconFound?.invoke(bitmap)
-						}
+						if (bitmap != null) onApkIconFound?.invoke(bitmap)
 					}
 
 					return@withIOContext true
@@ -548,10 +554,11 @@ object ViewUtility {
 
 				false
 			} catch (error: Exception) {
-				logger.e("Error found while extracting app icon from apk file:", error)
+				logger.e("Error extracting app icon from apk file:", error)
 				withMainContext {
 					imageViewHolder?.apply {
-						scaleType = ImageView.ScaleType.FIT_CENTER
+						val fitCenter = ImageView.ScaleType.FIT_CENTER
+						scaleType = fitCenter
 						setPadding(0, 0, 0, 0)
 						setImageDrawable(defaultThumbDrawable)
 					}
@@ -575,7 +582,7 @@ object ViewUtility {
 				drawable.draw(canvas)
 				bitmap
 			} catch (error: Exception) {
-				logger.e("Error found while converting drawable to a bitmap:", error)
+				logger.e("Error converting drawable to a bitmap:", error)
 				null
 			}
 		}
@@ -604,8 +611,8 @@ object ViewUtility {
 	suspend fun extractAudioAlbumArt(audioFile: File): Bitmap? {
 		return withIOContext {
 			if (!audioFile.exists()) return@withIOContext null
-
 			val retriever = MediaMetadataRetriever()
+
 			return@withIOContext try {
 				retriever.setDataSource(audioFile.absolutePath)
 				val embeddedPicture = retriever.embeddedPicture
@@ -628,19 +635,18 @@ object ViewUtility {
 					) / maxSize
 				)
 
-				val decodeOptions = Options().apply {
-					inSampleSize = scale
-				}
+				val decodeOptions = Options()
+					.apply { inSampleSize = scale }
 
 				decodeByteArray(
 					embeddedPicture, 0,
 					embeddedPicture.size, decodeOptions
 				)
 			} catch (error: Exception) {
-				logger.e("Error found while extracting audio album art:", error)
+				logger.e("Error extracting audio album art:", error)
 				null
 			} finally {
-				retriever.release()
+				runCatching { retriever.release() }
 			}
 		}
 	}
@@ -649,7 +655,6 @@ object ViewUtility {
 	suspend fun getBitmapFromThumbnailUrl(thumbnailUrl: String?): Bitmap? {
 		return withIOContext {
 			if (thumbnailUrl.isNullOrEmpty()) return@withIOContext null
-
 			var connection: HttpURLConnection? = null
 			var inputStream: InputStream? = null
 
@@ -663,20 +668,19 @@ object ViewUtility {
 					connect()
 				}
 
-				if (connection?.responseCode == HTTP_OK &&
-					connection.contentType?.contains("image", true) == true
-				) {
+				val isValidResponse = connection?.responseCode == HTTP_OK
+				val isImageContent = connection?.contentType
+					?.contains("image", true) == true
+
+				if (isValidResponse && isImageContent) {
 					inputStream = BufferedInputStream(connection.inputStream)
 					decodeStream(inputStream)
 				} else null
 			} catch (error: Exception) {
-				logger.e("Error found while getting bitmap from a url:", error)
+				logger.e("Error getting bitmap from a url:", error)
 				null
 			} finally {
-				try {
-					inputStream?.close()
-				} catch (_: IOException) {
-				}
+				runCatching { inputStream?.close() }
 				connection?.disconnect()
 			}
 		}
@@ -684,8 +688,7 @@ object ViewUtility {
 
 	@JvmStatic
 	suspend fun saveBitmapToFile(
-		bitmapToSave: Bitmap,
-		fileName: String,
+		bitmapToSave: Bitmap, fileName: String,
 		format: CompressFormat = CompressFormat.JPEG,
 		quality: Int = 60
 	): String? {
@@ -735,7 +738,6 @@ object ViewUtility {
 
 			val maxSize = 64
 			val scale = maxOf(1, maxOf(options.outWidth, options.outHeight) / maxSize)
-
 			val decodeOptions = Options().apply { inSampleSize = scale }
 			val bitmap = decodeFile(targetImageFile.absolutePath, decodeOptions)
 				?: return@withIOContext false
@@ -790,18 +792,15 @@ object ViewUtility {
 		preserveExistingDrawables: Boolean = false
 	) {
 		withMainContext {
-			val newDrawable = getDrawable(INSTANCE, drawableResId)
-			newDrawable?.setBounds(
-				0, 0, newDrawable.intrinsicWidth,
-				newDrawable.intrinsicHeight
-			)
-
+			val endIcon = getDrawable(INSTANCE, drawableResId)
+			endIcon?.setBounds(0, 0, endIcon.intrinsicWidth, endIcon.intrinsicHeight)
 			val textView = this@setRightSideDrawable
+
 			if (preserveExistingDrawables) {
 				val (left, top, _, bottom) = textView.compoundDrawables
-				textView.setCompoundDrawables(left, top, newDrawable, bottom)
+				textView.setCompoundDrawables(left, top, endIcon, bottom)
 			} else {
-				textView.setCompoundDrawables(null, null, newDrawable, null)
+				textView.setCompoundDrawables(null, null, endIcon, null)
 			}
 		}
 	}
@@ -810,9 +809,8 @@ object ViewUtility {
 	suspend fun View.matchHeightToTopCutout(baseActivity: BaseActivity) {
 		withMainContext {
 			doOnLayout {
-				baseActivity.activityCoroutineScope.launch {
-					updateCutoutHeight()
-				}
+				baseActivity.activityCoroutineScope
+					.launch { updateCutoutHeight() }
 			}
 		}
 	}
@@ -838,14 +836,16 @@ object ViewUtility {
 	@JvmStatic
 	suspend fun TextView.setTextColorKT(colorResId: Int) {
 		withMainContext {
-			this@setTextColorKT.setTextColor(INSTANCE.getColor(colorResId))
+			val color = INSTANCE.getColor(colorResId)
+			this@setTextColorKT.setTextColor(color)
 		}
 	}
 
 	@JvmStatic
 	suspend fun Int.dpToPx(): Int {
 		return withIOContext {
-			(this@dpToPx * Resources.getSystem().displayMetrics.density).toInt()
+			val displayMetrics = Resources.getSystem().displayMetrics
+			(this@dpToPx * displayMetrics.density).toInt()
 		}
 	}
 
@@ -853,7 +853,6 @@ object ViewUtility {
 	suspend fun changesSystemTheme(activity: BaseActivity) {
 		withMainContext {
 			val tempFile = File(INSTANCE.filesDir, DARK_MODE_INDICATOR_FIE)
-
 			when (tempFile.exists()) {
 				true -> {
 					setDefaultNightMode(MODE_NIGHT_YES)
@@ -881,8 +880,7 @@ object ViewUtility {
 
 	@JvmStatic
 	suspend fun View.setBounceClick(
-		scaleDown: Float = 0.92f,
-		duration: Long = 120L,
+		scaleDown: Float = 0.92f, duration: Long = 120L,
 		onClick: (View, Boolean) -> Unit
 	) {
 		withMainContext {
@@ -933,21 +931,16 @@ object ViewUtility {
 	}
 
 	@JvmStatic
-	fun shrinkTextToFitView(
-		textView: TextView?, text: String, endMatch: String
-	) {
+	fun shrinkTextToFitView(textView: TextView?, text: String, endMatch: String) {
 		if (textView == null) return
-		val availableWidth =
-			textView.width - textView.paddingStart - textView.paddingEnd
+
+		val width = textView.width
+		val paddingStart = textView.paddingStart
+		val paddingEnd = textView.paddingEnd
+		val availableWidth = width - paddingStart - paddingEnd
 
 		if (availableWidth <= 0) {
-			textView.doOnLayout {
-				shrinkTextToFitView(
-					textView = textView,
-					text = text,
-					endMatch = endMatch
-				)
-			}
+			textView.doOnLayout { shrinkTextToFitView(textView, text, endMatch) }
 			return
 		}
 
@@ -958,11 +951,9 @@ object ViewUtility {
 			if (newText.endsWith(endMatch, ignoreCase = true)) {
 				val measureText = paint.measureText(newText)
 				while (measureText > availableWidth && newText.length > 4) {
-					newText = if (newText.endsWith(endMatch, ignoreCase = true)) {
+					newText = (if (newText.endsWith(endMatch, ignoreCase = true)) {
 						newText.dropLast(endMatch.length)
-					} else {
-						newText.dropLast(1)
-					}
+					} else newText.dropLast(1))
 				}
 			}
 
