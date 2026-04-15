@@ -6,9 +6,7 @@ import kotlinx.coroutines.flow.*
 import kotlin.coroutines.*
 
 object ThreadsUtility : CoroutineScope {
-
 	val logger = LogHelperUtils.from(javaClass)
-
 	const val JOB_TIMEOUT = (30 * 1000L)
 	const val DEFAULT_RETRY_COUNT = 3
 	const val DEFAULT_RETRY_DELAY = 1000L
@@ -16,9 +14,10 @@ object ThreadsUtility : CoroutineScope {
 	private val job by lazy { SupervisorJob() }
 
 	override val coroutineContext: CoroutineContext
-		get() = Dispatchers.Default + job + CoroutineExceptionHandler { _, throwable ->
-			logger.d("Coroutine error: ${throwable.message}")
-		}
+		get() = Dispatchers.Default + job +
+			CoroutineExceptionHandler { _, throwable ->
+				logger.d("Coroutine error: ${throwable.message}")
+			}
 
 	inline fun executeInBackground(
 		timeOutInMilli: Long = JOB_TIMEOUT,
@@ -26,9 +25,7 @@ object ThreadsUtility : CoroutineScope {
 		noinline errorHandler: ((Throwable) -> Unit)? = null,
 	): Job = launch(Dispatchers.IO) {
 		try {
-			withTimeout(timeOutInMilli) {
-				codeBlock()
-			}
+			withTimeout(timeOutInMilli) { codeBlock() }
 		} catch (error: Exception) {
 			logger.e("Error in background execution:", error)
 			errorHandler?.invoke(error)
@@ -65,35 +62,32 @@ object ThreadsUtility : CoroutineScope {
 		}
 
 		lastError?.let { error ->
-			withContext(Dispatchers.Main) {
-				onFinalError(error)
-			}
+			withContext(Dispatchers.Main) { onFinalError(error) }
 		} ?: withContext(Dispatchers.Main) {
-			onFinalError(Exception("Unknown error after $retryCount retries"))
+			val exception = Exception("Unknown error after $retryCount retries")
+			onFinalError(exception)
 		}
 	}
 
-	suspend inline fun executeOnMain(crossinline codeBlock: suspend () -> Unit) {
-		withContext(Dispatchers.Main) {
-			codeBlock()
-		}
-	}
+	suspend inline fun executeOnMain(
+		crossinline codeBlock: suspend () -> Unit
+	) = withContext(Dispatchers.Main) { codeBlock() }
 
-	suspend inline fun <T> executeOnDefault(crossinline codeBlock: suspend () -> T): T {
-		return withContext(Dispatchers.Default) {
-			codeBlock()
-		}
-	}
+	suspend inline fun <T> executeOnDefault(
+		crossinline codeBlock: suspend () -> T
+	): T = withContext(Dispatchers.Default) { codeBlock() }
 
 	fun <T> executeAsync(
 		backgroundTask: suspend () -> T,
 		uiTask: suspend (T) -> Unit
 	): Job = launch {
 		try {
-			val result = withContext(Dispatchers.IO) { backgroundTask() }
+			val result = withContext(Dispatchers.IO) {
+				backgroundTask()
+			}
 			uiTask(result)
 		} catch (error: Exception) {
-			logger.e("Error in executing code in async background thread:", error)
+			logger.e("Error in async operation:", error)
 		}
 	}
 
@@ -136,7 +130,6 @@ object ThreadsUtility : CoroutineScope {
 
 	fun <T> debounced(delayMs: Long, block: (T) -> Unit): (T) -> Unit {
 		var job: Job? = null
-
 		return { input: T ->
 			job?.cancel()
 			job = launch(Dispatchers.Main) {
@@ -154,16 +147,12 @@ object ThreadsUtility : CoroutineScope {
 
 suspend inline fun <T> withMainContext(
 	crossinline block: suspend CoroutineScope.() -> T
-): T {
-	return withContext(Dispatchers.Main) {
-		block()
-	}
+): T = withContext(Dispatchers.Main) {
+	block()
 }
 
 suspend inline fun <T> withIOContext(
 	crossinline block: suspend CoroutineScope.() -> T
-): T {
-	return withContext(Dispatchers.IO) {
-		block()
-	}
+): T = withContext(Dispatchers.IO) {
+	block()
 }
