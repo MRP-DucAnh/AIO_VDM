@@ -25,17 +25,11 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-/**
- * Utility class for URL-related operations including validation, parsing,
- * manipulation, and network requests.
- */
 public class URLUtility {
-	/**
-	 * Logger for debugging and error tracking.
-	 */
-	private static final LogHelperUtils logger = LogHelperUtils.from(URLUtility.class);
 
-	// HTTP header constants
+	private static final LogHelperUtils logger =
+		LogHelperUtils.from(URLUtility.class);
+
 	public static final String CONTENT_DISPOSITION = "Content-Disposition";
 	public static final String ACCEPT_RANGES = "Accept-Ranges";
 	public static final String BYTES = "bytes";
@@ -44,12 +38,6 @@ public class URLUtility {
 	public static final String HEAD = "HEAD";
 	public static final String CONTENT_LENGTH = "Content-Length";
 
-	/**
-	 * Validates whether a string is a properly formatted URL.
-	 *
-	 * @param url The URL string to validate
-	 * @return true if the URL is valid, false otherwise
-	 */
 	public static boolean isValidURL(@Nullable String url) {
 		if (url == null || url.isEmpty()) return false;
 		try {
@@ -60,12 +48,6 @@ public class URLUtility {
 		}
 	}
 
-	/**
-	 * Extracts the filename from a URL path.
-	 *
-	 * @param urlString The URL to parse
-	 * @return The filename portion of the URL, or null if parsing fails
-	 */
 	@Nullable
 	public static String getFileNameFromURL(@NonNull String urlString) {
 		try {
@@ -80,23 +62,11 @@ public class URLUtility {
 		}
 	}
 
-	/**
-	 * Validates whether a string is a properly formatted domain name.
-	 *
-	 * @param domain The domain string to validate
-	 * @return true if the domain is valid, false otherwise
-	 */
 	public static boolean isValidDomain(String domain) {
 		String domainRegex = "^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$";
 		return domain.matches(domainRegex);
 	}
 
-	/**
-	 * Ensures a URL uses HTTPS protocol.
-	 *
-	 * @param url The URL to process
-	 * @return HTTPS version of the URL, or null if input is not a valid domain
-	 */
 	@Nullable
 	public static String ensureHttps(@NonNull String url) {
 		if (!isValidDomain(url)) return null;
@@ -107,16 +77,10 @@ public class URLUtility {
 		return nakedDomain;
 	}
 
-	/**
-	 * Checks if a URL is accessible by making a HEAD request.
-	 *
-	 * @param urlString The URL to check
-	 * @return true if the URL responds with HTTP OK (200), false otherwise
-	 */
 	public static boolean isUrlAccessible(@NonNull String urlString) {
 		try {
 			HttpURLConnection connection = (HttpURLConnection)
-					new URL(urlString).openConnection();
+				new URL(urlString).openConnection();
 			connection.setRequestMethod(HEAD);
 			int responseCode = connection.getResponseCode();
 			return responseCode == HttpURLConnection.HTTP_OK;
@@ -126,12 +90,6 @@ public class URLUtility {
 		}
 	}
 
-	/**
-	 * Extracts all URLs from a text string using Android's WEB_URL pattern.
-	 *
-	 * @param text The text to scan for URLs
-	 * @return Array of found URLs
-	 */
 	@NonNull
 	public static String[] extractLinks(@NonNull String text) {
 		List<String> links = new ArrayList<>();
@@ -144,12 +102,6 @@ public class URLUtility {
 		return links.toArray(new String[0]);
 	}
 
-	/**
-	 * Gets the file size from a URL using standard HttpURLConnection.
-	 *
-	 * @param url The URL to check
-	 * @return File size in bytes, or -1 if unavailable
-	 */
 	public static long getFileSizeFromUrl(@NonNull URL url) {
 		HttpURLConnection connection = null;
 		try {
@@ -167,16 +119,10 @@ public class URLUtility {
 		}
 	}
 
-	/**
-	 * Gets the file size from a URL using OkHttp client.
-	 *
-	 * @param url The URL to check
-	 * @return File size in bytes, or -1 if unavailable
-	 */
 	public static long getFileSizeFromURL_OkHttp(@NonNull URL url) {
 		try {
 			OkHttpClient client = new OkHttpClient.Builder()
-					.followRedirects(true).followSslRedirects(true).build();
+				.followRedirects(true).followSslRedirects(true).build();
 			Request request = new Request.Builder().url(url).head().build();
 			try (Response response = client.newCall(request).execute()) {
 				if (response.isSuccessful()) {
@@ -188,26 +134,19 @@ public class URLUtility {
 					}
 				} else {
 					throw new IOException("Failed to fetch file size: "
-							+ response.message());
+						+ response.message());
 				}
 			}
 		} catch (Exception error) {
-			logger.e("Error found while getting file name from url using okhttp():", error);
+			logger.e("Error found while getting file name from url:", error);
 			return -1;
 		}
 	}
 
-	/**
-	 * Checks if a URL supports multipart downloads by examining Accept-Ranges header.
-	 *
-	 * @param fileUrl The URL to check
-	 * @return true if server accepts range requests, false otherwise
-	 * @throws IOException if connection fails
-	 */
 	public static boolean supportsMultipartDownload(
-			@NonNull String fileUrl) throws IOException {
+		@NonNull String fileUrl) throws IOException {
 		HttpURLConnection connection =
-				(HttpURLConnection) new URL(fileUrl).openConnection();
+			(HttpURLConnection) new URL(fileUrl).openConnection();
 		connection.setRequestMethod(HEAD);
 		connection.connect();
 
@@ -221,17 +160,10 @@ public class URLUtility {
 		return supportsMultipart;
 	}
 
-	/**
-	 * Checks if a URL supports resumable downloads by examining headers.
-	 *
-	 * @param fileUrl The URL to check
-	 * @return true if server supports resume, false otherwise
-	 * @throws IOException if connection fails
-	 */
 	public static boolean supportsResumableDownload(
-			@NonNull String fileUrl) throws IOException {
+		@NonNull String fileUrl) throws IOException {
 		HttpURLConnection connection =
-				(HttpURLConnection) new URL(fileUrl).openConnection();
+			(HttpURLConnection) new URL(fileUrl).openConnection();
 		connection.setRequestMethod(HEAD);
 		connection.connect();
 
@@ -240,7 +172,7 @@ public class URLUtility {
 		String eTag = connection.getHeaderField(E_TAG);
 		String lastModified = connection.getHeaderField(LAST_MODIFIED);
 		if ((acceptRanges != null && acceptRanges.equals(BYTES)) ||
-				eTag != null || lastModified != null) {
+			eTag != null || lastModified != null) {
 			supportsResume = true;
 		}
 
@@ -248,12 +180,6 @@ public class URLUtility {
 		return supportsResume;
 	}
 
-	/**
-	 * Normalizes a URL by ensuring it ends with a forward slash.
-	 *
-	 * @param url The URL to normalize
-	 * @return Normalized URL
-	 */
 	@NonNull
 	public static String normalizeUrl(@NonNull String url) {
 		if (!url.endsWith("/") && url.contains("."))
@@ -261,67 +187,39 @@ public class URLUtility {
 		return url;
 	}
 
-	/**
-	 * Extracts the domain name from a URL.
-	 *
-	 * @param url The URL to parse
-	 * @return Domain name, or empty string if parsing fails
-	 */
 	@NonNull
 	public static String extractDomainName(@NonNull String url) {
 		try {
 			URL parsedUrl = new URL(url);
 			return parsedUrl.getHost();
 		} catch (Throwable error) {
-			logger.e("Error found while extracting domain name from url:", error);
+			logger.e("Error found while extracting domain name:", error);
 			return "";
 		}
 	}
 
-	/**
-	 * Appends a path segment to a base URL.
-	 *
-	 * @param baseUrl The base URL
-	 * @param path    The path to append
-	 * @return Combined URL
-	 */
 	@NonNull
 	public static String appendPath(@NonNull String baseUrl,
-									@NonNull String path) {
+	                                @NonNull String path) {
 		if (!baseUrl.endsWith("/") && !path.startsWith("/")) baseUrl += "/";
 		return baseUrl + path;
 	}
 
-	/**
-	 * Removes query parameters from a URL.
-	 *
-	 * @param url The URL to process
-	 * @return URL without query parameters
-	 */
 	@NonNull
 	public static String removeQueryParams(@NonNull String url) {
 		try {
 			URL parsedUrl = new URL(url);
 			return parsedUrl.getProtocol() + "://" +
-					parsedUrl.getHost() + parsedUrl.getPath();
+				parsedUrl.getHost() + parsedUrl.getPath();
 		} catch (Throwable error) {
 			logger.e("Error found while removing query name from url:", error);
 			return "";
 		}
 	}
 
-	/**
-	 * Adds a query parameter to a URL.
-	 *
-	 * @param url    The base URL
-	 * @param param  The parameter name
-	 * @param value  The parameter value
-	 * @param encode Whether to URL-encode the value
-	 * @return URL with added query parameter
-	 */
 	@NonNull
 	public static String addQueryParam(@NonNull String url, @NonNull String param,
-									   @NonNull String value, boolean encode) {
+	                                   @NonNull String value, boolean encode) {
 		try {
 			URL baseUrl = new URL(url);
 			StringBuilder newUrl = new StringBuilder(baseUrl.toString());
@@ -347,12 +245,6 @@ public class URLUtility {
 		}
 	}
 
-	/**
-	 * Generates possible URL variations by appending different TLDs.
-	 *
-	 * @param baseUrl The base URL without TLD
-	 * @return List of possible URLs with different TLDs
-	 */
 	@NonNull
 	public static List<String> generatePossibleURLs(@NonNull String baseUrl) {
 		List<String> possibleURLs = new ArrayList<>();
@@ -362,12 +254,6 @@ public class URLUtility {
 		return possibleURLs;
 	}
 
-	/**
-	 * Follows URL redirects to get the original URL.
-	 *
-	 * @param fileURL The URL that might redirect
-	 * @return Final URL after following redirects, or null if no redirect
-	 */
 	@Nullable
 	public static String getOriginalURL(@NonNull String fileURL) {
 		try {
@@ -376,9 +262,9 @@ public class URLUtility {
 			connection.setInstanceFollowRedirects(false);
 			int responseCode = connection.getResponseCode();
 			if (responseCode == HttpURLConnection.HTTP_MOVED_PERM ||
-					responseCode == HttpURLConnection.HTTP_MOVED_TEMP ||
-					responseCode == HttpURLConnection.HTTP_SEE_OTHER ||
-					responseCode == HttpURLConnection.HTTP_CREATED) {
+				responseCode == HttpURLConnection.HTTP_MOVED_TEMP ||
+				responseCode == HttpURLConnection.HTTP_SEE_OTHER ||
+				responseCode == HttpURLConnection.HTTP_CREATED) {
 				return connection.getHeaderField("Location");
 			}
 			return null;
@@ -388,12 +274,6 @@ public class URLUtility {
 		}
 	}
 
-	/**
-	 * Fetches the Content-Disposition header from a URL.
-	 *
-	 * @param url The URL to check
-	 * @return Content-Disposition header value, or null if not found
-	 */
 	@Nullable
 	public static String fetchContentDispositionHeader(@NonNull String url) {
 		HttpURLConnection connection = null;
@@ -405,7 +285,7 @@ public class URLUtility {
 			int responseCode = connection.getResponseCode();
 			if (responseCode == HttpURLConnection.HTTP_OK) {
 				String contentDisposition =
-						connection.getHeaderField(CONTENT_DISPOSITION);
+					connection.getHeaderField(CONTENT_DISPOSITION);
 				if (contentDisposition != null) return contentDisposition;
 			}
 		} catch (IOException error) {
@@ -416,13 +296,6 @@ public class URLUtility {
 		return null;
 	}
 
-	/**
-	 * URL-encodes a string using UTF-8 encoding.
-	 * Requires Android TIRAMISU (API 33) or higher.
-	 *
-	 * @param url The string to encode
-	 * @return Encoded string, or empty string if encoding fails
-	 */
 	@NonNull
 	@RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
 	public static String encodeURL(@NonNull String url) {
@@ -434,13 +307,6 @@ public class URLUtility {
 		}
 	}
 
-	/**
-	 * URL-decodes a string using UTF-8 encoding.
-	 * Requires Android TIRAMISU (API 33) or higher.
-	 *
-	 * @param url The string to decode
-	 * @return Decoded string, or empty string if decoding fails
-	 */
 	@NonNull
 	@RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
 	public static String decodeURL(@NonNull String url) {
