@@ -31,61 +31,36 @@ import java.util.List;
 
 import lib.process.LogHelperUtils;
 
-/**
- * Utility class for network-related operations including connectivity checks,
- * URL processing, and network information retrieval.
- */
 public class NetworkUtility {
 
-	/**
-	 * Logger for debugging and error tracking.
-	 */
-	private static final LogHelperUtils logger = LogHelperUtils.from(NetworkUtility.class);
+	private static final LogHelperUtils logger =
+		LogHelperUtils.from(NetworkUtility.class);
 
-	/**
-	 * Checks if network connectivity is available.
-	 * Uses modern NetworkCapabilities API for Android Q+ and falls back to
-	 * NetworkInfo for older versions.
-	 *
-	 * @return true if network is available, false otherwise
-	 */
 	public static boolean isNetworkAvailable() {
 		Context context = INSTANCE;
 		ConnectivityManager connectivityManager = (ConnectivityManager)
-				context.getSystemService(CONNECTIVITY_SERVICE);
+			context.getSystemService(CONNECTIVITY_SERVICE);
 
 		if (connectivityManager == null) return false;
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 			NetworkCapabilities capabilities = connectivityManager.
-					getNetworkCapabilities(connectivityManager.getActiveNetwork());
+				getNetworkCapabilities(connectivityManager.getActiveNetwork());
 
 			return capabilities != null &&
-					(capabilities.hasTransport(TRANSPORT_WIFI) ||
-							capabilities.hasTransport(TRANSPORT_CELLULAR));
+				(capabilities.hasTransport(TRANSPORT_WIFI) ||
+					capabilities.hasTransport(TRANSPORT_CELLULAR));
 		} else {
 			NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-			//noinspection deprecation
 			return activeNetworkInfo != null && activeNetworkInfo.isConnected();
 		}
 	}
 
-	/**
-	 * Checks if WiFi is enabled on the device.
-	 *
-	 * @return true if WiFi is enabled, false otherwise
-	 */
 	public static boolean isWifiEnabled() {
 		Object wifiService = INSTANCE.getSystemService(WIFI_SERVICE);
 		WifiManager wifiManager = (WifiManager) wifiService;
 		return wifiManager.isWifiEnabled();
 	}
 
-	/**
-	 * Extracts the MIME type from a URL based on its file extension.
-	 *
-	 * @param url The URL to analyze
-	 * @return The MIME type if determinable, null otherwise
-	 */
 	@Nullable
 	public static String getMimeTypeFromUrl(@NonNull String url) {
 		String fileExtension = MimeTypeMap.getFileExtensionFromUrl(url);
@@ -94,18 +69,11 @@ public class NetworkUtility {
 		return null;
 	}
 
-	/**
-	 * Follows URL redirects to get the original URL.
-	 *
-	 * @param fileURL The URL that might redirect
-	 * @return The final URL after following redirects
-	 * @throws IOException if there's an error during the connection
-	 */
 	@NonNull
 	public static String getOriginalUrlFromRedirectedUrl
-	(@NonNull String fileURL) throws IOException {
+		(@NonNull String fileURL) throws IOException {
 		HttpURLConnection connection = (HttpURLConnection)
-				new URL(fileURL).openConnection();
+			new URL(fileURL).openConnection();
 		connection.setInstanceFollowRedirects(false);
 		connection.connect();
 		int responseCode = connection.getResponseCode();
@@ -118,11 +86,6 @@ public class NetworkUtility {
 		return fileURL;
 	}
 
-	/**
-	 * Gets the name of the current network service provider.
-	 *
-	 * @return The network operator name, or empty string if unavailable
-	 */
 	@NonNull
 	public static String getServiceProvider() {
 		Object telephonyService = INSTANCE.getSystemService(TELEPHONY_SERVICE);
@@ -131,12 +94,6 @@ public class NetworkUtility {
 		else return "";
 	}
 
-	/**
-	 * Checks if a URL is accessible by making a HEAD request.
-	 *
-	 * @param urlString The URL to check
-	 * @return true if the URL responds with HTTP OK (200), false otherwise
-	 */
 	public static boolean isUrlAccessible(@NonNull String urlString) {
 		try {
 			URLConnection urlConnection = new URL(urlString).openConnection();
@@ -150,13 +107,6 @@ public class NetworkUtility {
 		}
 	}
 
-	/**
-	 * Normalizes a URL by ensuring it ends with a forward slash.
-	 *
-	 * @param url The URL to normalize
-	 * @return The normalized URL
-	 * @deprecated This method's behavior may not be suitable for all URL normalization cases
-	 */
 	@Deprecated
 	@NonNull
 	public static String normalizeUrl(@NonNull String url) {
@@ -166,12 +116,6 @@ public class NetworkUtility {
 		return url;
 	}
 
-	/**
-	 * Extracts unique domains from an array of URLs.
-	 *
-	 * @param urls Array of URLs to process
-	 * @return Array of unique domain names
-	 */
 	@NonNull
 	public static String[] extractUniqueDomains(@NonNull String[] urls) {
 		List<String> uniqueDomains = new ArrayList<>();
