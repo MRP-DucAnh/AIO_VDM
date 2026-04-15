@@ -94,9 +94,7 @@ object DownloaderUtils {
 	}
 
 	@JvmStatic
-	fun getHumanReadableFormat(
-		fileSizeInByte: Long
-	): String {
+	fun getHumanReadableFormat(fileSizeInByte: Long): String {
 		if (fileSizeInByte < 1024) return "$fileSizeInByte B"
 		val exp = (ln(fileSizeInByte.toDouble()) / ln(1024.0)).toInt()
 		val pre = "KMGTPE"[exp - 1] + "B"
@@ -106,9 +104,7 @@ object DownloaderUtils {
 	}
 
 	@JvmStatic
-	fun getHumanReadableSpeed(
-		speedBytesPerSecond: Double
-	): String {
+	fun getHumanReadableSpeed(speedBytesPerSecond: Double): String {
 		val oneKB: Long = 1024
 		val oneMB = oneKB * 1024
 		val oneGB = oneMB * 1024
