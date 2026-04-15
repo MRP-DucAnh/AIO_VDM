@@ -269,7 +269,7 @@ public class URLUtility {
 			}
 			return null;
 		} catch (Exception error) {
-			logger.e("Error found while getting original url from redirected links:", error);
+			logger.e("Error found while getting original url:", error);
 			return null;
 		}
 	}
@@ -289,7 +289,7 @@ public class URLUtility {
 				if (contentDisposition != null) return contentDisposition;
 			}
 		} catch (IOException error) {
-			logger.e("Error found while fetching content dispositional header from url:", error);
+			logger.e("Error found while fetching content disposition header:", error);
 		} finally {
 			if (connection != null) connection.disconnect();
 		}
