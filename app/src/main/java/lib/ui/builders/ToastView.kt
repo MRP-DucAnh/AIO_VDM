@@ -30,7 +30,6 @@ class ToastView(context: Context) : Toast(context) {
 		suspend fun showToast(activityInf: BaseActivityInf?, msg: String? = null, msgId: Int = -1) {
 			withMainContext {
 				if (activityInf == null) return@withMainContext
-
 				activityInf.getAttachedCoroutineScope().launch {
 					when {
 						msgId != -1 -> showResourceToast(activityInf, msgId)
@@ -44,7 +43,6 @@ class ToastView(context: Context) : Toast(context) {
 		suspend fun showToast(activityInf: BaseActivityInf?, msgId: Int = -1) {
 			withMainContext {
 				if (activityInf == null) return@withMainContext
-
 				activityInf.getAttachedCoroutineScope().launch {
 					showResourceToast(activityInf, msgId)
 				}
