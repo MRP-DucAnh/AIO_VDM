@@ -37,6 +37,7 @@ class FileFolderPicker(
 	private var dialogBuilder: DialogBuilder? = null
 	private var browserAdapter: BrowserAdapter? = null
 	private var browserState = BrowserState()
+	private var navigationJob: Job? = null
 
 	private data class BrowserState(
 		val currentDir: File? = null,
@@ -139,55 +140,55 @@ class FileFolderPicker(
 		}
 	}
 
-	private suspend fun loadDirectory(directory: File) {
-		withIOContext {
-			safeActivityRef?.let { activityRef ->
-				try {
-					val filter = FileFilter { file ->
-						if (file.isDirectory) return@FileFilter true
-						when {
-							isFolderPickerOnly -> false
-							isFilePickerOnly -> true
-							else -> true
-						}
-					}
-
-					val files = directory.listFiles(filter) ?: emptyArray()
-					val locale = Locale.getDefault()
-					val dateFormat = SimpleDateFormat("MMM d, yyyy", locale)
-
-					val browserItems = files.map { file ->
-						val isDir = file.isDirectory
-						val path = file.absolutePath
-
-						val lastModified = dateFormat.format(Date(file.lastModified()))
-						val infoText = if (isDir) {
-							lastModified
-						} else {
-							val size = formatFileSize(activityRef, file.length())
-							"$size • $lastModified"
+	private fun loadDirectory(directory: File) {
+		navigationJob?.cancel()
+		safeActivityRef?.let { activityRef ->
+			navigationJob = activityRef.activityCoroutineScope.launch {
+				withIOContext {
+					try {
+						val filter = FileFilter { file ->
+							if (file.isDirectory) return@FileFilter true
+							when {
+								isFolderPickerOnly -> false
+								isFilePickerOnly -> true
+								else -> true
+							}
 						}
 
-						BrowserItem(
-							file = file,
-							name = file.name,
-							path = path,
-							isDirectory = isDir,
-							info = infoText,
-							isSelected = selectedPaths.contains(path)
+						val files = directory.listFiles(filter) ?: emptyArray()
+						val locale = Locale.getDefault()
+						val dateFormat = SimpleDateFormat("MMM d, yyyy", locale)
+
+						val browserItems = files.map { file ->
+							val isDir = file.isDirectory
+							val path = file.absolutePath
+
+							val lastModified = dateFormat.format(Date(file.lastModified()))
+							val infoText = if (isDir) {
+								lastModified
+							} else {
+								val size = formatFileSize(activityRef, file.length())
+								"$size • $lastModified"
+							}
+
+							BrowserItem(
+								file = file,
+								name = file.name,
+								path = path,
+								isDirectory = isDir,
+								info = infoText,
+								isSelected = selectedPaths.contains(path)
+							)
+						}.sortedWith(
+							compareByDescending<BrowserItem> { it.isDirectory }
+								.thenBy { it.name.lowercase() }
 						)
-					}.sortedWith(
-						compareByDescending<BrowserItem> { it.isDirectory }
-							.thenBy { it.name.lowercase() }
-					)
 
-					activityRef.activityCoroutineScope.launch {
 						renderState(directory, browserItems)
+					} catch (error: Exception) {
+						val absolutePath = directory.absolutePath
+						logger.e("Failed to load directory $absolutePath:", error)
 					}
-
-				} catch (error: Exception) {
-					val absolutePath = directory.absolutePath
-					logger.e("Failed to load directory $absolutePath:", error)
 				}
 			}
 		}
@@ -221,16 +222,18 @@ class FileFolderPicker(
 	}
 
 	private suspend fun handleItemInteraction(item: BrowserItem) {
-		withIOContext {
-			if (item.isDirectory) {
+		if (item.isDirectory) {
+			withMainContext {
 				val newHistory = browserState.history + item.file
 				browserState = browserState.copy(
 					currentDir = item.file,
 					history = newHistory
 				)
-				loadDirectory(item.file)
-			} else {
-				if (isMultiSelection) {
+			}
+			loadDirectory(item.file)
+		} else {
+			if (isMultiSelection) {
+				withMainContext {
 					if (selectedPaths.contains(item.path)) {
 						selectedPaths.remove(item.path)
 					} else {
@@ -239,26 +242,28 @@ class FileFolderPicker(
 					item.isSelected = !item.isSelected
 					browserAdapter?.notifyDataSetChanged()
 					updateActionButtons()
-				} else {
-					finalizeSelection(listOf(item.path))
 				}
+			} else {
+				finalizeSelection(listOf(item.path))
 			}
 		}
 	}
 
 	private suspend fun navigateUp() {
-		withIOContext {
-			if (browserState.history.size > 1) {
-				val newHistory = browserState.history.dropLast(1)
-				val parentDir = newHistory.last()
+		val history = browserState.history
+		if (history.size <= 1) return
 
-				browserState = browserState.copy(
-					currentDir = parentDir,
-					history = newHistory
-				)
-				loadDirectory(parentDir)
-			}
+		val newHistory = history.dropLast(1)
+		val parentDir = newHistory.last()
+
+		withMainContext {
+			browserState = browserState.copy(
+				currentDir = parentDir,
+				history = newHistory
+			)
 		}
+
+		loadDirectory(parentDir)
 	}
 
 	private suspend fun handleConfirmSelection() {
@@ -341,6 +346,7 @@ class FileFolderPicker(
 			val metaText: TextView = view.findViewById(R.id.txt_file_folder_metadata)
 			val icon: ImageView = view.findViewById(R.id.img_file_type_indicator)
 			val checkbox: ImageView = view.findViewById(R.id.img_checkbox_selection)
+			var processingJob: Job? = null
 		}
 
 		private val weakReferenceOfActivity = WeakReference(activity)
@@ -370,6 +376,7 @@ class FileFolderPicker(
 			} else {
 				view = convertView
 				holder = view.tag as ViewHolder
+				holder.processingJob?.cancel()
 			}
 
 			val item = getItem(position)
@@ -385,8 +392,8 @@ class FileFolderPicker(
 			holder.checkbox.visibility = if (item.isSelected)
 				View.VISIBLE else View.GONE
 
-			safeActivityRef?.lifecycleScope?.launch {
-				holder.nameText.normalizeTallSymbols(currentName)
+			holder.processingJob = safeActivityRef?.lifecycleScope?.launch {
+				holder.nameText.normalizeTallSymbols(originalText = currentName)
 			}
 
 			view.setOnClickListener { onClick(item) }

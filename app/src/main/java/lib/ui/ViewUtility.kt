@@ -31,7 +31,7 @@ import androidx.core.view.*
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.bases.*
 import app.core.engines.settings.AIOSettings.Companion.DARK_MODE_INDICATOR_FIE
-import com.aio.R
+import com.aio.*
 import com.bumptech.glide.*
 import kotlinx.coroutines.*
 import lib.files.FileSystemUtility.isAudioByName
@@ -129,19 +129,17 @@ object ViewUtility {
 		reductionFactor: Float = 0.8f,
 		onDone: (Spannable) -> Unit = {}
 	) {
+		if (originalText.isEmpty()) return
 		withIOContext {
-			val fullText = this@normalizeTallSymbols.text.toString()
-			if (fullText.isEmpty()) return@withIOContext
-
-			val spannable = SpannableStringBuilder(fullText)
+			val spannable = SpannableStringBuilder(originalText)
 			val boundaryIterator = getCharacterInstance(Locale.getDefault())
-			boundaryIterator.setText(fullText)
+			boundaryIterator.setText(originalText)
 
 			var currentStart = boundaryIterator.first()
 			var currentEnd = boundaryIterator.next()
 
 			while (currentEnd != DONE) {
-				val cluster = fullText.substring(currentStart, currentEnd)
+				val cluster = originalText.substring(currentStart, currentEnd)
 				val shouldReduce = cluster.any { char ->
 					!Character.isSpaceChar(char) &&
 						!Character.UnicodeScript.of(char.code).isLatin()
