@@ -4,7 +4,6 @@ import static android.view.LayoutInflater.from;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
 import android.content.DialogInterface;
@@ -21,6 +20,7 @@ import com.aio.R;
 
 import java.lang.ref.WeakReference;
 
+import app.core.bases.BaseActivity;
 import app.core.bases.interfaces.BaseActivityInf;
 import lib.process.LogHelperUtils;
 
@@ -35,16 +35,21 @@ public class DialogBuilder {
 		this.weakReferenceBaseActivity = new WeakReference<>(baseActivityInf);
 	}
 
+	public @Nullable BaseActivity getBaseActivity() {
+		return weakReferenceBaseActivity.get() != null ?
+			weakReferenceBaseActivity.get().getActivity() : null;
+	}
+
 	public void show() {
 		try {
-			if (dialog == null) dialog = create();
-			BaseActivityInf activityInf = weakReferenceBaseActivity.get();
-			if (activityInf == null || activityInf.getActivity() == null) return;
+			BaseActivity activity = getBaseActivity();
+			if (activity == null || activity.isFinishing() ||
+				activity.isDestroyed()) {
+				return;
+			}
 
-			Activity activity = activityInf.getActivity();
-			if (!activity.isFinishing() &&
-				!activity.isDestroyed() &&
-				!dialog.isShowing()) {
+			if (dialog == null) dialog = create();
+			if (dialog != null && !dialog.isShowing()) {
 				dialog.show();
 			}
 		} catch (Exception error) {
@@ -120,9 +125,8 @@ public class DialogBuilder {
 
 	@NonNull
 	public DialogBuilder setView(int layoutResId) {
-		Activity activity = getActivity();
-		if (activity == null) return this;
-		View view = from(activity).inflate(layoutResId, null);
+		if (getBaseActivity() == null) return this;
+		View view = from(getBaseActivity()).inflate(layoutResId, null);
 		this.weakCustomView = new WeakReference<>(view);
 		return this;
 	}
@@ -159,18 +163,10 @@ public class DialogBuilder {
 		return this;
 	}
 
-	@Nullable
-	public Activity getActivity() {
-		BaseActivityInf inf = weakReferenceBaseActivity.get();
-		return inf != null ? inf.getActivity() : null;
-	}
-
 	private AlertDialog create() {
-		Activity activity = getActivity();
-		if (activity == null || activity.isFinishing() ||
-			activity.isDestroyed()) return null;
+		if (getBaseActivity() == null) return null;
 
-		Builder builder = new Builder(activity, R.style.style_dialog);
+		Builder builder = new Builder(getBaseActivity(), R.style.style_dialog);
 		View view = weakCustomView != null ? weakCustomView.get() : null;
 		if (view == null) return null;
 
