@@ -18,7 +18,7 @@ interface BaseActivityInf {
 	)
 
 	fun getAttachedCoroutineScope(): CoroutineScope
-	fun runCodeOnAttachedThread(isUIThread: Boolean = false, codeBlock: () -> Unit)
+	fun runCodeOnAttachedThread(isUIThread: Boolean = true, codeBlock: () -> Unit)
 	fun openActivity(targetActivity: Class<*>, shouldAnimate: Boolean = true)
 	fun closeActivityWithSwipeAnimation(shouldAnimate: Boolean = false)
 	fun closeActivityWithFadeAnimation(shouldAnimate: Boolean = false)

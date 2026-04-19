@@ -5,6 +5,7 @@ const val APP_DEFAULT_SHORT_NAME = "AIO"
 const val APP_DEFAULT_FULL_NAME = "TubeAIO Downloader"
 const val APP_DOWNLOADS = "$APP_DEFAULT_SHORT_NAME Downloads"
 const val APP_DOWNLOADS_PAH = "/storage/emulated/0/Download/$APP_DEFAULT_SHORT_NAME Downloads"
+const val APP_OFFICIAL_SITE = "https://tubeaio.com/"
 
 const val APP_FULL_NUMBERS = "0123456789"
 const val APP_FULL_APPLETS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"

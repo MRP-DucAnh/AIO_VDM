@@ -3,76 +3,81 @@
 package app.core.bases
 
 import android.Manifest.permission.*
-import android.annotation.SuppressLint
-import android.content.Intent
+import android.annotation.*
+import android.content.*
 import android.content.Intent.*
-import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-import android.content.res.Configuration
-import android.graphics.Rect
+import android.content.pm.ActivityInfo.*
+import android.content.res.*
+import android.graphics.*
 import android.os.*
 import android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
 import android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS
-import android.view.MotionEvent
+import android.view.*
 import android.view.View.*
-import android.view.WindowInsets
 import android.view.WindowInsetsController.*
-import android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-import android.view.inputmethod.InputMethodManager
-import android.widget.EditText
-import android.widget.TextView
-import androidx.activity.OnBackPressedCallback
-import androidx.annotation.ColorInt
-import androidx.core.content.ContextCompat.getColor
-import androidx.core.content.ContextCompat.getDrawable
-import androidx.core.graphics.drawable.toDrawable
-import androidx.core.net.toUri
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
-import androidx.lifecycle.lifecycleScope
-import app.core.AIOApp
+import android.view.WindowManager.LayoutParams.*
+import android.view.inputmethod.*
+import android.widget.*
+import androidx.activity.*
+import androidx.annotation.*
+import androidx.core.content.ContextCompat.*
+import androidx.core.graphics.drawable.*
+import androidx.core.net.*
+import androidx.core.view.*
+import androidx.lifecycle.*
+import app.core.*
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioAdblocker
 import app.core.AIOApp.Companion.aioSettings
 import app.core.AIOApp.Companion.aioTimer
 import app.core.AIOApp.Companion.downloadSystem
-import app.core.AIOCrashHandler
-import app.core.AIOTimer.AIOTimerListener
-import app.core.bases.dialogs.UpdaterDialog
-import app.core.bases.interfaces.BaseActivityInf
-import app.core.bases.interfaces.PermissionsResult
-import app.core.bases.language.LocaleActivityImpl
-import app.core.engines.services.AIOForegroundService
+import app.core.AIOTimer.*
+import app.core.bases.dialogs.*
+import app.core.bases.interfaces.*
+import app.core.bases.language.*
+import app.core.engines.services.*
+import app.core.engines.updater.*
 import app.core.engines.updater.AIOSelfDestruct.shouldSelfDestructApplication
-import app.core.engines.updater.AIOUpdater
-import app.ui.main.MotherActivity
-import app.ui.others.startup.OpeningActivity
+import app.ui.main.*
+import app.ui.others.startup.*
 import com.aio.R
-import com.anggrayudi.storage.SimpleStorageHelper
-import com.permissionx.guolindev.PermissionX.init
-import com.permissionx.guolindev.PermissionX.isGranted
+import com.anggrayudi.storage.*
+import com.permissionx.guolindev.PermissionX.*
 import kotlinx.coroutines.*
 import lib.device.DateTimeUtils.calculateTime
 import lib.files.FileSystemUtility.getFileExtension
 import lib.files.FileSystemUtility.getFileSha256
+import lib.process.*
 import lib.process.CommonTimeUtils.OnTaskFinishListener
 import lib.process.CommonTimeUtils.delay
-import lib.process.LogHelperUtils
-import lib.process.ThreadsUtility
+import lib.ui.*
 import lib.ui.ActivityAnimator.animActivityFade
 import lib.ui.ActivityAnimator.animActivitySwipeRight
-import lib.ui.MsgDialogUtils
 import lib.ui.MsgDialogUtils.showMessageDialog
-import lib.ui.ViewUtility
 import lib.ui.ViewUtility.setLeftSideDrawable
 import lib.ui.builders.ToastView.Companion.showToast
-import java.io.File
-import java.io.IOException
-import java.lang.Thread.setDefaultUncaughtExceptionHandler
-import java.lang.ref.WeakReference
-import java.util.TimeZone
-import java.util.concurrent.atomic.AtomicInteger
-import kotlin.system.exitProcess
+import java.io.*
+import java.lang.System
+import java.lang.Thread.*
+import java.lang.ref.*
+import java.util.*
+import java.util.concurrent.atomic.*
+import kotlin.Boolean
+import kotlin.Double
+import kotlin.Exception
+import kotlin.Int
+import kotlin.Pair
+import kotlin.String
+import kotlin.Suppress
+import kotlin.Unit
+import kotlin.apply
+import kotlin.collections.ArrayList
+import kotlin.collections.isNotEmpty
+import kotlin.getValue
+import kotlin.lazy
+import kotlin.let
+import kotlin.system.*
+import kotlin.toString
 
 /**
  * Base activity class that provides common functionality and infrastructure for all activities in the application.
@@ -214,6 +219,9 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf, AIOTimerLis
 	 */
 	open var permissionCheckListener: PermissionsResult? = null
 
+	private var lastUpdateCheckTime = 0L
+	private val minUpdateCheckInterval = 5 * 60 * 1000L
+
 	/**
 	 * Vibrator instance for providing haptic feedback to users.
 	 *
@@ -259,7 +267,6 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf, AIOTimerLis
 				aioSettings.foregroundUsageDurationMs += ((localLoopCounter.get() * 200)).toFloat()
 				aioSettings.foregroundUsageDurationFormatted =
 					calculateTime(aioSettings.foregroundUsageDurationMs)
-				aioSettings.updateInDB()
 				localLoopCounter.set(0)
 			}
 		} catch (error: Exception) {
@@ -326,7 +333,9 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf, AIOTimerLis
 			// Configure theme appearance based on user preferences or system settings
 			// Ensures consistent visual experience across the application
 			logger.d("Applying theme appearance from user preferences")
-			setThemeAppearance()
+			getAttachedCoroutineScope().launch {
+				setThemeAppearance()
+			}
 
 			// Initialize scoped storage helper for modern file access on Android 10+
 			// Handles permissions and provides abstraction for storage operations
@@ -357,42 +366,13 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf, AIOTimerLis
 		} ?: logger.d("Failed to acquire safe activity reference — critical initialization skipped")
 	}
 
-	/**
-	 * Called after onCreate() completion, typically used for final UI setup and initialization.
-	 *
-	 * This method provides an additional initialization point after the activity's layout
-	 * has been fully inflated and the basic UI hierarchy has been established. It's the
-	 * ideal place to perform operations that require the layout to be fully rendered,
-	 * such as finding views, setting up adapters, or initializing UI components.
-	 *
-	 * Common use cases:
-	 * - Setting up RecyclerView adapters and layout managers
-	 * - Configuring ViewPagers and TabLayouts
-	 * - Initializing custom views and their state
-	 * - Setting click listeners and other UI interactions
-	 * - Performing initial data loading for UI display
-	 *
-	 * @param savedInstanceState Previously saved activity state, same as in onCreate().
-	 *        Can be used to restore UI state after configuration changes.
-	 */
 	override fun onPostCreate(savedInstanceState: Bundle?) {
 		super.onPostCreate(savedInstanceState)
-		logger.d("onPostCreate() called — performing post-layout initialization")
-
-		// Allow subclasses to set up UI components after layout inflation is complete
-		// This ensures all views are available and properly initialized
-		logger.d("Calling onAfterLayoutRender() for subclass-specific UI setup")
 		onAfterLayoutRender()
-
-		if ((onRenderingLayout() > -1) == false) {
-			logger.d("No layout provided by subclass — activity will not check for update")
-			return
+		if ((onRenderingLayout() > -1) == false) return
+		getAttachedCoroutineScope().launch {
+			checkForLatestUpdateDebounced()
 		}
-
-		// Check for app updates after the UI is fully set up to avoid blocking rendering
-		// This provides a smooth user experience while ensuring update availability is known
-		logger.d("Checking for latest available app update in background")
-		checkForLatestUpdateDebounced()
 	}
 
 	/**
@@ -436,7 +416,9 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf, AIOTimerLis
 			// Request user to disable battery optimization for reliable background operations
 			// This ensures downloads and other background tasks aren't interrupted by the system
 			logger.d("Requesting user to disable battery optimization for uninterrupted service")
-			requestForDisablingBatteryOptimization()
+			getAttachedCoroutineScope().launch {
+				requestForDisablingBatteryOptimization()
+			}
 
 			// Update the state of foreground services to ensure they're running correctly
 			// Important for ongoing downloads and other persistent operations
@@ -533,7 +515,7 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf, AIOTimerLis
 		scopedStorageHelper = null
 		permissionCheckListener = null
 
-		cancelUpdateCheck()
+		getAttachedCoroutineScope().launch { cancelUpdateCheck() }
 
 		if (vibrator?.hasVibrator() == true) {
 			vibrator?.cancel()
@@ -797,282 +779,85 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf, AIOTimerLis
 		} ?: logger.d("launchPermissionRequest() skipped — safeBaseActivityRef is null")
 	}
 
-	/**
-	 * Opens another activity with proper intent configuration and optional transition animation.
-	 *
-	 * This method provides a standardized way to navigate between activities while
-	 * maintaining consistent behavior and user experience. It uses CLEAR_TOP and
-	 * SINGLE_TOP flags to ensure proper back stack management and prevent duplicate
-	 * activity instances.
-	 *
-	 * The fade animation provides smooth visual transition that helps users understand
-	 * the navigation flow and maintains the app's polished feel.
-	 *
-	 * @param targetActivity The target activity class to open. This should be a valid
-	 *        Activity class that is declared in the AndroidManifest.xml.
-	 * @param shouldAnimate Whether to apply the fade transition animation after
-	 *        launching the activity. Set to true for user-initiated navigation
-	 *        where smooth transitions enhance UX, false for programmatic navigation
-	 *        where animation might be unnecessary.
-	 */
 	override fun openActivity(targetActivity: Class<*>, shouldAnimate: Boolean) {
-		logger.d("openActivity() called — activity=${targetActivity.simpleName}, shouldAnimate=$shouldAnimate")
-
 		getActivity()?.let { activity ->
-			logger.d("Launching activity: ${targetActivity.simpleName}")
-
-			// Prepare intent with flags to manage activity stack and prevent duplicates
 			val intent = Intent(activity, targetActivity).apply {
 				flags = FLAG_ACTIVITY_CLEAR_TOP or FLAG_ACTIVITY_SINGLE_TOP
 			}
 
 			startActivity(intent)
-			logger.d("Activity ${targetActivity.simpleName} started successfully")
-
-			// Apply fade animation if requested for smooth visual transition
-			if (shouldAnimate) {
-				logger.d("Applying fade transition animation for polished navigation experience")
+			if (shouldAnimate) getAttachedCoroutineScope().launch {
 				animActivityFade(activity)
 			}
-		} ?: logger.d("openActivity() skipped — safeBaseActivityRef is null")
+		}
 	}
 
-	/**
-	 * Closes the current activity with swipe-right animation for natural navigation feel.
-	 *
-	 * This method provides an intuitive way to close activities that mimics the natural
-	 * back navigation gesture on Android. The swipe-right animation creates the visual
-	 * impression of sliding the activity off-screen to the right, which aligns with
-	 * users' mental model of going "back" in the navigation flow.
-	 *
-	 * The animation is particularly effective for activities that feel like "pages"
-	 * in a book or steps in a workflow, reinforcing the hierarchical navigation structure.
-	 *
-	 * @param shouldAnimate Whether to apply the swipe-right exit animation.
-	 *        Set to true for user-initiated back actions where the animation provides
-	 *        valuable visual feedback, false for programmatic closures where immediate
-	 *        response is more important than animation.
-	 */
 	override fun closeActivityWithSwipeAnimation(shouldAnimate: Boolean) {
-		logger.d("closeActivityWithSwipeAnimation() called — shouldAnimate=$shouldAnimate")
-
 		getActivity()?.apply {
-			logger.d("Finishing current activity: ${this::class.java.simpleName}")
 			finish()
-
-			// Apply swipe-right animation if requested for natural navigation feel
 			if (shouldAnimate) {
-				logger.d("Applying swipe-right exit animation mimicking natural back gesture")
-				animActivitySwipeRight(this)
+				getAttachedCoroutineScope().launch {
+					animActivitySwipeRight(getActivity())
+				}
 			}
-		} ?: logger.d("closeActivityWithSwipeAnimation() skipped — safeBaseActivityRef is null")
+		}
 	}
 
-	/**
-	 * Closes the current activity with optional fade-out animation for smooth visual transition.
-	 *
-	 * This method provides a controlled way to finish the current activity while
-	 * maintaining a polished user experience through optional animations. The fade
-	 * animation creates a subtle visual cue that helps users understand the
-	 * navigation flow and provides feedback that the activity is closing.
-	 *
-	 * @param shouldAnimate Whether to apply the fade-out transition animation.
-	 *        Set to true for normal user-initiated closures, false for programmatic
-	 *        closures where animation might be disruptive (e.g., during error handling
-	 *        or rapid sequential navigation).
-	 */
 	override fun closeActivityWithFadeAnimation(shouldAnimate: Boolean) {
-		logger.d("closeActivityWithFadeAnimation() called — shouldAnimate=$shouldAnimate")
-
 		getActivity()?.apply {
-			logger.d("Finishing current activity: ${this::class.java.simpleName}")
 			finish()
-
-			// Apply fade-out animation if requested for smooth visual transition
 			if (shouldAnimate) {
-				logger.d("Applying fade exit animation for better user experience")
-				animActivityFade(this)
+				getAttachedCoroutineScope().launch {
+					animActivityFade(getActivity())
+				}
 			}
-		} ?: logger.d("closeActivityWithFadeAnimation() skipped — safeBaseActivityRef is null")
+		}
 	}
 
-	/**
-	 * Handles double-back-press logic to prevent accidental activity exits.
-	 *
-	 * This method implements the common UX pattern where users must press the back
-	 * button twice within a short timeframe to confirm they want to exit. This
-	 * prevents accidental closures while still providing an easy exit path.
-	 *
-	 * Behavior flow:
-	 * - First press: Shows a toast message prompting user to press again to exit
-	 * - Second press (within 2 seconds): Closes activity with swipe animation
-	 * - Timeout (after 2 seconds): Resets the counter if user doesn't press again
-	 *
-	 * The 2-second timeout provides a reasonable window for user confirmation while
-	 * not being overly restrictive. The swipe animation provides clear visual feedback
-	 * that the exit action was successful.
-	 */
 	override fun exitActivityOnDoubleBackPress() {
-		logger.d("exitActivityOnDoubleBackPress() called — currentState=$isBackButtonEventFired")
-
 		if (isBackButtonEventFired == 0) {
-			logger.d("First back press detected — showing toast prompt to user")
-
-			// Show exit prompt toast to educate user about double-press requirement
-			showToast(
-				activityInf = getActivity(),
-				msgId = R.string.title_press_back_button_to_exit
-			)
-
-			// Set flag to indicate back button pressed once (pending confirmation)
+			showToast(getActivity(), R.string.title_press_back_button_to_exit)
 			isBackButtonEventFired = 1
 
-			// Reset flag after 2 seconds if user doesn't press again to confirm
 			delay(2000, object : OnTaskFinishListener {
 				override fun afterDelay() {
-					logger.d("Resetting back press flag after timeout - user did not confirm exit")
 					isBackButtonEventFired = 0
 				}
 			})
 		} else if (isBackButtonEventFired == 1) {
-			logger.d("Second back press detected within timeout — exiting activity with animation")
 			isBackButtonEventFired = 0
 			closeActivityWithSwipeAnimation(true)
 		}
 	}
 
-	/**
-	 * Force quits the entire application process immediately.
-	 *
-	 * This method performs an immediate termination of the application process,
-	 * bypassing normal Android activity lifecycle callbacks (onPause, onStop, onDestroy).
-	 * It should be used sparingly and only in specific scenarios where graceful
-	 * shutdown is not possible or necessary.
-	 *
-	 * Use cases:
-	 * - Critical errors that make the app unstable
-	 * - Security concerns requiring immediate termination
-	 * - User-initiated force quit from emergency situations
-	 *
-	 * WARNING: This method does not save state, persist data, or perform cleanup.
-	 * Use normal activity finishing methods for routine navigation and closures.
-	 */
 	override fun forceQuitApplication() {
-		logger.d("forceQuitApplication() called — terminating the process immediately")
-
-		// Kill the current process to ensure complete application termination
 		Process.killProcess(Process.myPid())
-		logger.d("Process killed successfully - all activities and services terminated")
-
-		// Exit the JVM to release all resources and complete shutdown
 		exitProcess(0)
 	}
 
-	/**
-	 * Opens the application's App Info screen in device system settings.
-	 *
-	 * This method launches the system settings page specifically for this application,
-	 * allowing users to manage various app-level configurations without navigating
-	 * through the general settings menu. This is particularly useful for helping
-	 * users access settings that might be needed for troubleshooting or configuration.
-	 *
-	 * Users can typically perform these actions from the App Info screen:
-	 * - Grant or revoke runtime permissions
-	 * - Clear app cache and data
-	 * - Force stop the application
-	 * - Manage battery optimization settings
-	 * - Review storage usage and notifications
-	 * - Uninstall the application
-	 *
-	 * This provides a direct path for users to manage app settings that might
-	 * affect functionality or resolve issues they're experiencing.
-	 */
 	override fun openAppInfoSetting() {
-		logger.d("openAppInfoSetting() called — launching system app settings")
-
 		val packageName = this.packageName
-		logger.d("Target package for app info: $packageName")
-
-		// Prepare intent to open the specific App Info screen for this application
 		val uri = "package:$packageName".toUri()
 		val intent = Intent(ACTION_APPLICATION_DETAILS_SETTINGS, uri)
-
 		startActivity(intent)
-		logger.d(
-			"App Info settings screen opened successfully -" +
-				" user can now manage app permissions and settings"
-		)
 	}
 
-	/**
-	 * Opens the official application website or Play Store page in an external browser.
-	 *
-	 * This method attempts to launch the app's official online presence, which could be
-	 * the application website, Play Store listing, or other promotional page. It uses
-	 * the standard Android intent system to delegate to the user's preferred browser.
-	 *
-	 * If no browser application is available on the device, it gracefully falls back
-	 * to showing a toast message prompting the user to install a web browser. This
-	 * ensures the app doesn't crash and provides helpful guidance to the user.
-	 *
-	 * @throws Exception if the intent cannot be resolved or launched, which is
-	 *         caught internally and handled by showing the fallback toast message.
-	 */
 	override fun openApplicationOfficialSite() {
-		logger.d("openApplicationOfficialSite() called")
-
 		try {
-			// Get the official site URL from string resources for easy maintenance
-			val uri = getText(R.string.text_aio_official_page_url).toString()
-			logger.d("Opening official site URL: $uri")
-
-			// Use ACTION_VIEW intent to open in user's preferred browser or Play Store
+			val uri = APP_OFFICIAL_SITE
 			startActivity(Intent(ACTION_VIEW, uri.toUri()))
-			logger.d("Official site opened successfully in browser or Play Store")
 		} catch (error: Exception) {
-			logger.d("Failed to open official site: ${error.message}")
 			error.printStackTrace()
-
-			// Show fallback message when no browser is available
-			showToast(
-				activityInf = getActivity(),
-				msgId = R.string.title_please_install_web_browser
-			)
-			logger.d("Displayed toast: Please install a web browser")
+			showToast(getActivity(), R.string.title_please_install_web_browser)
 		}
 	}
 
-	/**
-	 * Retrieves the device's current time zone identifier.
-	 *
-	 * This method returns the IANA time zone ID (e.g., "America/New_York", "Europe/London")
-	 * that represents the device's configured time zone. This is useful for timestamp
-	 * synchronization, scheduling, and displaying time-sensitive information in the
-	 * user's local time context.
-	 *
-	 * @return The device's default time zone ID as a string in IANA format.
-	 *         Examples: "Asia/Kolkata", "America/Los_Angeles", "Europe/Paris"
-	 */
 	override fun getTimeZoneId(): String {
 		val timeZoneId = TimeZone.getDefault().id
-		logger.d("getTimeZoneId() called — current time zone: $timeZoneId")
 		return timeZoneId
 	}
 
-	/**
-	 * Returns the currently active BaseActivity instance for UI operations.
-	 *
-	 * This method provides access to the current activity context, which is essential
-	 * for performing UI operations, showing dialogs, or starting new activities.
-	 * The reference is managed through weak references to prevent memory leaks
-	 * and is automatically cleared during activity destruction.
-	 *
-	 * @return The current BaseActivity instance if available, or null if the activity
-	 *         is not currently active (destroyed or not initialized). Callers should
-	 *         always check for null before using the returned activity.
-	 */
 	override fun getActivity(): BaseActivity? {
-		logger.d("getActivity() called — returning current activity reference")
 		return weakReferenceOfActivity?.get()
 	}
 
@@ -1087,141 +872,55 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf, AIOTimerLis
 		}
 	}
 
-	/**
-	 * Clears the weak reference to the current activity to prevent memory leaks.
-	 *
-	 * This method is typically called by the application lifecycle manager during
-	 * activity destruction or configuration changes. It ensures that stale activity
-	 * references don't prevent garbage collection, which could lead to memory leaks
-	 * and increased memory usage over time.
-	 *
-	 * The method clears both the weak reference container and the safe activity
-	 * reference, providing a clean slate for the next activity instance.
-	 */
 	open fun clearWeakActivityReference() {
-		logger.d("clearWeakActivityReference() called — clearing activity references")
-
-		// Clear the weak reference to allow garbage collection
 		weakReferenceOfActivity?.clear()
-		logger.d("Weak reference cleared")
-
-		// Clear the safe reference to prevent accidental usage of destroyed activity
 		weakReferenceOfActivity = null
-		logger.d("Safe weak activity reference set to null")
 	}
 
-	/**
-	 * Triggers a short vibration on the device for haptic feedback.
-	 *
-	 * This method provides tactile feedback to users for various interactions
-	 * such as button presses, notifications, or confirmation events. It first
-	 * checks if the device has vibrator capability before attempting to vibrate.
-	 *
-	 * The vibration uses the default amplitude setting and creates a one-shot
-	 * vibration effect for the specified duration.
-	 *
-	 * @param timeInMillis Duration of the vibration in milliseconds. Typical values
-	 *        range from 50ms for subtle feedback to 500ms for prominent notifications.
-	 *        Values outside reasonable ranges may be ignored by the system.
-	 */
 	override fun doSomeVibration(timeInMillis: Int) {
-		logger.d("doSomeVibration() called — duration=${timeInMillis}ms")
-
 		if (vibrator?.hasVibrator() == true) {
-			logger.d("Device supports vibration — triggering vibration")
-
-			// Create a one-shot vibration effect with default amplitude
 			vibrator?.vibrate(
 				VibrationEffect.createOneShot(
-					/* milliseconds = */ timeInMillis.toLong(),
-					/* amplitude = */ VibrationEffect.DEFAULT_AMPLITUDE
+					timeInMillis.toLong(),
+					VibrationEffect.DEFAULT_AMPLITUDE
 				)
 			)
-
-			logger.d("Vibration triggered successfully for ${timeInMillis}ms")
-		} else {
-			logger.d("Device does not support vibration — skipping haptic feedback")
 		}
 	}
 
-	/**
-	 * Provides standard intent flags for launching activities in single-top mode.
-	 *
-	 * These flags are commonly used when you want to ensure only one instance of
-	 * an activity exists in the task stack. If an instance already exists, it will
-	 * be brought to the front instead of creating a new instance.
-	 *
-	 * The combined flags provide the following behavior:
-	 * - FLAG_ACTIVITY_CLEAR_TOP: Removes intermediate activities from the stack
-	 * - FLAG_ACTIVITY_SINGLE_TOP: Prevents multiple instances of the same activity
-	 *
-	 * This is particularly useful for main activities, launcher activities, or
-	 * activities that should maintain a single instance in the back stack.
-	 *
-	 * @return Combined intent flags for single-top launch mode configuration.
-	 */
 	override fun getSingleTopIntentFlags(): Int {
 		val flags = FLAG_ACTIVITY_CLEAR_TOP or FLAG_ACTIVITY_SINGLE_TOP
-		logger.d("getSingleTopIntentFlags() called — returning flags=$flags")
 		return flags
 	}
 
-	/**
-	 * Displays a user-friendly dialog to inform users that a selected feature
-	 * is not yet implemented or currently unavailable.
-	 *
-	 * This method provides a consistent user experience when users attempt to
-	 * access upcoming or in-development features. It includes haptic feedback
-	 * for better user acknowledgment and uses custom styling to maintain
-	 * the app's visual identity while delivering the message.
-	 *
-	 * The dialog features:
-	 * - A green-colored title for positive visual association
-	 * - An icon-enhanced "Okay" button for clear call-to-action
-	 * - Brief vibration feedback to confirm user interaction
-	 * - Safe activity reference checking to prevent crashes
-	 */
 	fun showUpcomingFeatures() {
-		logger.d("showUpcomingFeatures() called — displaying upcoming feature dialog")
+		doSomeVibration()
+		getActivity()?.let { activityRef ->
+			activityRef.getAttachedCoroutineScope().launch {
+				showMessageDialog(
+					baseActivityInf = activityRef,
+					isTitleVisible = true,
+					titleText = getString(R.string.title_feature_isnt_implemented),
+					isNegativeButtonVisible = false,
+					positiveButtonText = getString(R.string.title_okay),
+					messageTextViewCustomize = { messageTextView ->
+						messageTextView.setText(R.string.text_feature_isnt_available_yet)
+					},
 
-		// Trigger short vibration for haptic feedback to acknowledge user interaction
-		doSomeVibration(20)
+					titleTextViewCustomize = { titleTextView ->
+						val colorResId = R.color.color_green
+						val color = activityRef.resources.getColor(colorResId, null)
+						titleTextView.setTextColor(color)
+					},
 
-		getActivity()?.let { safeActivityRef ->
-			logger.d("Safe activity reference found — preparing dialog")
-
-			showMessageDialog(
-				baseActivityInf = safeActivityRef,
-				isTitleVisible = true,
-				titleText = getString(R.string.title_feature_isnt_implemented),
-				isNegativeButtonVisible = false, // Single action flow - only "Okay" option
-				positiveButtonText = getString(R.string.title_okay),
-
-				// Customize message text view with the upcoming feature explanation
-				messageTextViewCustomize = { messageTextView ->
-					logger.d("Setting message text for upcoming features")
-					messageTextView.setText(R.string.text_feature_isnt_available_yet)
-				},
-
-				// Customize title text view with green color for positive visual indication
-				titleTextViewCustomize = { titleTextView ->
-					val colorResId = R.color.color_green
-					val color = safeActivityRef.resources.getColor(colorResId, null)
-					titleTextView.setTextColor(color)
-					logger.d("Title text color set to green - indicating informational message")
-				},
-
-				// Customize positive button with an icon for enhanced visual appeal
-				positiveButtonTextCustomize = { positiveButton: TextView ->
-					val drawable = getDrawable(applicationContext, R.drawable.ic_okay_done)
-					drawable?.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
-					positiveButton.setCompoundDrawables(drawable, null, null, null)
-					logger.d("Positive button customized with drawable icon for better UX")
-				}
-			)
-
-			logger.d("Upcoming feature dialog displayed successfully")
-		} ?: logger.d("showUpcomingFeatures() skipped — safeBaseActivityRef is null")
+					positiveButtonTextCustomize = { positiveButton: TextView ->
+						val drawable = getDrawable(applicationContext, R.drawable.ic_okay_done)
+						drawable?.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
+						positiveButton.setCompoundDrawables(drawable, null, null, null)
+					}
+				)
+			}
+		}
 	}
 
 	/**
@@ -1383,220 +1082,84 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf, AIOTimerLis
 		logger.d("Light system bar theme applied successfully")
 	}
 
-	/**
-	 * Applies the app's theme appearance based on user preferences or system defaults.
-	 *
-	 * This method coordinates the visual theme of the application by delegating to
-	 * ViewUtility.changesSystemTheme() which handles the actual theme application.
-	 * It supports three theme modes that can be configured in app settings or
-	 * follow the system-wide dark mode setting.
-	 *
-	 * Theme Mode Options:
-	 * - -1: Follow system (auto) - automatically switches between light/dark based on system setting
-	 * -  1: Force Dark mode - always uses dark theme regardless of system setting
-	 * -  2: Force Light mode - always uses light theme regardless of system setting
-	 *
-	 * The method safely checks for an active activity reference before applying
-	 * the theme to prevent crashes when called from background or destroyed contexts.
-	 */
-	fun setThemeAppearance() {
-		logger.d("setThemeAppearance() called — applying user-selected or system theme")
-
+	suspend fun setThemeAppearance() {
 		getActivity()?.let { activity ->
 			ViewUtility.changesSystemTheme(activity)
-			logger.d("Theme applied via ViewUtility.changesSystemTheme()")
-		} ?: logger.d("No active activity reference — theme appearance not applied")
+		}
 	}
 
-	/**
-	 * Checks whether the system's dark mode is currently active.
-	 *
-	 * This method examines the device's UI configuration to determine if dark mode
-	 * is enabled at the system level. It does not consider app-specific theme settings,
-	 * but rather the actual system-wide dark mode state. This is useful for coordinating
-	 * app behavior with system preferences or for analytics tracking.
-	 *
-	 * @return true if dark mode is enabled system-wide, false if light mode is active.
-	 *         Returns based on the actual Configuration.uiMode rather than app theme.
-	 */
 	fun isDarkModeActive(): Boolean {
-		val currentNightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+		val uiMode = resources.configuration.uiMode
+		val currentNightMode = uiMode and Configuration.UI_MODE_NIGHT_MASK
 		val isDark = currentNightMode == Configuration.UI_MODE_NIGHT_YES
-		logger.d("isDarkModeActive() called — result=$isDark")
 		return isDark
 	}
 
-	/**
-	 * Configures the system bars (status bar and navigation bar) for dark theme compatibility.
-	 *
-	 * This method applies a dark-themed appearance to the system bars, ensuring they
-	 * use light-colored icons (white) on dark backgrounds. This creates optimal visual
-	 * contrast and follows Material Design guidelines for dark theme implementation.
-	 *
-	 * The colors are typically set to the app's primary dark color, and both status bar
-	 * and navigation bar are configured to use light-content appearance for better
-	 * readability against dark backgrounds.
-	 */
 	fun setDarkSystemBarTheme() {
-		logger.d("setDarkSystemBarTheme() called — applying dark system bar appearance")
-
 		setSystemBarsColors(
 			statusBarColorResId = R.color.color_primary,
 			navigationBarColorResId = R.color.color_primary,
-			isLightStatusBar = false,    // Use dark status bar with light icons
-			isLightNavigationBar = false // Use dark navigation bar with light icons
+			isLightStatusBar = false,
+			isLightNavigationBar = false
 		)
-
-		logger.d("Dark system bar theme applied successfully")
 	}
 
-	/**
-	 * Enables immersive edge-to-edge fullscreen mode by hiding system bars.
-	 *
-	 * This method configures the app to use the entire screen real estate, hiding
-	 * both status bar and navigation bar for a completely immersive experience.
-	 * System bars can be temporarily revealed by swiping from the edges of the screen.
-	 *
-	 * The implementation uses different approaches based on Android version:
-	 * - Android R (API 30+) and above: Uses modern WindowInsetsController API
-	 * - Pre-Android R: Uses legacy system UI visibility flags with immersive sticky mode
-	 *
-	 * This is ideal for media consumption, gaming, or reading experiences where
-	 * maximum screen space is desired without permanently losing system navigation.
-	 */
 	fun setEdgeToEdgeFullscreen() {
-		logger.d("setEdgeToEdgeFullscreen() called — enabling immersive fullscreen mode")
-
-		// Disable default window fitting to enable edge-to-edge layout
-		// This allows content to draw behind system bars when they are hidden
 		WindowCompat.setDecorFitsSystemWindows(window, false)
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-			logger.d("Android version >= R — using InsetsController API for fullscreen")
-
 			window.insetsController?.let {
-				// Hide both status bar and navigation bar
 				it.hide(WindowInsets.Type.systemBars())
-				// System bars appear transiently when user swipes from edges
 				it.systemBarsBehavior = BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 			}
 		} else {
-			logger.d("Android version < R — using legacy system UI flags")
-
 			window.decorView.systemUiVisibility = (SYSTEM_UI_FLAG_LAYOUT_STABLE
 				or SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
 				or SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
 				or SYSTEM_UI_FLAG_HIDE_NAVIGATION
 				or SYSTEM_UI_FLAG_FULLSCREEN
-				or SYSTEM_UI_FLAG_IMMERSIVE_STICKY) // Sticky immersive mode for better UX
+				or SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
 		}
 
-		// Apply edge-to-edge behavior using compatibility controller for consistent behavior
 		WindowCompat.getInsetsController(window, window.decorView).let { controller ->
 			controller.hide(WindowInsetsCompat.Type.systemBars())
 			controller.systemBarsBehavior =
 				WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-			logger.d("Fullscreen mode activated with swipe-to-show system bars")
 		}
-
-		logger.d("Edge-to-edge fullscreen setup completed successfully")
 	}
 
-	/**
-	 * Disables edge-to-edge fullscreen mode and restores standard system UI layout.
-	 *
-	 * This method reverses edge-to-edge display configuration, returning the app to
-	 * standard Android system UI behavior. It ensures system bars (status bar and
-	 * navigation bar) become visible and interactive again, with content properly
-	 * inset below these system elements.
-	 *
-	 * The implementation handles both modern (API 30+) and legacy (pre-API 30)
-	 * Android versions appropriately, using the recommended approaches for each
-	 * platform to guarantee consistent behavior across devices.
-	 */
 	fun disableEdgeToEdge() {
-		logger.d("disableEdgeToEdge() called — restoring default system UI layout")
-
-		// Re-enable window fitting for system windows - content will no longer draw behind system bars
 		WindowCompat.setDecorFitsSystemWindows(window, true)
-
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-			// Modern approach for Android 11+ using WindowInsetsController
 			window.insetsController?.let {
-				// Make system bars permanently visible
 				it.show(WindowInsets.Type.systemBars())
 				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-					// Reset to default behavior (system bars hide when user swipes)
 					it.systemBarsBehavior = BEHAVIOR_DEFAULT
 				}
-				logger.d("InsetsController used to show system bars and reset behavior")
 			}
 		} else {
-			// Legacy approach for Android versions before API 30
 			val flags = (SYSTEM_UI_FLAG_LAYOUT_STABLE
 				or SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
 				or SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
 			window.decorView.systemUiVisibility = flags
-			logger.d("Legacy system UI flags applied for pre-R devices")
 		}
 
-		// Apply compatibility controller for consistent behavior across all API levels
 		WindowCompat.getInsetsController(window, window.decorView).let { controller ->
 			controller.show(WindowInsetsCompat.Type.systemBars())
 			controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
-			logger.d("InsetsControllerCompat used to show system bars with default behavior")
 		}
 	}
 
-	/**
-	 * Enables edge-to-edge fullscreen mode with a custom cutout (notch) color.
-	 *
-	 * This method configures the app to use the entire screen, including areas
-	 * around display cutouts (notches). Content will extend behind system bars,
-	 * creating an immersive experience. The specified color is applied to the
-	 * status bar and navigation bar backgrounds to ensure visual consistency.
-	 *
-	 * @param color The color to apply to status bar and navigation bar cutout areas.
-	 *              This should typically match your app's primary background color
-	 *              to create a seamless visual transition between content and system areas.
-	 */
-	fun setEdgeToEdgeCustomCutoutColor(
-		@ColorInt
-		color: Int
-	) {
-		logger.d("setEdgeToEdgeCustomCutoutColor() called — color=${color}")
-
-		// Allow content to draw behind system bars for edge-to-edge effect
+	fun setEdgeToEdgeCustomCutoutColor(@ColorInt color: Int) {
 		WindowCompat.setDecorFitsSystemWindows(window, false)
-
-		// Set transparent system bars so content can show through
 		window.statusBarColor = color
 		window.navigationBarColor = color
-
-		// Allow content to extend into display cutouts on short edges (notched devices)
 		window.attributes.layoutInDisplayCutoutMode = LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-			// Set window background to match cutout color for visual consistency
 			window.setBackgroundDrawable(color.toDrawable())
-			logger.d("Applied custom cutout color to window background (API >= R)")
 		}
 	}
 
-	/**
-	 * Checks if the application is ignoring battery optimizations.
-	 *
-	 * Battery optimization is a system feature that can restrict background activity
-	 * to conserve battery. Some apps (like download managers or media players) need
-	 * to be excluded from these restrictions to function properly in the background.
-	 *
-	 * This method checks whether the user has granted this app permission to bypass
-	 * battery optimization restrictions. If not, you may want to prompt the user
-	 * to disable optimization for reliable background operation.
-	 *
-	 * @return `true` if the app is excluded from battery optimization (can run freely
-	 *         in background), `false` if subject to system battery restrictions.
-	 */
 	fun isBatteryOptimizationIgnored(): Boolean {
 		val powerManager = getSystemService(POWER_SERVICE) as? PowerManager
 		// Check if this app is in the battery optimization whitelist
@@ -1618,7 +1181,7 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf, AIOTimerLis
 	 * @see isBatteryOptimizationIgnored For checking current battery optimization status
 	 * @see MotherActivity The main activity context required for showing the dialog
 	 */
-	fun requestForDisablingBatteryOptimization() {
+	suspend fun requestForDisablingBatteryOptimization() {
 		logger.d("requestForDisablingBatteryOptimization() called")
 
 		// Guard clause: Only show if user has experienced successful downloads
@@ -1662,12 +1225,16 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf, AIOTimerLis
 			messageTextViewCustomize = { it.setText(R.string.text_battery_optimization_msg) },
 			titleTextViewCustomize = { it.setText(R.string.title_turn_off_battery_optimization) },
 			positiveButtonTextCustomize = {
-				it.setText(R.string.title_disable_now)
-				it.setLeftSideDrawable(R.drawable.ic_button_arrow_next)
+				getActivity()?.getAttachedCoroutineScope()?.launch {
+					it.setText(R.string.title_disable_now)
+					it.setLeftSideDrawable(R.drawable.ic_button_arrow_next)
+				}
 			},
 			negativeButtonTextCustomize = {
-				it.setText(R.string.title_not_now)
-				it.setLeftSideDrawable(R.drawable.ic_button_cancel)
+				getActivity()?.activityCoroutineScope?.launch {
+					it.setText(R.string.title_not_now)
+					it.setLeftSideDrawable(R.drawable.ic_button_cancel)
+				}
 			}
 		)?.apply {
 			// Set up dialog lifecycle listeners to properly manage the showing state
@@ -1755,7 +1322,8 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf, AIOTimerLis
 				onSuccess = { logger.d("Update check completed successfully") },
 				onFinalError = { error -> logger.e("Update check failed after retries:", error) }
 			)
-		} ?: logger.d("safeBaseActivityRef is null — cannot perform update check without activity context")
+		}
+			?: logger.d("safeBaseActivityRef is null — cannot perform update check without activity context")
 	}
 
 	/**
@@ -1792,72 +1360,33 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf, AIOTimerLis
 		}
 	}
 
-	/**
-	 * Fetches and validates an application update by downloading the APK and verifying its integrity.
-	 *
-	 * This method implements a comprehensive validation pipeline that ensures downloaded updates
-	 * are genuine, complete, and safe to install. It performs multiple security checks including
-	 * file format validation, size verification, and cryptographic hash matching to prevent
-	 * tampering and corruption.
-	 *
-	 * The validation process follows these steps:
-	 * 1. Retrieve the latest APK download URL from the update server
-	 * 2. Fetch update metadata (version, changelog, hash) for verification
-	 * 3. Download the APK file silently without user interruption
-	 * 4. Validate the file structure and APK format integrity
-	 * 5. Compute SHA256 hash and compare with server-provided hash
-	 * 6. Return validated update package or null if any check fails
-	 *
-	 * @param updater The updater instance used to fetch update information and download files.
-	 * @return A pair containing the downloaded APK file and update info if validation passes,
-	 *         or null if any validation step fails, ensuring only safe updates are presented to users.
-	 */
-	private suspend fun fetchAndValidateUpdate(
-		updater: AIOUpdater
-	): Pair<File, AIOUpdater.UpdateInfo>? {
-		// Step 1: Get the latest APK download URL from the update server
+	private suspend fun fetchAndValidateUpdate(updater: AIOUpdater):
+		Pair<File, AIOUpdater.UpdateInfo>? {
 		val latestAPKUrl = updater.getLatestApkUrl()
-		if (latestAPKUrl.isNullOrEmpty()) {
-			logger.d("Latest APK URL is null or empty — aborting update check")
-			return null
-		}
+		if (latestAPKUrl.isNullOrEmpty()) return null
 		logger.d("Latest APK URL retrieved: $latestAPKUrl")
 
-		// Step 2: Fetch update metadata (version, hash, changelog, etc.)
-		val updateInfo = updater.fetchUpdateInfo()
-		if (updateInfo == null) {
-			logger.d("UpdateInfo is null — aborting update check due to missing metadata")
-			return null
-		}
+		val updateInfo = updater.fetchUpdateInfo() ?: return null
 		logger.d(
 			"Fetched update info: version=" +
 				"${updateInfo.latestVersion}, hash=${updateInfo.versionHash}"
 		)
 
-		// Step 3: Download the APK file silently (without user interaction)
 		val latestAPKFile = updater.downloadUpdateApkSilently(
 			url = latestAPKUrl,
 			version = updateInfo.latestVersion.toString(),
 			serverHash = updateInfo.versionHash
-		) ?: run {
-			logger.d("Failed to download latest APK — network or storage issue")
-			return null
-		}
+		) ?: return null
 
-		// Step 4: Validate the downloaded file is a proper APK with valid structure
 		if (!isValidApkFile(latestAPKFile)) {
-			logger.d("Downloaded file is not a valid APK — deleting corrupted file")
 			latestAPKFile.delete()
 			return null
 		}
 
-		// Step 5: Verify file integrity using SHA256 hash on background thread
-		// This prevents UI freezing during computationally intensive hash calculation
 		val fileHash = ThreadsUtility.executeOnDefault {
 			getFileSha256(latestAPKFile)
 		}
 
-		// Step 6: Compare computed hash with expected hash from server to prevent tampering
 		if (fileHash != updateInfo.versionHash) {
 			logger.d(
 				"SHA256 mismatch! Expected=" +
@@ -1872,116 +1401,50 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf, AIOTimerLis
 		return Pair(latestAPKFile, updateInfo)
 	}
 
-	/**
-	 * Validates that a file is a legitimate APK file with proper structure and format.
-	 *
-	 * This method performs basic sanity checks to ensure the downloaded file is actually
-	 * an Android application package before proceeding with installation. It verifies:
-	 * - File existence and accessibility
-	 * - Non-zero file size to detect incomplete downloads
-	 * - Correct file extension to filter out non-APK files
-	 *
-	 * @param file The file to validate as a potential APK package.
-	 * @return true if the file exists, is non-empty, has valid file permissions, and
-	 *         has an APK extension, indicating it's likely a valid Android package.
-	 */
-	private fun isValidApkFile(file: File): Boolean {
+	private suspend fun isValidApkFile(file: File): Boolean {
 		return file.exists() &&
 			file.isFile &&
 			file.length() > 0 &&
-			getFileExtension(file.name)?.contains("apk", true) == true
+			getFileExtension(file.name)
+				?.contains("apk", true) == true
 	}
 
-	/**
-	 * Displays the update dialog to the user on the main UI thread with proper lifecycle safety.
-	 *
-	 * This method ensures the update dialog is only shown when the activity is in a valid
-	 * state and can properly handle user interactions. It performs comprehensive lifecycle
-	 * checks to prevent WindowManager crashes and automatically cleans up downloaded files
-	 * when the activity is no longer available to present the dialog.
-	 *
-	 * The dialog is restricted to MotherActivity (the main activity) to ensure consistent
-	 * user experience and proper navigation flow after update installation.
-	 *
-	 * @param activity The activity context for showing the dialog and handling user input.
-	 * @param apkFile The downloaded APK file ready for installation, which will be
-	 *        automatically cleaned up if the dialog cannot be shown.
-	 * @param updateInfo The update metadata containing version information, release notes,
-	 *        and other details to present to the user for update decision.
-	 */
 	private suspend fun showUpdateDialog(
 		activity: BaseActivity,
-		apkFile: File, updateInfo: AIOUpdater.UpdateInfo
+		apkFile: File,
+		updateInfo: AIOUpdater.UpdateInfo
 	) {
-		ThreadsUtility.executeOnMain(codeBlock = {
-			// Safety check: ensure activity is still valid and active to prevent crashes
-			if (!isActivityRunning || activity.isFinishing || activity.isDestroyed) {
-				logger.d("Activity not running — cleaning up downloaded APK to free storage")
+		withIOContext {
+			if (!isActivityRunning ||
+				activity.isFinishing ||
+				activity.isDestroyed
+			) {
 				apkFile.delete()
-				return@executeOnMain
+				return@withIOContext
 			}
 
-			// Only show dialog on MotherActivity (main activity) for consistent UX
 			if (activity is MotherActivity) {
 				UpdaterDialog(
 					activityInf = activity,
 					latestVersionApkFile = apkFile,
 					versionInfo = updateInfo
 				).initialize().show()
-				logger.d("UpdaterDialog launched for version=${updateInfo.latestVersion}")
 			} else {
-				logger.d("Activity is not MotherActivity — cleaning up downloaded APK")
 				apkFile.delete()
 			}
-		})
+		}
 	}
 
-	/**
-	 * Cancels any ongoing update check operation to free resources and prevent unnecessary processing.
-	 *
-	 * This method is essential for proper resource management when the update check is no longer
-	 * needed, such as when the user navigates away from the app, the activity is destroyed, or
-	 * the app is backgrounded. It ensures coroutines are properly cancelled to prevent memory
-	 * leaks and unnecessary battery/network usage.
-	 *
-	 * Call this method during activity destruction or when update checks should be interrupted
-	 * due to changing application state or user preferences.
-	 */
-	private fun cancelUpdateCheck() {
+	private suspend fun cancelUpdateCheck() {
 		updateCheckJob?.cancel()
 		updateCheckJob = null
-		logger.d("Update check cancelled and resources released")
 	}
 
-	// Timestamp tracking for debouncing update checks to prevent excessive network usage
-	private var lastUpdateCheckTime = 0L
-
-	// Minimum interval between update checks (5 minutes) to avoid excessive network calls and battery drain
-	private val minUpdateCheckInterval = 5 * 60 * 1000L // 5 minutes in milliseconds
-
-	/**
-	 * Performs a debounced update check to prevent excessive checking and conserve resources.
-	 *
-	 * This method implements a throttling mechanism that prevents update checks from occurring
-	 * too frequently, which could waste network bandwidth, drain battery, and annoy users with
-	 * constant update notifications. It maintains a 5-minute minimum interval between checks
-	 * while still allowing manual update checks when specifically requested by users.
-	 *
-	 * The debouncing is particularly important for automatic checks triggered by app startup
-	 * or resume events, ensuring the app respects user resources and network conditions.
-	 */
-	private fun checkForLatestUpdateDebounced() {
+	private suspend fun checkForLatestUpdateDebounced() {
 		getActivity()?.let { activityRef ->
 			if (activityRef is MotherActivity) {
 				val currentTime = System.currentTimeMillis()
-
-				// Check if minimum interval has elapsed since last check to prevent spam
-				if (currentTime - lastUpdateCheckTime < minUpdateCheckInterval) {
-					logger.d("Skipping update check - too soon since last check (throttled)")
-					return
-				}
-
-				// Update timestamp and proceed with check to reset the throttle window
+				if (currentTime - lastUpdateCheckTime < minUpdateCheckInterval) return
 				lastUpdateCheckTime = currentTime
 				checkForLatestUpdate()
 			}

@@ -300,15 +300,15 @@ class AIOSettings : Serializable {
 	 * rapid consecutive updates. It ensures the download directory path is
 	 * sanitized via [ensureDownloadDirExists] before saving.
 	 */
-	suspend fun updateInDB() {
-		withIOContext {
+	fun updateInDB() {
+		ThreadsUtility.executeInBackground(codeBlock = {
 			runCatching {
 				ensureDownloadDirExists()
 				saveInDB(this@AIOSettings)
 			}.onFailure { error ->
 				logger.e("Settings save error: ${error.message}", error)
 			}
-		}
+		})
 	}
 
 	/**
