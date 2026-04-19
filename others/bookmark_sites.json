@@ -1,0 +1,58 @@
+{
+	"categories": [
+		{
+			"id": "general",
+			"title": "General / Search",
+			"sites": [
+				{ "name": "Google", "url": "https://google.com/" },
+				{ "name": "Bing", "url": "https://bing.com/" },
+				{ "name": "Yahoo", "url": "https://yahoo.com/" },
+				{ "name": "DuckDuckGo", "url": "https://duckduckgo.com/" },
+				{ "name": "Wikipedia", "url": "https://wikipedia.org/" }
+			]
+		},
+		{
+			"id": "music",
+			"title": "Music",
+			"sites": [
+				{ "name": "PagalNew", "url": "https://pagalnew.com/" },
+				{ "name": "Mr-Jatt", "url": "https://mr-jatt.im/" },
+				{ "name": "DJMaza", "url": "https://djmaza.my/" },
+				{ "name": "DJPunjab", "url": "https://djpunjab.fm/" },
+				{ "name": "Raag.fm", "url": "https://raag.fm/" },
+				{ "name": "JioSaavn", "url": "https://jiosaavn.com/" },
+				{ "name": "Wynk Music", "url": "https://wynk.in/music" },
+				{ "name": "Gaana", "url": "https://gaana.com/" }
+			]
+		},
+		{
+			"id": "movies",
+			"title": "Movie Download Sites",
+			"sites": [
+				{ "name": "MoviesWap", "url": "https://movieswap.cam/" },
+				{ "name": "TamilYogi", "url": "https://tamilyogi.cool/" },
+				{ "name": "9xMovies", "url": "https://9xmovies.team/" },
+				{ "name": "7StarHD", "url": "https://7starhd.run/" },
+				{ "name": "Khatrimaza", "url": "https://khatrimaza.uno/" },
+				{ "name": "WorldFree4U", "url": "https://worldfree4u.lol/" },
+				{ "name": "MoviesFlix", "url": "https://themoviesflix.org/" },
+				{ "name": "HDMoviesHub", "url": "https://hdmovieshub.ltd/" }
+			]
+		},
+		{
+			"id": "adult",
+			"title": "Adult (18+)",
+			"nsfw": true,
+			"sites": [
+				{ "name": "Pornhub", "url": "https://pornhub.com/" },
+				{ "name": "XVideos", "url": "https://xvideos.com/" },
+				{ "name": "XNXX", "url": "https://xnxx.com/" },
+				{ "name": "RedTube", "url": "https://redtube.com/" },
+				{ "name": "YouPorn", "url": "https://youporn.com/" },
+				{ "name": "xHamster", "url": "https://xhamster.com/" }
+			]
+		}
+	],
+	"version": 1,
+	"updated_at": "2026-03-04"
+}
