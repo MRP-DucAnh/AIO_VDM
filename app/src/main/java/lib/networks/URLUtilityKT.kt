@@ -289,9 +289,10 @@ object URLUtilityKT {
 	}
 
 	@JvmStatic
-	suspend fun fetchWebPageContent(url: String,
-	                                retry: Boolean = false,
-	                                numOfRetry: Int = 0): String? {
+	suspend fun fetchWebPageContent(
+		url: String,
+		retry: Boolean = false,
+		numOfRetry: Int = 0): String? {
 		return withIOContext {
 			if (retry && numOfRetry > 0) {
 				var index = 0

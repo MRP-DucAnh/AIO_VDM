@@ -23,8 +23,6 @@ object HttpClientProvider {
 
 	@JvmStatic
 	suspend fun initialize() {
-		withIOContext {
-			okHttpClient
-		}
+		withIOContext { okHttpClient }
 	}
 }
