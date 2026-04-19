@@ -4,6 +4,7 @@ import android.annotation.*
 import android.content.*
 import android.os.*
 import android.provider.*
+import app.core.*
 import java.security.*
 
 class DeviceIdProvider(private val context: Context) {
@@ -11,7 +12,7 @@ class DeviceIdProvider(private val context: Context) {
 	private val appContext = context.applicationContext
 
 	companion object {
-		private const val APP_SALT = "com.tubeaio.pro"
+		private const val APP_SALT = "com.$APP_DEFAULT_FULL_NAME.pro"
 		@Volatile private var cachedId: String? = null
 	}
 

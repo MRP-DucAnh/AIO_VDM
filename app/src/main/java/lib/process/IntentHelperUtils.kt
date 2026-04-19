@@ -10,8 +10,8 @@ object IntentHelperUtils {
 	private val logger = LogHelperUtils.from(javaClass)
 
 	@JvmStatic
-	fun getMatchingActivities(activity: Activity?,
-	                          intent: Intent?): List<ResolveInfo> {
+	fun getMatchingActivities(
+		activity: Activity?, intent: Intent?): List<ResolveInfo> {
 		if (intent == null || activity == null) return emptyList()
 		return activity.packageManager.queryIntentActivities(intent, 0)
 	}
@@ -29,8 +29,8 @@ object IntentHelperUtils {
 	}
 
 	@JvmStatic
-	suspend fun canHandleIntent(activity: Activity?,
-	                            intent: Intent?): Boolean {
+	suspend fun canHandleIntent(
+		activity: Activity?, intent: Intent?): Boolean {
 		if (intent == null || activity == null) return false
 		val packageManager = activity.packageManager
 		val activities = packageManager.queryIntentActivities(intent, 0)
@@ -38,8 +38,8 @@ object IntentHelperUtils {
 	}
 
 	@JvmStatic
-	suspend fun startActivityIfPossible(activity: Activity?,
-	                                    intent: Intent?): Boolean {
+	suspend fun startActivityIfPossible(
+		activity: Activity?, intent: Intent?): Boolean {
 		if (intent == null || activity == null) return false
 		return if (canHandleIntent(activity, intent)) {
 			activity.startActivity(intent)
@@ -50,8 +50,8 @@ object IntentHelperUtils {
 	}
 
 	@JvmStatic
-	suspend fun getPackageNameForIntent(activity: Activity?,
-	                                    intent: Intent?): String {
+	suspend fun getPackageNameForIntent(
+		activity: Activity?, intent: Intent?): String {
 		if (intent == null || activity == null) return ""
 		val packageManager = activity.packageManager
 		val activities = packageManager.queryIntentActivities(intent, 0)
