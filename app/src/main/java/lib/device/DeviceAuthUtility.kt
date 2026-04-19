@@ -13,8 +13,7 @@ import lib.ui.builders.ToastView.Companion.showToast
 object DeviceAuthUtility {
 
 	@JvmStatic
-	suspend fun authenticate(activity: BaseActivity, onResult: (Boolean) -> Unit
-	) {
+	suspend fun authenticate(activity: BaseActivity, onResult: (Boolean) -> Unit) {
 		withMainContext {
 			val biometricManager = BiometricManager.from(activity)
 			val authenticators = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -34,8 +33,7 @@ object DeviceAuthUtility {
 	}
 
 	private fun executePrompt(
-		activity: BaseActivity, authenticators: Int, onResult: (Boolean) -> Unit
-	) {
+		activity: BaseActivity, authenticators: Int, onResult: (Boolean) -> Unit) {
 		val executor = ContextCompat.getMainExecutor(activity)
 
 		val promptInfo = BiometricPrompt.PromptInfo.Builder()
