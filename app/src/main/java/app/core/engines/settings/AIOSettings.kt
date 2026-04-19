@@ -412,7 +412,7 @@ class AIOSettings : Serializable {
 	private suspend fun setupDefaultDownloadDir(): Boolean {
 		return withIOContext {
 			runCatching {
-				val dirName = AIO_DOWNLOADS
+				val dirName = APP_DOWNLOADS
 				val dir = INSTANCE.getPublicDownloadDir()?.makeFolder(INSTANCE, dirName)
 				dir?.exists() == true
 			}.getOrDefault(false)

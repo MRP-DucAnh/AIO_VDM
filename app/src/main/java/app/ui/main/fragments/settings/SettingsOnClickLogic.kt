@@ -8,7 +8,7 @@ import androidx.core.content.ContextCompat.*
 import androidx.core.net.*
 import app.core.AIOApp.Companion.AIO_DEFAULT_DOWNLOAD_PATH
 import app.core.AIOApp.Companion.INSTANCE
-import app.core.AIO_DEFAULT_FULL_NAME
+import app.core.APP_DEFAULT_FULL_NAME
 import app.core.engines.settings.AIOSettings.Companion.DARK_MODE_INDICATOR_FIE
 import app.core.engines.settings.AIOSettingsRepo.getSettings
 import app.core.engines.updater.*
@@ -806,7 +806,7 @@ class SettingsOnClickLogic(settingsFragment: SettingsFragment) {
 	 */
 	private suspend fun getApplicationShareText(context: Context): String {
 		return withIOContext {
-			val appName = AIO_DEFAULT_FULL_NAME
+			val appName = APP_DEFAULT_FULL_NAME
 			val githubOfficialPage = context.getString(R.string.text_aio_official_page_url)
 			context.getString(R.string.text_sharing_app_msg, appName, githubOfficialPage)
 				.trimIndent()

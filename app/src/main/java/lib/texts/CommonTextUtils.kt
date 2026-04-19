@@ -28,7 +28,7 @@ object CommonTextUtils {
 	@JvmStatic
 	suspend fun generateRandomString(length: Int): String {
 		return withIOContext {
-			val characters = AIO_FULL_APPLETS
+			val characters = APP_FULL_APPLETS
 			val sb = StringBuilder(length)
 			for (index in 0 until length) {
 				val randomIndex = (characters.indices).random()

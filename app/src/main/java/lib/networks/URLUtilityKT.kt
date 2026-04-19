@@ -346,13 +346,13 @@ object URLUtilityKT {
 		numOfRetry: Int = 0,
 		timeoutSeconds: Int = 30
 	): String? {
-		val oldMobileUserAgents = AIO_MOBILE_AGENTS
+		val oldMobileUserAgents = APP_DEFAULT_MOBILE_AGENTS
 		val client = okHttpClient
 		fun attemptFetch(attempt: Int): String? {
 			val acceptLanguage = "en-US,en;q=0.5"
 			val userAgentIndex = attempt % oldMobileUserAgents.size
 			val userAgent = oldMobileUserAgents[userAgentIndex]
-			val mediaTypes = AIO_ALL_MEDIA_TYPES
+			val mediaTypes = APP_ALL_MEDIA_TYPES
 
 			val request = Request.Builder()
 				.url(url).header("User-Agent", userAgent)

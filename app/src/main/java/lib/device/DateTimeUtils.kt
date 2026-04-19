@@ -1,84 +1,86 @@
 package lib.device
 
+import app.core.*
 import java.text.*
 import java.time.*
 import java.time.LocalDateTime.*
 import java.time.format.*
+import java.time.format.DateTimeFormatter.*
 import java.util.*
 import java.util.Locale.*
 import java.util.concurrent.*
 
 object DateTimeUtils {
 
-	@JvmStatic
-	val dateFormatter: DateTimeFormatter =
-		DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", ENGLISH)
+	private val formatterCache = ConcurrentHashMap<String, DateTimeFormatter>()
+	private val defaultDateFormatter = ofPattern(APP_DEFAULT_DATE_TIME_FORMAT, ENGLISH)
+	private val time12HFormatter = ofPattern(APP_TIME_FORMAT_12_HOUR, ENGLISH)
+	private val time24HFormatter = ofPattern(APP_TIME_FORMAT_24_HOUR, ENGLISH)
 
-	@JvmStatic
-	val timeFormatter12Hour: DateTimeFormatter =
-		DateTimeFormatter.ofPattern("hh:mm a", ENGLISH)
-
-	@JvmStatic
-	val timeFormatter24Hour: DateTimeFormatter =
-		DateTimeFormatter.ofPattern("HH:mm", ENGLISH)
+	private fun getOrCreateFormatter(
+		pattern: String, locale: Locale = getDefault()
+	): DateTimeFormatter {
+		val key = "$pattern-${locale.language}"
+		return formatterCache.getOrPut(key) {
+			ofPattern(pattern, locale)
+		}
+	}
 
 	@JvmStatic
 	fun getCurrentDateTime(): String {
-		return now().format(dateFormatter)
+		return now().format(defaultDateFormatter)
 	}
 
 	@JvmStatic
 	fun getCurrentDate(format: String?): String {
-		val formatter = DateTimeFormatter.ofPattern(format, getDefault())
+		val formatter = ofPattern(format, getDefault())
 		return now().format(formatter)
 	}
 
 	@JvmStatic
 	fun getCurrentTime(format: String?): String {
-		val formatter = DateTimeFormatter.ofPattern(format, getDefault())
+		val formatter = ofPattern(format, getDefault())
 		return now().format(formatter)
 	}
 
 	@JvmStatic
-	fun timestampToDateString(timestamp: Long, format: String?): String {
-		val formatter = DateTimeFormatter.ofPattern(format, getDefault())
-		val dateTime = ofInstant(Date(timestamp).toInstant(), ZoneId.systemDefault())
-		return dateTime.format(formatter)
+	fun timestampToDateString(timestamp: Long, format: String): String {
+		val instant = Instant.ofEpochMilli(timestamp)
+		val dateTime = ZonedDateTime.ofInstant(instant, ZoneId.systemDefault())
+		return dateTime.format(getOrCreateFormatter(format))
 	}
 
 	@JvmStatic
 	fun dateStringToTimestamp(dateString: String?, format: String?): Long {
-		val formatter = DateTimeFormatter.ofPattern(format, getDefault())
+		val formatter = ofPattern(format, getDefault())
 		val dateTime = parse(dateString, formatter)
 		return Date.from(dateTime.atZone(ZoneId.systemDefault()).toInstant()).time
 	}
 
 	@JvmStatic
 	fun getDaysDifference(startDate: String?, endDate: String?, format: String?): Long {
-		val formatter = DateTimeFormatter.ofPattern(format, getDefault())
+		val formatter = ofPattern(format, getDefault())
 		val start = parse(startDate, formatter)
 		val end = parse(endDate, formatter)
 		return Duration.between(start, end).toDays()
 	}
 
 	@JvmStatic
-	fun formatDateWithSuffix(date: Date): String {
-		val dayFormatter = SimpleDateFormat("d", US)
-		val monthFormatter = SimpleDateFormat("MMM", US)
-		val timeFormatter = SimpleDateFormat("HH:mm", US)
+	fun formatDateWithSuffix(timestamp: Long): String {
+		val ofEpochMilli = Instant.ofEpochMilli(timestamp)
+		val systemDefault = ZoneId.systemDefault()
+		val dt = ZonedDateTime.ofInstant(ofEpochMilli, systemDefault)
+		val day = dt.dayOfMonth
+		val month = dt.format(getOrCreateFormatter("MMM", US))
+		val time = dt.format(getOrCreateFormatter("HH:mm", US))
 
-		val day = dayFormatter.format(date).toInt()
-		val dayWithSuffix = "$day${getDayOfMonthSuffix(day)}"
-
-		val dateFormat = timeFormatter.format(date)
-		val monthFormat = monthFormatter.format(date)
-		return "$dayWithSuffix $monthFormat ($dateFormat)"
+		return "${day}${getDayOfMonthSuffix(day)} $month ($time)"
 	}
 
 	@JvmStatic
 	fun isCurrentTimeInRange(startTime: String?,
 	                         endTime: String?, format: String?): Boolean {
-		val formatter = DateTimeFormatter.ofPattern(format, getDefault())
+		val formatter = ofPattern(format, getDefault())
 		val start = parse(startTime, formatter)
 		val end = parse(endTime, formatter)
 		val currentTime = now()
@@ -88,20 +90,20 @@ object DateTimeUtils {
 	@JvmStatic
 	fun formatDateString(dateString: String?,
 	                     fromFormat: String?, toFormat: String?): String? {
-		val fromFormatter = DateTimeFormatter.ofPattern(fromFormat, getDefault())
-		val toFormatter = DateTimeFormatter.ofPattern(toFormat, getDefault())
+		val fromFormatter = ofPattern(fromFormat, getDefault())
+		val toFormatter = ofPattern(toFormat, getDefault())
 		val dateTime = parse(dateString, fromFormatter)
 		return dateTime.format(toFormatter)
 	}
 
 	@JvmStatic
 	fun getCurrentTimeIn12HourFormat(): String {
-		return now().format(timeFormatter12Hour)
+		return now().format(time12HFormatter)
 	}
 
 	@JvmStatic
 	fun getCurrentTimeIn24HourFormat(): String {
-		return now().format(timeFormatter24Hour)
+		return now().format(time24HFormatter)
 	}
 
 	@JvmStatic
@@ -119,14 +121,12 @@ object DateTimeUtils {
 
 	@JvmStatic
 	fun getDayOfMonthSuffix(day: Int): String {
-		return when {
-			day in 11..13 -> "th"
-			else -> when (day % 10) {
-				1 -> "st"
-				2 -> "nd"
-				3 -> "rd"
-				else -> "th"
-			}
+		return if (day in 11..13) "th"
+		else when (day % 10) {
+			1 -> "st"
+			2 -> "nd"
+			3 -> "rd"
+			else -> "th"
 		}
 	}
 
@@ -147,17 +147,18 @@ object DateTimeUtils {
 	}
 
 	@JvmStatic
-	fun formatTime(milliseconds: Long): String {
+	fun formatTime(milliseconds: Long, includeSuffix: String = ""): String {
 		val totalSeconds = milliseconds / 1000
 		val hours = totalSeconds / 3600
 		val minutes = (totalSeconds % 3600) / 60
 		val seconds = totalSeconds % 60
 
-		return if (hours > 0) {
-			String.format(getDefault(), "%02d:%02d:%02d", hours, minutes, seconds)
-		} else {
-			String.format(getDefault(), "%02d:%02d", minutes, seconds)
-		}
+		val time = if (hours > 0)
+			String.format(getDefault(),
+			              APP_DEFAULT_TIMESTAMP_PATTERN,
+			              hours, minutes, seconds)
+		else String.format(getDefault(), "%02d:%02d", minutes, seconds)
+		return if (includeSuffix.isEmpty()) time else "$time $includeSuffix"
 	}
 
 	@JvmStatic
@@ -170,13 +171,13 @@ object DateTimeUtils {
 	@JvmStatic
 	fun millisToDateTimeString(millis: Long): String {
 		val dateTime = ofInstant(Instant.ofEpochMilli(millis), ZoneId.systemDefault())
-		val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")
+		val formatter = ofPattern("dd-MM-yyyy HH:mm:ss")
 		return dateTime.format(formatter)
 	}
 
 	@JvmStatic
 	fun dateTimeStringToMillis(dateTimeString: String): Long {
-		val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")
+		val formatter = ofPattern("dd-MM-yyyy HH:mm:ss")
 		val dateTime = parse(dateTimeString, formatter)
 		return dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 	}
@@ -189,11 +190,11 @@ object DateTimeUtils {
 		val hour = totalSeconds / 3600
 
 		val timeString = if (hour > 0) {
-			String.format(getDefault(), "%d:%02d:%02d", hour, minute, second)
-		} else {
-			String.format(getDefault(), "%02d:%02d", minute, second)
-		}
-
+			String.format(getDefault(),
+			              APP_DEFAULT_DURATION_PATTERN,
+			              hour, minute, second)
+		} else String.format(getDefault(),
+		                     APP_DEFAULT_TIME_PATTERN, minute, second)
 		return "$timeString $suffix"
 	}
 
@@ -204,7 +205,7 @@ object DateTimeUtils {
 		val minutes = (totalSeconds % 3600) / 60
 		val seconds = totalSeconds % 60
 		return String.format(getDefault(),
-		                     "%02d:%02d:%02d",
+		                     APP_DEFAULT_TIMESTAMP_PATTERN,
 		                     hours, minutes, seconds)
 	}
 }
