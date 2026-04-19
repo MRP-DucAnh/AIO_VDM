@@ -9,23 +9,25 @@ import androidx.core.content.*
 import com.aio.*
 import lib.process.*
 
-class VerticalProgressBar @JvmOverloads constructor(
-	context: Context,
-	attrs: AttributeSet? = null,
-	defStyleAttr: Int = 0
+class VerticalProgressBar
+@JvmOverloads constructor(context: Context,
+                          attrs: AttributeSet? = null,
+                          defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
 	private var progress = 0
 	private var max = 100
 
 	private val backgroundPaint = Paint().apply {
-		color = ContextCompat.getColor(context, R.color.color_primary_variant)
+		val colorResId = R.color.color_primary_variant
+		color = ContextCompat.getColor(context, colorResId)
 		style = Paint.Style.FILL
 		isAntiAlias = true
 	}
 
 	private val progressPaint = Paint().apply {
-		color = ContextCompat.getColor(context, R.color.color_secondary)
+		val colorResId = R.color.color_secondary
+		color = ContextCompat.getColor(context, colorResId)
 		style = Paint.Style.FILL
 		isAntiAlias = true
 	}
@@ -44,7 +46,8 @@ class VerticalProgressBar @JvmOverloads constructor(
 		}
 	}
 
-	override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+	override fun onMeasure(widthMeasureSpec: Int,
+	                       heightMeasureSpec: Int) {
 		val desiredWidth = dpToPx(10)
 		val desiredHeight = dpToPx(200)
 		val width = resolveSize(desiredWidth, widthMeasureSpec)
@@ -60,7 +63,11 @@ class VerticalProgressBar @JvmOverloads constructor(
 			backgroundPaint
 		)
 		val progressHeight =
-			if (max > 0) (height * progress / max.toFloat()) else 0f
+			if (max > 0) {
+				(height * progress / max.toFloat())
+			} else {
+				0f
+			}
 
 		canvas.drawRoundRect(
 			0f,
@@ -74,6 +81,7 @@ class VerticalProgressBar @JvmOverloads constructor(
 	}
 
 	private fun dpToPx(dp: Int): Int {
-		return (dp * Resources.getSystem().displayMetrics.density).toInt()
+		val displayResources = Resources.getSystem()
+		return (dp * displayResources.displayMetrics.density).toInt()
 	}
 }

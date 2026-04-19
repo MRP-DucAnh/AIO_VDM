@@ -14,13 +14,11 @@ import com.aio.*
 import lib.process.*
 import java.lang.ref.*
 
-class PopupBuilder(
-	activityInf: BaseActivityInf?,
-	private val popupLayoutId: Int = -1,
-	private val popupContentView: View? = null,
-	popupAnchorView: View
+class PopupBuilder(activityInf: BaseActivityInf?,
+                   private val popupLayoutId: Int = -1,
+                   private val popupContentView: View? = null,
+                   popupAnchorView: View
 ) {
-
 	private val logger = LogHelperUtils.from(javaClass)
 	private val weakActivityInf = WeakReference(activityInf)
 	private val weakAnchorView = WeakReference(popupAnchorView)
@@ -51,7 +49,9 @@ class PopupBuilder(
 				popupLayout = inflater.inflate(popupLayoutId, null, false)
 			}
 
-			popupContentView != null -> popupLayout = popupContentView
+			popupContentView != null -> {
+				popupLayout = popupContentView
+			}
 		}
 
 		if (popupLayout == null) {
@@ -77,11 +77,8 @@ class PopupBuilder(
 			val activity = getValidActivity()
 			val anchor = weakAnchorView.get()
 
-			if (activity == null ||
-				activity.isFinishing ||
-				activity.isDestroyed ||
-				anchor == null
-			) return@withMainContext
+			if (activity == null || activity.isFinishing ||
+				activity.isDestroyed || anchor == null) return@withMainContext
 
 			try {
 				if (popupWindow.isShowing) return@withMainContext
@@ -101,23 +98,28 @@ class PopupBuilder(
 
 		val anchorX = anchorLocation[0]
 		val anchorY = anchorLocation[1]
-		val margin = layout.resources.getDimensionPixelSize(R.dimen._10)
+		val resources = layout.resources
+		val margin = resources.getDimensionPixelSize(R.dimen._10)
 
 		layout.measure(UNSPECIFIED, UNSPECIFIED)
 		val popupWidth = layout.measuredWidth
 
 		val xOffset = when (popupPosition) {
 			PopupPosition.RIGHT -> {
-				val screenWidth = layout.resources.displayMetrics.widthPixels
+				val displayMetrics = resources.displayMetrics
+				val screenWidth = displayMetrics.widthPixels
 				screenWidth - popupWidth - margin
 			}
 
 			PopupPosition.LEFT -> {
-				(anchorX - popupWidth - margin).coerceAtLeast(margin)
+				val targetX = anchorX - popupWidth - margin
+				targetX.coerceAtLeast(margin)
 			}
 		}
 
-		popupWindow.showAtLocation(anchor, NO_GRAVITY, xOffset, anchorY)
+		popupWindow.showAtLocation(
+			anchor, NO_GRAVITY, xOffset, anchorY
+		)
 	}
 
 	suspend fun close() {

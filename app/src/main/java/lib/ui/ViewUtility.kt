@@ -31,7 +31,7 @@ import androidx.core.view.*
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.bases.*
 import app.core.engines.settings.AIOSettings.Companion.DARK_MODE_INDICATOR_FIE
-import com.aio.*
+import com.aio.R
 import com.bumptech.glide.*
 import kotlinx.coroutines.*
 import lib.files.FileSystemUtility.isAudioByName
@@ -620,21 +620,18 @@ object ViewUtility {
 					inJustDecodeBounds = true
 				}
 
-				decodeByteArray(
-					embeddedPicture, 0,
-					embeddedPicture.size, optionsBounds
-				)
+				decodeByteArray(embeddedPicture, 0,
+				                embeddedPicture.size, optionsBounds)
 
 				val maxSize = 412
-				val scale = maxOf(
-					1, maxOf(
-						optionsBounds.outWidth,
-						optionsBounds.outHeight
-					) / maxSize
-				)
+				val outWidth = optionsBounds.outWidth
+				val outHeight = optionsBounds.outHeight
+				val maxOf = maxOf(outWidth, outHeight)
+				val scale = maxOf(1, maxOf / maxSize)
 
-				val decodeOptions = Options()
-					.apply { inSampleSize = scale }
+				val decodeOptions = Options().apply {
+					inSampleSize = scale
+				}
 
 				decodeByteArray(
 					embeddedPicture, 0,
@@ -644,7 +641,9 @@ object ViewUtility {
 				logger.e("Error extracting audio album art:", error)
 				null
 			} finally {
-				runCatching { retriever.release() }
+				runCatching {
+					retriever.release()
+				}
 			}
 		}
 	}
@@ -779,7 +778,11 @@ object ViewUtility {
 	suspend fun TextView.setLeftSideDrawable(drawableResIdRes: Int) {
 		withMainContext {
 			val drawable = getDrawable(INSTANCE, drawableResIdRes)
-			drawable?.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
+				?: return@withMainContext
+
+			val intrinsicWidth = drawable.intrinsicWidth
+			val intrinsicHeight = drawable.intrinsicHeight
+			drawable.setBounds(0, 0, intrinsicWidth, intrinsicHeight)
 			this@setLeftSideDrawable.setCompoundDrawables(drawable, null, null, null)
 		}
 	}
@@ -787,11 +790,14 @@ object ViewUtility {
 	@JvmStatic
 	suspend fun TextView.setRightSideDrawable(
 		drawableResId: Int,
-		preserveExistingDrawables: Boolean = false
-	) {
+		preserveExistingDrawables: Boolean = false) {
 		withMainContext {
 			val endIcon = getDrawable(INSTANCE, drawableResId)
-			endIcon?.setBounds(0, 0, endIcon.intrinsicWidth, endIcon.intrinsicHeight)
+				?: return@withMainContext
+
+			val intrinsicWidth = endIcon.intrinsicWidth
+			val intrinsicHeight = endIcon.intrinsicHeight
+			endIcon.setBounds(0, 0, intrinsicWidth, intrinsicHeight)
 			val textView = this@setRightSideDrawable
 
 			if (preserveExistingDrawables) {
@@ -807,7 +813,8 @@ object ViewUtility {
 	suspend fun View.matchHeightToTopCutout(baseActivity: BaseActivity) {
 		withMainContext {
 			doOnLayout {
-				baseActivity.activityCoroutineScope
+				baseActivity
+					.activityCoroutineScope
 					.launch { updateCutoutHeight() }
 			}
 		}
@@ -877,10 +884,9 @@ object ViewUtility {
 	}
 
 	@JvmStatic
-	suspend fun View.setBounceClick(
-		scaleDown: Float = 0.92f, duration: Long = 120L,
-		onClick: (View, Boolean) -> Unit
-	) {
+	suspend fun View.setBounceClick(scaleDown: Float = 0.92f,
+	                                duration: Long = 120L,
+	                                onClick: (View, Boolean) -> Unit) {
 		withMainContext {
 			var isPressedInside = false
 			setOnClickListener { onClick(it, isPressedInside) }
@@ -929,7 +935,8 @@ object ViewUtility {
 	}
 
 	@JvmStatic
-	fun shrinkTextToFitView(textView: TextView?, text: String, endMatch: String) {
+	fun shrinkTextToFitView(textView: TextView?,
+	                        text: String, endMatch: String) {
 		if (textView == null) return
 
 		val width = textView.width
@@ -938,7 +945,9 @@ object ViewUtility {
 		val availableWidth = width - paddingStart - paddingEnd
 
 		if (availableWidth <= 0) {
-			textView.doOnLayout { shrinkTextToFitView(textView, text, endMatch) }
+			textView.doOnLayout {
+				shrinkTextToFitView(textView, text, endMatch)
+			}
 			return
 		}
 
@@ -946,10 +955,10 @@ object ViewUtility {
 		val paint = Paint(textView.paint)
 
 		try {
-			if (newText.endsWith(endMatch, ignoreCase = true)) {
+			if (newText.endsWith(endMatch, true)) {
 				val measureText = paint.measureText(newText)
 				while (measureText > availableWidth && newText.length > 4) {
-					newText = (if (newText.endsWith(endMatch, ignoreCase = true)) {
+					newText = (if (newText.endsWith(endMatch, true)) {
 						newText.dropLast(endMatch.length)
 					} else newText.dropLast(1))
 				}
@@ -957,7 +966,7 @@ object ViewUtility {
 
 			textView.text = newText
 		} catch (error: Exception) {
-			logger.e(error)
+			logger.e("Error shrinking text to fit view:", error)
 			textView.text = text
 		}
 	}

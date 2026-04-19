@@ -27,7 +27,8 @@ class ToastView(context: Context) : Toast(context) {
 	companion object {
 
 		@JvmStatic
-		suspend fun showToast(activityInf: BaseActivityInf?, msg: String? = null, msgId: Int = -1) {
+		suspend fun showToast(activityInf: BaseActivityInf?,
+		                      msg: String? = null, msgId: Int = -1) {
 			withMainContext {
 				if (activityInf == null) return@withMainContext
 				activityInf.getAttachedCoroutineScope().launch {
@@ -60,22 +61,18 @@ class ToastView(context: Context) : Toast(context) {
 			makeText(activityInf, msg)?.show()
 		}
 
-		private fun makeText(
-			activityInf: BaseActivityInf,
-			toastMessage: CharSequence?,
-			duration: Int = LENGTH_LONG
-		): ToastView? {
+		private fun makeText(activityInf: BaseActivityInf,
+		                     toastMessage: CharSequence?,
+		                     duration: Int = LENGTH_LONG): ToastView? {
 			return activityInf.getActivity()?.let {
 				configureToastView(it, toastMessage, duration)
 			}
 		}
 
 		@SuppressLint("InflateParams")
-		private fun configureToastView(
-			activity: BaseActivity,
-			toastMessage: CharSequence?,
-			duration: Int
-		): ToastView {
+		private fun configureToastView(activity: BaseActivity,
+		                               toastMessage: CharSequence?,
+		                               duration: Int = LENGTH_LONG): ToastView {
 			val themedCtx = ContextThemeWrapper(activity, R.style.style_application)
 			val inflater = LayoutInflater.from(themedCtx)
 
