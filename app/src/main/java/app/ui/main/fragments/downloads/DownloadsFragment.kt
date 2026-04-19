@@ -27,7 +27,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import lib.device.SecureFileUtil.authenticate
+import lib.device.DeviceAuthUtility.authenticate
 import lib.device.StorageUtility.getFreeStorageSpace
 import lib.device.StorageUtility.getTotalStorageSpace
 import lib.networks.DownloaderUtils.getHumanReadableFormat

@@ -10,7 +10,7 @@ import lib.process.*
 import lib.texts.CommonTextUtils.getText
 import lib.ui.builders.ToastView.Companion.showToast
 
-object SecureFileUtil {
+object DeviceAuthUtility {
 
 	@JvmStatic
 	suspend fun authenticate(activity: BaseActivity, onResult: (Boolean) -> Unit

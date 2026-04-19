@@ -49,7 +49,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import lib.device.SecureFileUtil.authenticate
+import lib.device.DeviceAuthUtility.authenticate
 import lib.device.ShareUtility
 import lib.device.ShareUtility.openApkFile
 import lib.files.FileSystemUtility.endsWithExtension

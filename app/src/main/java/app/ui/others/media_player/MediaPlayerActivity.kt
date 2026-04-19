@@ -59,7 +59,7 @@ import com.airbnb.lottie.LottieCompositionFactory.fromRawRes
 import com.anggrayudi.storage.file.FileFullPath
 import com.anggrayudi.storage.file.getAbsolutePath
 import com.google.common.io.Files.getFileExtension
-import lib.device.SecureFileUtil.authenticate
+import lib.device.DeviceAuthUtility.authenticate
 import lib.device.ShareUtility
 import lib.device.ShareUtility.shareMediaFile
 import lib.files.FileSystemUtility.getFileFromUri
