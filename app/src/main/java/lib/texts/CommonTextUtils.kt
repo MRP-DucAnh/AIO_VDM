@@ -53,10 +53,7 @@ object CommonTextUtils {
 
 			while (result.isNotEmpty() && (result.last().isWhitespace() ||
 					!result.last().isValidCharacter())
-			) {
-				result = result.dropLast(1)
-			}
-
+			) result = result.dropLast(1)
 			result
 		}
 	}
