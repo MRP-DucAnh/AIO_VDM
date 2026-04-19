@@ -27,8 +27,8 @@ object FileSizeFormatter {
 		}
 	}
 
-	private fun formatUnit(value: Double,
-	                       unit: String, df: DecimalFormat): String {
+	private fun formatUnit(
+		value: Double, unit: String, df: DecimalFormat): String {
 		val formatted = "${df.format(value)} $unit"
 		return formatted
 	}

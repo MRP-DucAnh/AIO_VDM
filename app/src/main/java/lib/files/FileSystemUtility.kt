@@ -26,7 +26,7 @@ import lib.files.FileExtensions.VIDEO_EXTENSIONS
 import lib.process.*
 import lib.texts.CommonTextUtils.getText
 import java.io.*
-import java.net.*
+import java.net.URLDecoder.*
 import java.nio.charset.StandardCharsets.*
 import java.security.*
 import java.util.*
@@ -68,7 +68,7 @@ object FileSystemUtility {
 
 	@JvmStatic
 	suspend fun hasFullFileSystemAccess(context: Context): Boolean {
-		return withMainContext {
+		return withIOContext {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
 				Environment.isExternalStorageManager()
 			} else {
@@ -121,7 +121,7 @@ object FileSystemUtility {
 	suspend fun decodeURLFileName(encodedString: String): String {
 		return withIOContext {
 			try {
-				val decodedFileName = URLDecoder.decode(encodedString, UTF_8.name())
+				val decodedFileName = decode(encodedString, UTF_8.name())
 				decodedFileName
 			} catch (error: Exception) {
 				error.printStackTrace()
@@ -162,7 +162,9 @@ object FileSystemUtility {
 		return withIOContext {
 			try {
 				val filePath = uri.path
-				val file = if (filePath != null) File(filePath) else null
+				val file = if (filePath != null) {
+					File(filePath)
+				} else null
 				file
 			} catch (error: Exception) {
 				error.printStackTrace()
@@ -172,13 +174,14 @@ object FileSystemUtility {
 	}
 
 	@JvmStatic
-	suspend fun saveStringToInternalStorage(fileName: String, data: String): Boolean {
+	suspend fun saveStringToInternalStorage(
+		fileName: String, data: String): Boolean {
 		return withIOContext {
 			try {
 				val context = INSTANCE
-				val fileOutputStream = context.openFileOutput(fileName, MODE_PRIVATE)
-				fileOutputStream.write(data.toByteArray())
-				fileOutputStream.close()
+				val outputStream = context.openFileOutput(fileName, MODE_PRIVATE)
+				outputStream.write(data.toByteArray())
+				outputStream.close()
 				true
 			} catch (error: Exception) {
 				error.printStackTrace()
@@ -205,10 +208,11 @@ object FileSystemUtility {
 
 	@JvmStatic
 	fun sanitizeFileNameExtreme(fileName: String): String {
-		val sanitizedFileName = fileName.replace(Regex("[^a-zA-Z0-9()@\\[\\]_.-]"), "_")
-			.replace(" ", "_")
-			.replace("___", "_")
-			.replace("__", "_")
+		val sanitizedFileName =
+			fileName.replace(Regex("[^a-zA-Z0-9()@\\[\\]_.-]"), "_")
+				.replace(" ", "_")
+				.replace("___", "_")
+				.replace("__", "_")
 		return sanitizedFileName
 	}
 
@@ -270,9 +274,8 @@ object FileSystemUtility {
 	}
 
 	@JvmStatic
-	suspend fun writeEmptyFile(context: Context,
-	                           file: DocumentFile,
-	                           fileSize: Long): Boolean {
+	suspend fun writeEmptyFile(
+		context: Context, file: DocumentFile, fileSize: Long): Boolean {
 		return withIOContext {
 			try {
 				val contentResolver = context.contentResolver
@@ -292,8 +295,8 @@ object FileSystemUtility {
 	}
 
 	@JvmStatic
-	suspend fun generateUniqueFileName(fileDirectory: DocumentFile,
-	                                   originalFileName: String): String {
+	suspend fun generateUniqueFileName(
+		fileDirectory: DocumentFile, originalFileName: String): String {
 		return withIOContext {
 			var sanitizedFileName = sanitizeFileNameExtreme(originalFileName)
 			var index = 1
@@ -315,8 +318,8 @@ object FileSystemUtility {
 	}
 
 	@JvmStatic
-	suspend fun findFileStartingWith(internalDir: File,
-	                                 namePrefix: String): File? {
+	suspend fun findFileStartingWith(
+		internalDir: File, namePrefix: String): File? {
 		return withIOContext {
 			val result = internalDir.listFiles()?.find {
 				it.isFile && it.name.startsWith(namePrefix)
@@ -326,8 +329,8 @@ object FileSystemUtility {
 	}
 
 	@JvmStatic
-	suspend fun makeDirectory(parentFolder: DocumentFile?,
-	                          folderName: String): DocumentFile? {
+	suspend fun makeDirectory(
+		parentFolder: DocumentFile?, folderName: String): DocumentFile? {
 		return withIOContext {
 			val newDirectory = parentFolder?.createDirectory(folderName)
 			return@withIOContext newDirectory
@@ -337,7 +340,8 @@ object FileSystemUtility {
 	@JvmStatic
 	suspend fun getMimeType(fileName: String): String? {
 		return withIOContext {
-			val extension = getFileExtension(fileName)?.lowercase(Locale.getDefault())
+			val fileExtension = getFileExtension(fileName)
+			val extension = fileExtension?.lowercase(Locale.getDefault())
 			val mimeType = extension?.let {
 				MimeTypeMap.getSingleton().getMimeTypeFromExtension(it)
 			} ?: run {
@@ -350,7 +354,8 @@ object FileSystemUtility {
 
 	@JvmStatic
 	suspend fun getFileExtension(fileName: String): String? {
-		return fileName.substringAfterLast('.', "").takeIf { it.isNotEmpty() }
+		return fileName.substringAfterLast('.', "")
+			.takeIf { it.isNotEmpty() }
 	}
 
 	@JvmStatic
