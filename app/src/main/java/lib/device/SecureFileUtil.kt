@@ -3,7 +3,6 @@ package lib.device
 import android.os.*
 import androidx.biometric.*
 import androidx.biometric.BiometricManager.Authenticators.*
-import androidx.biometric.BiometricPrompt.*
 import androidx.core.content.*
 import app.core.bases.*
 import com.aio.R
@@ -13,38 +12,61 @@ import lib.ui.builders.ToastView.Companion.showToast
 
 object SecureFileUtil {
 
-	private const val KEY_ALIAS = "PrivateFileKey"
-	private const val ANDROID_KEYSTORE = "AndroidKeyStore"
-
-	suspend fun authenticate(activity: BaseActivity?, onResult: (Boolean) -> Unit) {
+	@JvmStatic
+	suspend fun authenticate(activity: BaseActivity, onResult: (Boolean) -> Unit
+	) {
 		withMainContext {
-			if (activity == null) return@withMainContext
-			val allowedAuthenticators =
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-					BIOMETRIC_STRONG or DEVICE_CREDENTIAL
-				} else {
-					BIOMETRIC_STRONG
+			val biometricManager = BiometricManager.from(activity)
+			val authenticators = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+				BIOMETRIC_STRONG or DEVICE_CREDENTIAL
+			} else BIOMETRIC_STRONG
+
+			when (biometricManager.canAuthenticate(authenticators)) {
+				BiometricManager.BIOMETRIC_SUCCESS -> {
+					executePrompt(activity, authenticators, onResult)
 				}
+				else -> {
+					showToast(activity, R.string.title_authentication_failed)
+					onResult(false)
+				}
+			}
+		}
+	}
 
-			val promptInfo = PromptInfo.Builder()
-				.setTitle(getText(R.string.title_unlock_requires))
-				.setAllowedAuthenticators(allowedAuthenticators)
-				.build()
+	private fun executePrompt(
+		activity: BaseActivity, authenticators: Int, onResult: (Boolean) -> Unit
+	) {
+		val executor = ContextCompat.getMainExecutor(activity)
 
-			val executor = ContextCompat.getMainExecutor(activity)
-			val biometricPrompt = BiometricPrompt(
-				activity, executor, object : AuthenticationCallback() {
-				override fun onAuthenticationSucceeded(result: AuthenticationResult) {
+		val promptInfo = BiometricPrompt.PromptInfo.Builder()
+			.setTitle(getText(R.string.title_unlock_requires))
+			.setAllowedAuthenticators(authenticators)
+			.apply {
+				if ((authenticators and DEVICE_CREDENTIAL) == 0) {
+					setNegativeButtonText(getText(R.string.title_cancel))
+				}
+			}
+			.build()
+
+		val biometricPrompt = BiometricPrompt(
+			activity, executor,
+			object : BiometricPrompt.AuthenticationCallback() {
+				override fun onAuthenticationSucceeded(
+					result: BiometricPrompt.AuthenticationResult) {
+					super.onAuthenticationSucceeded(result)
 					onResult(true)
 				}
 
 				override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-					showToast(activity, R.string.title_authentication_failed)
+					super.onAuthenticationError(errorCode, errString)
+					if (errorCode != BiometricPrompt.ERROR_USER_CANCELED &&
+						errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON) {
+						showToast(activity, R.string.title_authentication_failed)
+					}
 					onResult(false)
 				}
 			})
 
-			biometricPrompt.authenticate(promptInfo)
-		}
+		biometricPrompt.authenticate(promptInfo)
 	}
 }
