@@ -3,8 +3,8 @@ package lib.device
 import android.content.*
 import android.content.Intent.*
 import android.net.*
-import android.webkit.MimeTypeMap.*
-import androidx.core.content.FileProvider.*
+import android.webkit.*
+import androidx.core.content.*
 import androidx.documentfile.provider.*
 import app.core.bases.*
 import com.aio.*
@@ -12,145 +12,114 @@ import lib.process.*
 import lib.texts.CommonTextUtils.getText
 import lib.ui.builders.ToastView.Companion.showToast
 import java.io.*
-import java.lang.ref.*
 
 object ShareUtility {
 
-	@JvmStatic
-	suspend fun shareUrl(context: Context?, fileURL: String,
-	                     titleText: String = "Share",
-	                     onDone: () -> Unit = {}) {
-		withMainContext {
-			WeakReference(context).get()?.let { contextRef ->
-				Intent(ACTION_SEND).apply {
-					type = "text/plain"
-					putExtra(EXTRA_TEXT, fileURL)
-					contextRef.startActivity(createChooser(this, titleText))
-					onDone()
-				}
+	private fun getMimeType(context: Context, uri: Uri, file: File? = null): String {
+		return context.contentResolver.getType(uri)
+			?: file?.let {
+				val singleton = MimeTypeMap.getSingleton()
+				singleton.getMimeTypeFromExtension(it.extension)
 			}
+			?: "*/*"
+	}
+
+	@JvmStatic
+	suspend fun shareUrl(context: Context, fileURL: String, title: String = "Share") {
+		withMainContext {
+			if (fileURL.isBlank()) return@withMainContext
+			val intent = Intent(ACTION_SEND).apply {
+				type = "text/plain"
+				putExtra(EXTRA_TEXT, fileURL)
+			}
+			context.startActivity(createChooser(intent, title))
 		}
 	}
 
 	@JvmStatic
-	suspend fun shareDocumentFile(context: Context?,
-	                              documentFile: DocumentFile,
-	                              titleText: String = "Share",
-	                              onDone: () -> Unit = {}) {
+	suspend fun shareDocumentFile(
+		context: Context, documentFile: DocumentFile, title: String = "Share") {
 		withMainContext {
-			WeakReference(context).get()?.let { contextRef ->
-				val file = File(documentFile.uri.path ?: return@withMainContext)
-				val fileUri: Uri = getUriForFile(
-					contextRef,
-					"${contextRef.packageName}.provider", file
-				)
+			val intent = Intent(ACTION_SEND).apply {
+				type = documentFile.type ?: "application/octet-stream"
+				putExtra(EXTRA_STREAM, documentFile.uri)
+				addFlags(FLAG_GRANT_READ_URI_PERMISSION)
+			}
+			context.startActivity(createChooser(intent, title))
+		}
+	}
 
-				Intent(ACTION_SEND).apply {
-					type = contextRef.contentResolver.getType(documentFile.uri)
+	@JvmStatic
+	suspend fun shareMediaFile(
+		context: Context, file: File, title: String? = null) {
+		withMainContext {
+			try {
+				val authority = "${context.packageName}.provider"
+				val fileUri = FileProvider.getUriForFile(context, authority, file)
+
+				val intent = Intent(ACTION_SEND).apply {
+					type = getMimeType(context, fileUri, file)
 					putExtra(EXTRA_STREAM, fileUri)
 					addFlags(FLAG_GRANT_READ_URI_PERMISSION)
-					contextRef.startActivity(createChooser(this, titleText))
-					onDone()
 				}
+
+				val chooserTitle = title ?: getText(R.string.title_sharing_media_file)
+				context.startActivity(createChooser(intent, chooserTitle))
+			} catch (error: Exception) {
+				error.printStackTrace()
 			}
 		}
 	}
 
 	@JvmStatic
-	suspend fun openFile(file: File, context: Context?) {
-		withMainContext {
-			WeakReference(context).get()?.let { contextRef ->
-				val fileUri: Uri = getUriForFile(
-					contextRef,
-					"${contextRef.packageName}.provider", file
-				)
-				val mimeType = getSingleton()
-					.getMimeTypeFromExtension(file.extension) ?: "*/*"
+	suspend fun openFile(context: Context, file: File) = withMainContext {
+		try {
+			val authority = "${context.packageName}.provider"
+			val fileUri = FileProvider.getUriForFile(context, authority, file)
+			val mimeType = getMimeType(context, fileUri, file)
 
-				val openFileIntent = Intent(ACTION_VIEW).apply {
-					setDataAndType(fileUri, mimeType)
-					addFlags(FLAG_GRANT_READ_URI_PERMISSION)
+			val intent = Intent(ACTION_VIEW).apply {
+				setDataAndType(fileUri, mimeType)
+				addFlags(FLAG_GRANT_READ_URI_PERMISSION)
+				if (context !is BaseActivity) {
+					addFlags(FLAG_ACTIVITY_NEW_TASK)
 				}
+			}
 
-				if (openFileIntent.resolveActivity(contextRef.packageManager) != null) {
-					contextRef.startActivity(openFileIntent)
-				} else {
-					if (contextRef is BaseActivity) {
-						val msgId = R.string.title_no_app_found_to_open_this_file
-						showToast(contextRef, msgId)
-					}
-				}
+			context.startActivity(intent)
+		} catch (error: ActivityNotFoundException) {
+			if (context is BaseActivity) {
+				val msgId = R.string.title_no_app_found_to_open_this_file
+				showToast(context, msgId)
 			}
 		}
 	}
 
 	@JvmStatic
-	suspend fun shareMediaFile(context: Context?, file: File) {
+	suspend fun shareText(context: Context, text: String, title: String = "Share") {
 		withMainContext {
-			WeakReference(context).get()?.let { contextRef ->
-				try {
-					val fileUri: Uri = getUriForFile(
-						contextRef,
-						"${contextRef.packageName}.provider", file
-					)
-					val shareIntent = Intent(ACTION_SEND).apply {
-						type = contextRef.contentResolver.getType(fileUri) ?: "audio/*"
-						putExtra(EXTRA_STREAM, fileUri)
-						addFlags(FLAG_GRANT_READ_URI_PERMISSION)
-					}
-					val titleString = getText(R.string.title_sharing_media_file)
-					val intentChooser = createChooser(shareIntent, titleString)
-					contextRef.startActivity(intentChooser)
-				} catch (error: Exception) {
-					error.printStackTrace()
-				}
+			if (text.isBlank()) return@withMainContext
+			val intent = Intent(ACTION_SEND).apply {
+				type = "text/plain"
+				putExtra(EXTRA_TEXT, text)
 			}
+			context.startActivity(createChooser(intent, title))
 		}
 	}
 
 	@JvmStatic
-	suspend fun shareVideo(context: Context?, videoFile: DocumentFile,
-	                       title: String = "Share", onDone: () -> Unit = {}) {
+	suspend fun openApkFile(context: Context, apkFile: File) {
 		withMainContext {
-			WeakReference(context).get()?.let { safeContextRef ->
-				Intent(ACTION_SEND).apply {
-					val videoUri = videoFile.uri
-					type = "video/*"
-					putExtra(EXTRA_STREAM, videoUri)
-					addFlags(FLAG_GRANT_READ_URI_PERMISSION)
-					safeContextRef.startActivity(createChooser(this, title))
-					onDone()
-				}
-			}
-		}
-	}
-
-	@JvmStatic
-	suspend fun shareText(context: Context?, text: String,
-	                      title: String = "Share", onDone: () -> Unit = {}) {
-		withMainContext {
-			WeakReference(context).get()?.let { safeContextRef ->
-				Intent(ACTION_SEND).apply {
-					type = "text/plain"
-					putExtra(EXTRA_TEXT, text)
-					safeContextRef.startActivity(createChooser(this, title))
-					onDone()
-				}
-			}
-		}
-	}
-
-	@JvmStatic
-	suspend fun openApkFile(baseActivity: BaseActivity?,
-	                        apkFile: File, authority: String) {
-		withMainContext {
-			WeakReference(baseActivity).get()?.let { safeContextRef ->
+			try {
+				val authority = "${context.packageName}.provider"
+				val apkUri = FileProvider.getUriForFile(context, authority, apkFile)
 				val intent = Intent(ACTION_VIEW).apply {
-					flags = FLAG_ACTIVITY_NEW_TASK or FLAG_GRANT_READ_URI_PERMISSION
-					val apkUri: Uri = getUriForFile(safeContextRef, authority, apkFile)
 					setDataAndType(apkUri, "application/vnd.android.package-archive")
+					addFlags(FLAG_GRANT_READ_URI_PERMISSION or FLAG_ACTIVITY_NEW_TASK)
 				}
-				safeContextRef.startActivity(intent)
+				context.startActivity(intent)
+			} catch (e: Exception) {
+				e.printStackTrace()
 			}
 		}
 	}
