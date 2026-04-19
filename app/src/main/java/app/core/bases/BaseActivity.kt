@@ -1924,10 +1924,10 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf, AIOTimerLis
 			// Only show dialog on MotherActivity (main activity) for consistent UX
 			if (activity is MotherActivity) {
 				UpdaterDialog(
-					baseActivity = activity,
+					activityInf = activity,
 					latestVersionApkFile = apkFile,
 					versionInfo = updateInfo
-				).show()
+				).initialize().show()
 				logger.d("UpdaterDialog launched for version=${updateInfo.latestVersion}")
 			} else {
 				logger.d("Activity is not MotherActivity — cleaning up downloaded APK")
