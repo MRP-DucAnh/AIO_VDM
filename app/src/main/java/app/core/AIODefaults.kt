@@ -23,6 +23,9 @@ const val APP_ALL_MEDIA_TYPES = "text/html,application/xhtml+xml,application/xml
 	"image/webp,image/apng,image/avif,image/jpeg,image/png,image/gif,image/svg+xml,image/*," +
 	"*/*;q=0.8"
 
+const val APP_GITHUB_RAW_URL = "https://github.com/shibaFoss/AIO-Video-Downloader/raw/refs/" +
+	"heads/master/others/adblock_host.txt"
+
 const val APP_DEFAULT_DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss"
 const val APP_DEFAULT_TIMESTAMP_PATTERN = "%02d:%02d:%02d"
 const val APP_DEFAULT_DURATION_PATTERN = "%d:%02d:%02d"
