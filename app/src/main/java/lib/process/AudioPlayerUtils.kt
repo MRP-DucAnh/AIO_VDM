@@ -96,11 +96,15 @@ open class AudioPlayerUtils(context: Context?) {
 
 	suspend fun stop() {
 		withIOContext {
-			mediaPlayer?.apply {
-				stop()
-				release()
+			runCatching {
+				mediaPlayer?.apply {
+					stop()
+					release()
+				}
+				mediaPlayer = null
+			}.onFailure { error ->
+				logger.e(error.message.toString(), error)
 			}
-			mediaPlayer = null
 		}
 	}
 

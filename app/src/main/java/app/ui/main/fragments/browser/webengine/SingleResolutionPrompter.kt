@@ -498,7 +498,7 @@ class SingleResolutionPrompter(
 								if (closeActivityOnSuccessfulDownload) {
 									baseActivity.closeActivityWithFadeAnimation(true)
 								}
-							}).show()
+							}).initialize().show()
 						}
 					}
 				} catch (error: Exception) {

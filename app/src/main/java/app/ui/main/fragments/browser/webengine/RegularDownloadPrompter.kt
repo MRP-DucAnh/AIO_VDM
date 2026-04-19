@@ -357,11 +357,9 @@ class RegularDownloadPrompter(
 								executeOnMainThread {
 									// Close the dialog
 									close()
-
-									// Show the post download added dialog
 									PostDownloadDialog(safeBaseActivityRef, onCloseDialog = {
 										logger.d("Post download animation dialog is closed")
-									}).show()
+									}).initialize().show()
 								}
 							}
 							aioSettings.numberOfDownloadsUserDid++

@@ -711,7 +711,7 @@ class VideoResolutionPicker(
 								PostDownloadDialog(safeBaseActivityRef, onCloseDialog = {
 									logger.d("Post download animation dialog is closed")
 									onResult.invoke()
-								}).show()
+								}).initialize().show()
 							}
 						})
 					} else {
