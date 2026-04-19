@@ -1,6 +1,5 @@
-package app.core.engines.defaults
+package app.core.engines.browser
 
-import app.core.engines.browser.*
 import com.google.gson.*
 import kotlinx.coroutines.*
 import lib.process.*
@@ -84,7 +83,7 @@ private const val REMOTE_BOOKMARKS_URL =
  * val customBookmarks = fetchBookmarksFromJson("https://example.com/bookmarks.json")
  *
  * @see RemoteBookmarkJson For the expected JSON structure
- * @see app.core.engines.browser.AIOWebRecords For the database entity structure
+ * @see AIOWebRecords For the database entity structure
  */
 private suspend fun fetchBookmarksFromJson(remoteUrl: String = REMOTE_BOOKMARKS_URL):
 	List<AIOWebRecords> = withContext(Dispatchers.IO) {
