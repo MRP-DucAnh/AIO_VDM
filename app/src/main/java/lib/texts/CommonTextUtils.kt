@@ -15,7 +15,7 @@ object CommonTextUtils {
 	private val logger = LogHelperUtils.from(javaClass)
 
 	@JvmStatic
-	fun removeDuplicateSlashes(input: String?): String? {
+	suspend fun removeDuplicateSlashes(input: String?): String? {
 		if (input == null) return null
 		return input.replace("/{2,}".toRegex(), "/")
 	}
