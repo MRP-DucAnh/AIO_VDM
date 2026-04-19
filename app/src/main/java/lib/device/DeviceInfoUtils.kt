@@ -24,7 +24,9 @@ object DeviceInfoUtils {
 				val pm = contextRef.packageManager
 				val packageInfo: PackageInfo = pm.getPackageInfo(contextRef.packageName, 0)
 				sb.append("Device Id: ${DeviceIdProvider(AIOApp.INSTANCE).generate()}")
-				sb.append("App Version: ${getApplicationVersionName()} (${getApplicationVersionCode()})\n")
+				val applicationVersionName = getApplicationVersionName(contextRef)
+				val applicationVersionCode = getApplicationVersionCode(contextRef)
+				sb.append("App Version: $applicationVersionName ($applicationVersionCode)\n")
 				sb.append("App Package Name: ${packageInfo.packageName}\n")
 				sb.append("Device Model: ${Build.MODEL}\n")
 				sb.append("Device Manufacturer: ${Build.MANUFACTURER}\n")
@@ -62,29 +64,29 @@ object DeviceInfoUtils {
 	}
 
 	@JvmStatic
-	private fun getApplicationVersionName(): String? {
-		return AppVersionUtility.versionName
+	private suspend fun getApplicationVersionName(context: Context): String? {
+		return AppVersionUtility.getVersionName(context)
 	}
 
 	@JvmStatic
-	private fun getApplicationVersionCode(): String {
-		return AppVersionUtility.versionCode.toString()
+	private suspend fun getApplicationVersionCode(context: Context): String {
+		return AppVersionUtility.getVersionCode(context).toString()
 	}
 
 	@JvmStatic
-	private fun getDeviceTotalStorage(): Long {
+	private suspend fun getDeviceTotalStorage(): Long {
 		val stat = StatFs(getExternalStorageDirectory().absolutePath)
 		return stat.blockCountLong * stat.blockSizeLong
 	}
 
 	@JvmStatic
-	private fun getDeviceAvailableStorage(): Long {
+	private suspend fun getDeviceAvailableStorage(): Long {
 		val stat = StatFs(getExternalStorageDirectory().absolutePath)
 		return stat.availableBlocksLong * stat.blockSizeLong
 	}
 
 	@JvmStatic
-	private fun getDeviceNetworkCountry(context: Context?): String {
+	private suspend fun getDeviceNetworkCountry(context: Context?): String {
 		WeakReference(context).get()?.let { safeRes ->
 			val telephonyService = safeRes.getSystemService(TELEPHONY_SERVICE)
 			val telephonyManager = telephonyService as TelephonyManager
@@ -93,7 +95,7 @@ object DeviceInfoUtils {
 	}
 
 	@JvmStatic
-	private fun getDeviceSimCountry(context: Context?): String {
+	private suspend fun getDeviceSimCountry(context: Context?): String {
 		WeakReference(context).get()?.let { safeRes ->
 			val telephonyService = safeRes.getSystemService(TELEPHONY_SERVICE)
 			val telephonyManager = telephonyService as TelephonyManager
@@ -102,7 +104,7 @@ object DeviceInfoUtils {
 	}
 
 	@JvmStatic
-	private fun getDeviceSimOperator(context: Context?): String {
+	private suspend fun getDeviceSimOperator(context: Context?): String {
 		WeakReference(context).get()?.let { safeRes ->
 			val telephonyService = safeRes.getSystemService(TELEPHONY_SERVICE)
 			val telephonyManager = telephonyService as TelephonyManager
@@ -111,7 +113,7 @@ object DeviceInfoUtils {
 	}
 
 	@JvmStatic
-	fun getDeviceBatteryStatus(context: Context?): Pair<String, Int>? {
+	suspend fun getDeviceBatteryStatus(context: Context?): Pair<String, Int>? {
 		WeakReference(context).get()?.let { safeRes ->
 			val batteryStatus: Intent? = IntentFilter(ACTION_BATTERY_CHANGED).let { filter ->
 				safeRes.registerReceiver(null, filter)
