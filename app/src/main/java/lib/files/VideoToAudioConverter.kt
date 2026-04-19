@@ -4,7 +4,6 @@ import android.media.*
 import android.media.MediaMuxer.OutputFormat.*
 import lib.process.*
 import java.io.*
-import java.lang.ref.*
 import java.nio.*
 import kotlin.concurrent.atomics.*
 
@@ -18,113 +17,104 @@ class VideoToAudioConverter {
 	suspend fun extractAudio(inputFile: String, outputFile: String,
 	                         listener: ConversionListener) {
 		withIOContext {
-			val weakListener = WeakReference(listener)
-			weakListener.get()?.let { safeListener ->
-				var extractor: MediaExtractor? = null
-				var muxer: MediaMuxer? = null
+			var extractor: MediaExtractor? = null
+			var muxer: MediaMuxer? = null
 
-				try {
-					extractor = MediaExtractor()
-					extractor.setDataSource(inputFile)
+			try {
+				extractor = MediaExtractor()
+				extractor.setDataSource(inputFile)
 
-					var audioTrackIndex = -1
-					var format: MediaFormat? = null
+				var audioTrackIndex = -1
+				var format: MediaFormat? = null
 
-					for (index in 0 until extractor.trackCount) {
-						format = extractor.getTrackFormat(index)
-						val mime = format.getString(MediaFormat.KEY_MIME)
-						if (mime?.startsWith("audio/") == true) {
-							audioTrackIndex = index
-							extractor.selectTrack(index)
-							break
-						}
-					}
-
-					if (audioTrackIndex == -1 || format == null) {
-						val errorMsg = "No audio track found in video file: $inputFile"
-						logger.d(errorMsg)
-						safeListener.onFailure(errorMsg)
-						return@withIOContext
-					}
-
+				for (index in 0 until extractor.trackCount) {
+					format = extractor.getTrackFormat(index)
 					val mime = format.getString(MediaFormat.KEY_MIME)
-					val (muxerFormat, _) = when (mime) {
-						"audio/aac", "audio/mp4a-latm" -> MUXER_OUTPUT_MPEG_4 to ".m4a"
-						"audio/opus", "audio/vorbis" -> MUXER_OUTPUT_WEBM to ".mka"
-						else -> {
-							val errorMsg = "Unsupported audio MIME type extraction: $mime"
-							logger.e(errorMsg)
-							safeListener.onFailure(errorMsg)
-							return@withIOContext
-						}
+					if (mime?.startsWith("audio/") == true) {
+						audioTrackIndex = index
+						extractor.selectTrack(index)
+						break
 					}
+				}
 
-					muxer = MediaMuxer(outputFile, muxerFormat)
-					val newTrackIndex = muxer.addTrack(format)
-					muxer.start()
-					isMuxerStarted = true
+				if (audioTrackIndex == -1 || format == null) {
+					val errorMsg = "No audio track found in video file: $inputFile"
+					logger.d(errorMsg)
+					withMainContext { listener.onFailure(errorMsg) }
+					return@withIOContext
+				}
 
-					val buffer = ByteBuffer.allocate(4096)
-					val bufferInfo = MediaCodec.BufferInfo()
-
-					val fileSize = File(inputFile).length().toFloat()
-					var extractedSize = 0L
-
-					while (!isProcessCancelledByUser.load()) {
-						buffer.clear()
-
-						val sampleSize = extractor.readSampleData(buffer, 0)
-						if (sampleSize < 0) {
-							break
-						}
-
-						bufferInfo.offset = 0
-						bufferInfo.size = sampleSize
-						bufferInfo.presentationTimeUs = extractor.sampleTime
-						bufferInfo.flags = MediaCodec.BUFFER_FLAG_KEY_FRAME
-
-						muxer.writeSampleData(newTrackIndex, buffer, bufferInfo)
-
-						extractor.advance()
-
-						extractedSize += sampleSize
-						val progress = ((extractedSize / fileSize) * 100).toInt()
-						withMainContext { safeListener.onProgress(progress) }
-					}
-
-					if (isProcessCancelledByUser.load()) {
-						logger.d("Audio extraction cancelled by user")
-						withMainContext { safeListener.onFailure("Audio extraction cancelled") }
+				val mime = format.getString(MediaFormat.KEY_MIME)
+				val (muxerFormat, _) = when (mime) {
+					"audio/aac", "audio/mp4a-latm" -> MUXER_OUTPUT_MPEG_4 to ".m4a"
+					"audio/opus", "audio/vorbis" -> MUXER_OUTPUT_WEBM to ".mka"
+					else -> {
+						val errorMsg = "Unsupported audio MIME type extraction: $mime"
+						logger.e(errorMsg)
+						withMainContext { listener.onFailure(errorMsg) }
 						return@withIOContext
 					}
+				}
 
-					muxer.stop()
-					isMuxerStarted = false
+				muxer = MediaMuxer(outputFile, muxerFormat)
+				val newTrackIndex = muxer.addTrack(format)
+				muxer.start()
+				isMuxerStarted = true
 
-					logger.d("Audio extraction completed successfully. Output: $outputFile")
-					withMainContext { safeListener.onSuccess(outputFile) }
+				val buffer = ByteBuffer.allocate(4096)
+				val bufferInfo = MediaCodec.BufferInfo()
 
-				} catch (error: Exception) {
-					val errorMsg = "Audio extraction failed: ${error.message}"
-					logger.e("$errorMsg. Error: $error")
-					withMainContext { safeListener.onFailure(errorMsg) }
+				val fileSize = File(inputFile).length().toFloat()
+				var extractedSize = 0L
 
-				} finally {
-					if (isMuxerStarted) {
-						try {
-							muxer?.stop()
-						} catch (error: Exception) {
-							logger.e("Error stopping muxer " +
-								         "(ignored to proceed with release): ${error.message}")
-						}
+				while (!isProcessCancelledByUser.load()) {
+					buffer.clear()
+
+					val sampleSize = extractor.readSampleData(buffer, 0)
+					if (sampleSize < 0) {
+						break
 					}
 
-					muxer?.release()
-					extractor?.release()
+					bufferInfo.offset = 0
+					bufferInfo.size = sampleSize
+					bufferInfo.presentationTimeUs = extractor.sampleTime
+					bufferInfo.flags = MediaCodec.BUFFER_FLAG_KEY_FRAME
 
-					logger.d("MediaMuxer and MediaExtractor resources released")
-					isMuxerStarted = false
+					muxer.writeSampleData(newTrackIndex, buffer, bufferInfo)
+
+					extractor.advance()
+
+					extractedSize += sampleSize
+					val progress = ((extractedSize / fileSize) * 100).toInt()
+					withMainContext { listener.onProgress(progress) }
 				}
+
+				if (isProcessCancelledByUser.load()) {
+					withMainContext { listener.onFailure("Audio extraction cancelled") }
+					return@withIOContext
+				}
+
+				muxer.stop()
+				isMuxerStarted = false
+				withMainContext { listener.onSuccess(outputFile) }
+
+			} catch (error: Exception) {
+				val errorMsg = "Audio extraction failed: ${error.message}"
+				logger.e("$errorMsg. Error: $error")
+				withMainContext { listener.onFailure(errorMsg) }
+
+			} finally {
+				if (isMuxerStarted) {
+					try {
+						muxer?.stop()
+					} catch (error: Exception) {
+						error.printStackTrace()
+					}
+				}
+
+				muxer?.release()
+				extractor?.release()
+				isMuxerStarted = false
 			}
 		}
 	}
