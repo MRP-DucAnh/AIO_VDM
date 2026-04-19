@@ -10,7 +10,6 @@ import java.io.*
 
 object MP4FileUtility {
 	private val logger = LogHelperUtils.from(javaClass)
-
 	const val TMP_MOOV_OPTIMIZED_PREFIX = "moov_optimize_"
 	const val TMP_MOOV_OPTIMIZED_SUFFIX = ".mp4"
 
@@ -182,9 +181,7 @@ object MP4FileUtility {
 				((this[i + 2].toInt() and 0xFF) shl 8) or
 				(this[i + 3].toInt() and 0xFF)
 			if (i + size > this.size || size < 8) break
-
 			val type = String(this, i + 4, 4, Charsets.US_ASCII)
-
 			if (type == "moov") return i <= 1024
 			i += size
 		}
