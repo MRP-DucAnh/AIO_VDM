@@ -21,7 +21,7 @@ import kotlin.math.*
 object DownloaderUtils {
 
 	private val logger = LogHelperUtils.from(javaClass)
-	private val decimalFormat = DecimalFormat("##.##")
+	private val decimalFormat by lazy { DecimalFormat("##.##") }
 
 	@JvmStatic
 	fun getFormattedPercentage(download: AIODownload): String {
@@ -146,9 +146,7 @@ object DownloaderUtils {
 	}
 
 	@JvmStatic
-	suspend fun updateSmartCatalogDownloadDir(
-		download: AIODownload
-	) {
+	suspend fun updateSmartCatalogDownloadDir(download: AIODownload) {
 		withIOContext {
 			if (isSmartDownloadCatalogEnabled(download)) {
 				val fileCategoryName = download.getUpdatedCategoryName()
@@ -173,9 +171,7 @@ object DownloaderUtils {
 	}
 
 	@JvmStatic
-	suspend fun renameIfDownloadFileExistsWithSameName(
-		download: AIODownload
-	) {
+	suspend fun renameIfDownloadFileExistsWithSameName(download: AIODownload) {
 		withIOContext {
 			var index: Int
 			val regex = Regex("^(\\d+)_")
@@ -194,8 +190,7 @@ object DownloaderUtils {
 
 	@JvmStatic
 	suspend fun validateExistedDownloadedFileName(
-		directory: String, fileName: String
-	): String {
+		directory: String, fileName: String): String {
 		return withIOContext {
 			var index: Int
 			val regex = Regex("^(\\d+)_")
@@ -221,8 +216,7 @@ object DownloaderUtils {
 	}
 
 	@JvmStatic
-	suspend fun generateNetscapeFormattedCookieString(cookieString: String)
-		: String {
+	suspend fun convertToNetscapeCookies(cookieString: String): String {
 		return withIOContext {
 			val cookies = cookieString.split(";").map { it.trim() }
 			val domain = ""
@@ -248,8 +242,7 @@ object DownloaderUtils {
 	}
 
 	@JvmStatic
-	suspend fun getVideoResolutionFromUrl(videoUrl: String)
-		: Pair<Int, Int>? {
+	suspend fun getVideoResolutionFromUrl(videoUrl: String): Pair<Int, Int>? {
 		return withIOContext {
 			val retriever = MediaMetadataRetriever()
 			return@withIOContext try {

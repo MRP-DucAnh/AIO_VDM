@@ -14,7 +14,7 @@ import lib.device.DateTimeUtils.calculateTime
 import lib.files.FileSystemUtility.sanitizeFileNameExtreme
 import lib.files.FileSystemUtility.sanitizeFileNameNormal
 import lib.files.FileSystemUtility.saveStringToInternalStorage
-import lib.networks.DownloaderUtils.generateNetscapeFormattedCookieString
+import lib.networks.DownloaderUtils.convertToNetscapeCookies
 import lib.networks.URLUtilityKT.getBaseDomain
 import lib.networks.URLUtilityKT.getWebpageTitleOrDescription
 import lib.process.LogHelperUtils
@@ -145,7 +145,7 @@ object VideoParserUtility {
 			
 			// If a cookie is provided, format it and save it to the temporary file.
 			if (!videoCookie.isNullOrEmpty()) {
-				val cookieString = generateNetscapeFormattedCookieString(videoCookie)
+				val cookieString = convertToNetscapeCookies(videoCookie)
 				if (saveStringToInternalStorage(cookieTempFile.name, cookieString)) {
 					logger.d("Cookie file created successfully at '${cookieTempFile.absolutePath}'.")
 				}
@@ -228,7 +228,7 @@ object VideoParserUtility {
 			
 			// If a cookie is provided, format and save it to the file.
 			if (!cookie.isNullOrEmpty()) {
-				val cookieString = generateNetscapeFormattedCookieString(cookie)
+				val cookieString = convertToNetscapeCookies(cookie)
 				saveStringToInternalStorage(temporaryCookieFile.name, cookieString)
 				logger.d("Cookie file created at '${temporaryCookieFile.absolutePath}'.")
 			}
