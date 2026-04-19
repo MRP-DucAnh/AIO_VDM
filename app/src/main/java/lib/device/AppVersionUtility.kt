@@ -1,59 +1,60 @@
 package lib.device
 
-import android.content.pm.PackageManager.*
-import android.content.pm.PackageManager.PackageInfoFlags.*
+import android.content.*
+import android.content.pm.*
 import android.os.Build.VERSION.*
-import android.os.Build.VERSION_CODES.*
-import app.core.*
+import androidx.core.content.pm.*
+import kotlinx.coroutines.sync.*
+import lib.process.*
+import kotlin.coroutines.cancellation.*
 
 object AppVersionUtility {
 
-	@JvmStatic
-	val versionName: String?
-		get() {
-			val context = AIOApp.INSTANCE
-			val packageName = context.packageName
-			return try {
-				val packageManager = context.packageManager
+	private var cachedVersionName: String? = null
+	private var cachedVersionCode: Long? = null
+	private val mutex = Mutex()
 
-				val packageInfo = if (SDK_INT >= TIRAMISU) {
-					val flags = of(GET_SIGNING_CERTIFICATES.toLong())
-					packageManager.getPackageInfo(packageName, flags)
-				} else {
-					@Suppress("DEPRECATION")
-					packageManager.getPackageInfo(packageName, GET_SIGNATURES)
+	private suspend fun ensureCacheLoaded(context: Context) {
+		if (cachedVersionName != null &&
+			cachedVersionCode != null) return
+
+		mutex.withLock {
+			if (cachedVersionName != null &&
+				cachedVersionCode != null) return@withLock
+
+			withIOContext {
+				try {
+					val packageName = context.packageName
+					val packageManager = context.packageManager
+
+					val info = if (SDK_INT >= 33) {
+						val packageInfoFlags = PackageManager.PackageInfoFlags.of(0)
+						packageManager.getPackageInfo(packageName, packageInfoFlags)
+					} else {
+						@Suppress("DEPRECATION")
+						packageManager.getPackageInfo(packageName, 0)
+					}
+
+					cachedVersionName = info.versionName
+					cachedVersionCode = PackageInfoCompat.getLongVersionCode(info)
+				} catch (error: Exception) {
+					if (error is CancellationException) throw error
+					error.printStackTrace()
 				}
-
-				packageInfo.versionName
-			} catch (error: NameNotFoundException) {
-				error.printStackTrace()
-				null
 			}
 		}
+	}
 
-	@JvmStatic
-	val versionCode: Long
-		get() {
-			val context = AIOApp.INSTANCE
-			val packageName = context.packageName
-			return try {
-				val packageManager = context.packageManager
-				val packageInfo = if (SDK_INT >= TIRAMISU) {
-					val flags = of(GET_SIGNING_CERTIFICATES.toLong())
-					packageManager.getPackageInfo(packageName, flags)
-				} else {
-					@Suppress("DEPRECATION")
-					packageManager.getPackageInfo(packageName, GET_SIGNATURES)
-				}
+	suspend fun getVersionName(context: Context): String? {
+		ensureCacheLoaded(context)
+		return cachedVersionName
+	}
 
-				packageInfo.longVersionCode
-			} catch (error: NameNotFoundException) {
-				error.printStackTrace()
-				0
-			}
-		}
+	suspend fun getVersionCode(context: Context): Long {
+		ensureCacheLoaded(context)
+		return cachedVersionCode ?: 0L
+	}
 
-	@JvmStatic
 	val deviceSDKVersion: Int
 		get() = SDK_INT
 }
