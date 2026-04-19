@@ -27,26 +27,22 @@ class ToastView(context: Context) : Toast(context) {
 	companion object {
 
 		@JvmStatic
-		suspend fun showToast(activityInf: BaseActivityInf?,
+		fun showToast(activityInf: BaseActivityInf?,
 		                      msg: String? = null, msgId: Int = -1) {
-			withMainContext {
-				if (activityInf == null) return@withMainContext
-				activityInf.getAttachedCoroutineScope().launch {
-					when {
-						msgId != -1 -> showResourceToast(activityInf, msgId)
-						msg != null -> showTextToast(activityInf, msg)
-					}
+			if (activityInf == null) return
+			activityInf.getAttachedCoroutineScope().launch {
+				when {
+					msgId != -1 -> showResourceToast(activityInf, msgId)
+					msg != null -> showTextToast(activityInf, msg)
 				}
 			}
 		}
 
 		@JvmStatic
-		suspend fun showToast(activityInf: BaseActivityInf?, msgId: Int = -1) {
-			withMainContext {
-				if (activityInf == null) return@withMainContext
-				activityInf.getAttachedCoroutineScope().launch {
-					showResourceToast(activityInf, msgId)
-				}
+		fun showToast(activityInf: BaseActivityInf?, msgId: Int = -1) {
+			if (activityInf == null) return
+			activityInf.getAttachedCoroutineScope().launch {
+				showResourceToast(activityInf, msgId)
 			}
 		}
 
