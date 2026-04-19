@@ -1,135 +1,103 @@
 package lib.device
 
 import android.content.*
-import android.content.Context.*
-import android.content.Intent.*
-import android.content.pm.*
 import android.os.*
-import android.os.BatteryManager.*
-import android.os.Environment.*
 import android.telephony.*
-import app.core.*
+import lib.device.AppVersionUtility.getVersionCode
+import lib.device.AppVersionUtility.getVersionName
 import lib.networks.NetworkUtility.*
 import lib.process.*
-import java.lang.ref.*
 import java.util.*
 
 object DeviceInfoUtils {
 
 	@JvmStatic
-	suspend fun getDeviceInformation(context: Context?): String {
-		return withIOContext {
-			WeakReference(context).get()?.let { contextRef ->
-				val sb = StringBuilder()
-				val pm = contextRef.packageManager
-				val packageInfo: PackageInfo = pm.getPackageInfo(contextRef.packageName, 0)
-				sb.append("Device Id: ${DeviceIdProvider(AIOApp.INSTANCE).generate()}")
-				val applicationVersionName = getApplicationVersionName(contextRef)
-				val applicationVersionCode = getApplicationVersionCode(contextRef)
-				sb.append("App Version: $applicationVersionName ($applicationVersionCode)\n")
-				sb.append("App Package Name: ${packageInfo.packageName}\n")
-				sb.append("Device Model: ${Build.MODEL}\n")
-				sb.append("Device Manufacturer: ${Build.MANUFACTURER}\n")
-				sb.append("Android Version: ${Build.VERSION.RELEASE}\n")
-				sb.append("API Level: ${Build.VERSION.SDK_INT}\n")
-				sb.append("Device Hardware: ${Build.HARDWARE}\n")
-				sb.append("Device Brand: ${Build.BRAND}\n")
-				sb.append("Device Board: ${Build.BOARD}\n")
-				sb.append("Device Bootloader: ${Build.BOOTLOADER}\n")
-				sb.append("Device Host: ${Build.HOST}\n")
-				sb.append("Device Tags: ${Build.TAGS}\n")
-				sb.append("Device Type: ${Build.TYPE}\n")
-				sb.append("Device User: ${Build.USER}\n")
-				val metrics = contextRef.resources.displayMetrics
-				sb.append("Screen Resolution: ${metrics.widthPixels}x${metrics.heightPixels}\n")
-				sb.append("Screen Density: ${metrics.densityDpi} dpi\n")
-				sb.append("Available Storage: ${getDeviceAvailableStorage()} bytes\n")
-				sb.append("Total Storage: ${getDeviceTotalStorage()} bytes\n")
-				sb.append("Network Operator: ${getServiceProvider()}\n")
-				sb.append("Network Country: ${getDeviceNetworkCountry(contextRef)}\n")
-				sb.append("Sim Country: ${getDeviceSimCountry(contextRef)}\n")
-				sb.append("Sim Operator: ${getDeviceSimOperator(contextRef)}\n")
-				sb.append("Locale: ${Locale.getDefault().displayName}\n")
-				sb.append("Language: ${Locale.getDefault().language}\n")
-				sb.append("Country: ${Locale.getDefault().country}\n")
-				getDeviceBatteryStatus(contextRef)?.let {
-					sb.append("Battery Status: ${it.first}\n")
-					sb.append("Battery Level: ${it.second}%\n")
-				}
+	suspend fun getDeviceInformation(context: Context): String = withIOContext {
+		val appContext = context.applicationContext
+		val sb = StringBuilder()
+		val data = mutableMapOf<String, Any?>()
 
-				return@withIOContext sb.toString()
+		try {
+			val pm = appContext.packageManager
+			val packageInfo = pm.getPackageInfo(appContext.packageName, 0)
+
+			data["Device Id"] = DeviceIdProvider(appContext).generate()
+			data["App Version"] = "${getVersionName(appContext)} (${getVersionCode(appContext)})"
+			data["App Package Name"] = packageInfo.packageName
+			data["Device Model"] = Build.MODEL
+			data["Device Manufacturer"] = Build.MANUFACTURER
+			data["Android Version"] = Build.VERSION.RELEASE
+			data["API Level"] = Build.VERSION.SDK_INT
+
+			val metrics = appContext.resources.displayMetrics
+			data["Screen Resolution"] = "${metrics.widthPixels}x${metrics.heightPixels}"
+			data["Screen Density"] = "${metrics.densityDpi} dpi"
+
+			data["Available Storage"] = getDeviceAvailableStorage(appContext)
+			data["Total Storage"] = getDeviceTotalStorage(appContext)
+
+			val systemService = appContext.getSystemService(Context.TELEPHONY_SERVICE)
+			val telephony = systemService as? TelephonyManager
+			data["Network Operator"] = getServiceProvider()
+			data["Network Country"] = telephony?.networkCountryIso ?: "Unknown"
+			data["Sim Operator"] = telephony?.simOperatorName ?: "Unknown"
+
+			val locale = Locale.getDefault()
+			data["Locale"] = locale.displayName
+			data["Language"] = locale.language
+
+			getDeviceBatteryStatus(appContext)?.let { (status, level) ->
+				data["Battery Status"] = status
+				data["Battery Level"] = "$level%"
 			}
-			return@withIOContext ""
+
+		} catch (error: Exception) {
+			error.printStackTrace()
+			return@withIOContext "Error gathering device info: ${error.message}"
 		}
+		data.forEach { (key, value) ->
+			sb.append("$key: $value\n")
+		}
+
+		sb.toString()
 	}
 
 	@JvmStatic
-	private suspend fun getApplicationVersionName(context: Context): String? {
-		return AppVersionUtility.getVersionName(context)
-	}
-
-	@JvmStatic
-	private suspend fun getApplicationVersionCode(context: Context): String {
-		return AppVersionUtility.getVersionCode(context).toString()
-	}
-
-	@JvmStatic
-	private suspend fun getDeviceTotalStorage(): Long {
-		val stat = StatFs(getExternalStorageDirectory().absolutePath)
+	private fun getDeviceTotalStorage(context: Context): Long {
+		val path = context.getExternalFilesDir(null) ?: Environment.getDataDirectory()
+		val stat = StatFs(path.absolutePath)
 		return stat.blockCountLong * stat.blockSizeLong
 	}
 
 	@JvmStatic
-	private suspend fun getDeviceAvailableStorage(): Long {
-		val stat = StatFs(getExternalStorageDirectory().absolutePath)
+	private fun getDeviceAvailableStorage(context: Context): Long {
+		val path = context.getExternalFilesDir(null) ?: Environment.getDataDirectory()
+		val stat = StatFs(path.absolutePath)
 		return stat.availableBlocksLong * stat.blockSizeLong
 	}
 
 	@JvmStatic
-	private suspend fun getDeviceNetworkCountry(context: Context?): String {
-		WeakReference(context).get()?.let { safeRes ->
-			val telephonyService = safeRes.getSystemService(TELEPHONY_SERVICE)
-			val telephonyManager = telephonyService as TelephonyManager
-			return telephonyManager.networkCountryIso
-		}; return ""
-	}
+	suspend fun getDeviceBatteryStatus(context: Context): Pair<String, Int>? {
+		return withIOContext {
+			val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+			val registerReceiver = context.registerReceiver(null, filter)
+			val batteryStatus = registerReceiver ?: return@withIOContext null
 
-	@JvmStatic
-	private suspend fun getDeviceSimCountry(context: Context?): String {
-		WeakReference(context).get()?.let { safeRes ->
-			val telephonyService = safeRes.getSystemService(TELEPHONY_SERVICE)
-			val telephonyManager = telephonyService as TelephonyManager
-			return telephonyManager.simCountryIso
-		}; return ""
-	}
+			val status = batteryStatus.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+			val level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+			val scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
 
-	@JvmStatic
-	private suspend fun getDeviceSimOperator(context: Context?): String {
-		WeakReference(context).get()?.let { safeRes ->
-			val telephonyService = safeRes.getSystemService(TELEPHONY_SERVICE)
-			val telephonyManager = telephonyService as TelephonyManager
-			return telephonyManager.simOperatorName
-		}; return ""
-	}
+			val batteryPct = if (scale > 0) (level * 100 / scale) else -1
 
-	@JvmStatic
-	suspend fun getDeviceBatteryStatus(context: Context?): Pair<String, Int>? {
-		WeakReference(context).get()?.let { safeRes ->
-			val batteryStatus: Intent? = IntentFilter(ACTION_BATTERY_CHANGED).let { filter ->
-				safeRes.registerReceiver(null, filter)
-			}
-			val status = batteryStatus?.getIntExtra(EXTRA_STATUS, -1) ?: -1
-			val batteryPct = batteryStatus?.let {
-				it.getIntExtra(EXTRA_LEVEL, -1) * 100 / it.getIntExtra(EXTRA_SCALE, -1)
-			} ?: -1
 			val statusString = when (status) {
-				BATTERY_STATUS_CHARGING -> "Charging"
-				BATTERY_STATUS_FULL -> "Full"
-				BATTERY_STATUS_DISCHARGING -> "Discharging"
-				BATTERY_STATUS_NOT_CHARGING -> "Not Charging"
+				BatteryManager.BATTERY_STATUS_CHARGING -> "Charging"
+				BatteryManager.BATTERY_STATUS_FULL -> "Full"
+				BatteryManager.BATTERY_STATUS_DISCHARGING -> "Discharging"
+				BatteryManager.BATTERY_STATUS_NOT_CHARGING -> "Not Charging"
 				else -> "Unknown"
 			}
-			return Pair(statusString, batteryPct)
-		}; return null
+
+			Pair(statusString, batteryPct)
+		}
 	}
 }
