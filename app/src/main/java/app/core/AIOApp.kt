@@ -567,7 +567,7 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 	private fun initializeCookieStore() {
 		try {
 			logger.d("[Startup] Preloading user cookie store...")
-			UserCookieStore.init(INSTANCE)
+			UserCookieStore.initialize(INSTANCE)
 			logger.d("[Startup] Preloaded user cookie store...")
 		} catch (error: Exception) {
 			logger.e("[Startup] Failed to preload lottie animations: ${error.message}")
