@@ -1,45 +1,21 @@
-/**
- * The buildscript block configures the repositories and dependencies required
- * for Gradle itself to execute the build. This is where top-level build logic
- * and external plugins (like ObjectBox) are defined before the project is evaluated.
- */
 buildscript {
 
-	/**
-	 * Project-wide extra properties.
-	 * Defines versioning constants to ensure consistency across multiple modules.
-	 */
 	ext {
 		objectboxVersion = "5.4.1"
 	}
 
-	/**
-	 * Defines the remote repositories used to resolve the buildscript dependencies.
-	 */
 	repositories {
 		google()
 		mavenCentral()
 		gradlePluginPortal()
 	}
 
-	/**
-	 * Top-level dependencies required for the build process.
-	 * Includes the ObjectBox Gradle plugin to enable NoSQL database code generation.
-	 */
 	dependencies {
 		classpath "io.objectbox:objectbox-gradle-plugin:$objectboxVersion"
 	}
 }
 
-/**
- * The plugins block defines the Gradle plugins used by this project and its sub-modules.
- * Using 'apply false' here declares the plugin version at the root level without
- * applying it to the root project, allowing sub-modules to use them with consistent versions.
- */
 plugins {
-	// Android Application plugin for building the main app module
 	alias(libs.plugins.android.application) apply false
-
-	// Kotlin Android plugin for Kotlin language support in Android modules
 	alias(libs.plugins.kotlin.android) apply false
 }
