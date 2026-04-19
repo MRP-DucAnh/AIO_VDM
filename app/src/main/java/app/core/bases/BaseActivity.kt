@@ -37,7 +37,6 @@ import app.core.bases.interfaces.*
 import app.core.bases.language.*
 import app.core.engines.services.*
 import app.core.engines.updater.*
-import app.core.engines.updater.AIOSelfDestruct.shouldSelfDestructApplication
 import app.ui.main.*
 import app.ui.others.startup.*
 import com.aio.R
@@ -127,7 +126,7 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf, AIOTimerLis
 	 *
 	 * @see WeakReference For the Java weak reference mechanism used
 	 */
-	private var weakReferenceOfActivity: WeakReference<BaseActivity>? = null
+	private var weakActivityRef: WeakReference<BaseActivity>? = null
 
 	/**
 	 * Coroutine scope tied to the activity's lifecycle for managing concurrent operations.
@@ -319,7 +318,7 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf, AIOTimerLis
 		// Initialize weak reference to prevent memory leaks when activity is destroyed
 		// Weak references allow garbage collection while providing temporary access
 		logger.d("Activity references initialized with weak reference strategy")
-		weakReferenceOfActivity = WeakReference(this)
+		weakActivityRef = WeakReference(this)
 
 		getActivity()?.let { activity ->
 			logger.d("Safe activity reference acquired — proceeding with full initialization")
@@ -375,113 +374,34 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf, AIOTimerLis
 		}
 	}
 
-	/**
-	 * Called when the activity moves to the foreground and becomes interactive to the user.
-	 *
-	 * This method performs comprehensive reinitialization and state restoration to ensure
-	 * the activity is fully prepared for user interaction. It handles everything from
-	 * reference management to service updates and permission verification, creating a
-	 * seamless experience when users return to the app after backgrounding or interruption.
-	 *
-	 * Key responsibilities:
-	 * - Re-establish activity references for UI operations
-	 * - Verify and request necessary permissions
-	 * - Update service states and background operations
-	 * - Validate user configurations and settings
-	 * - Initialize essential components and libraries
-	 * - Handle localization and language changes
-	 * - Manage security and self-destruct features
-	 */
 	override fun onResume() {
 		super.onResume()
-		logger.d("onResume() called — preparing activity for interaction")
-
-		// Reinitialize weak activity reference if it was cleared during backgrounding
-		// This ensures safe access to activity context for UI operations
-		if (weakReferenceOfActivity == null) {
-			logger.d("Re-initializing safe weak activity reference after background state")
-			weakReferenceOfActivity = WeakReference(this)
+		if (weakActivityRef == null) {
+			weakActivityRef = WeakReference(this)
 		}
 
-		getActivity()?.let { activity ->
-			isActivityRunning = true
-			aioTimer.register(activity)
-			logger.d("Activity marked as running and ready for user interaction")
-
-			// Ensure permissions are granted or request if needed
-			// Critical for features that require runtime permissions to function properly
-			logger.d("Checking and requesting required permissions for app functionality")
-			requestForPermissionIfRequired()
-
-			// Request user to disable battery optimization for reliable background operations
-			// This ensures downloads and other background tasks aren't interrupted by the system
-			logger.d("Requesting user to disable battery optimization for uninterrupted service")
+		getActivity()?.let { activityRef ->
 			getAttachedCoroutineScope().launch {
-				requestForDisablingBatteryOptimization()
+				isActivityRunning = true
+				aioTimer.register(activityRef)
+				launch(Dispatchers.IO) { AIOForegroundService.updateService() }
+				launch { requestForPermissionIfRequired() }
+				launch { requestForDisablingBatteryOptimization() }
+				launch { aioSettings.validateUserSelectedFolder() }
+				launch { INSTANCE.initializeYtDLP() }
+				launch { aioAdblocker.fetchAdFilters() }
+				launch { attachMotherActivity(activityRef) }
+				launch { onResumeActivity() }
 			}
-
-			// Update the state of foreground services to ensure they're running correctly
-			// Important for ongoing downloads and other persistent operations
-			logger.d("Updating foreground service state for background tasks")
-			AIOApp.applicationScope.launch(Dispatchers.IO) {
-				AIOForegroundService.updateService()
-			}
-
-			// Validate user-selected folders to ensure they're still accessible
-			// Prevents issues with storage permissions changes or folder deletion
-			logger.d("Validating user-selected download folder accessibility")
-			getAttachedCoroutineScope().launch {
-				aioSettings.validateUserSelectedFolder()
-			}
-
-			// Initialize YouTube-DLP engine for video downloading capabilities
-			// Ensures the video download functionality is ready when needed
-			logger.d("Initializing YtDLP engine for video download operations")
-			INSTANCE.initializeYtDLP()
-
-			// Invoke any subclass-specific resume logic for specialized behavior
-			// Allows child activities to perform their own initialization
-			logger.d("Calling subclass onResumeActivity() for custom initialization")
-			onResumeActivity()
-
-			// Refresh ad-blocking filters to ensure up-to-date protection
-			// Maintains effective ad-blocking with latest filter definitions
-			logger.d("Fetching latest ad-blocker filters for updated protection")
-			aioAdblocker.fetchAdFilters()
-
-			// Register base-activity at download UI manager for proper UI updates
-			// Ensures download progress and status are properly displayed
-			logger.d("Registering base-activity at download ui manager for UI coordination")
-			(activity as? MotherActivity)?.let { motherActivity ->
-				downloadSystem.downloadsUIManager.safeMotherActivity = motherActivity
-			}
-
-			// Handle self-destruct mode if enabled for security purposes
-			// Provides automatic cleanup for sensitive applications
-			logger.d("Checking self-destruct activation status for security")
-			shouldSelfDestructApplication()
-		} ?: logger.d("safeBaseActivityRef is null — skipping onResume tasks due to invalid context")
+		}
 	}
 
-	/**
-	 * Called when the activity is being placed in the background but has not yet been stopped.
-	 *
-	 * This method is the counterpart to `onResume()` and is typically called when the user
-	 * navigates away from the activity, a new activity starts on top of it, or the
-	 * screen is turned off. It marks the activity as no longer running in the foreground
-	 * and provides a hook for subclasses to perform any necessary cleanup or state saving.
-	 *
-	 * Key actions performed:
-	 * - Sets `isActivityRunning` to `false` to indicate the activity is no longer interactive.
-	 * - Calls the `onPauseActivity()` template method, allowing subclasses to implement
-	 *   custom logic for pausing operations, such as stopping animations or saving draft data.
-	 *
-	 * After this method completes, the system may either resume the activity (by calling `onResume()`)
-	 * or stop it completely (by calling `onStop()`).
-	 *
-	 * @see onResume
-	 * @see onPauseActivity
-	 */
+	private fun attachMotherActivity(activity: BaseActivity) {
+		(activity as? MotherActivity)?.let { motherActivity ->
+			downloadSystem.downloadsUIManager.safeMotherActivity = motherActivity
+		}
+	}
+
 	override fun onPause() {
 		super.onPause()
 		isActivityRunning = false
@@ -858,7 +778,7 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf, AIOTimerLis
 	}
 
 	override fun getActivity(): BaseActivity? {
-		return weakReferenceOfActivity?.get()
+		return weakActivityRef?.get()
 	}
 
 	override fun getAttachedCoroutineScope(): CoroutineScope {
@@ -873,8 +793,8 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf, AIOTimerLis
 	}
 
 	open fun clearWeakActivityReference() {
-		weakReferenceOfActivity?.clear()
-		weakReferenceOfActivity = null
+		weakActivityRef?.clear()
+		weakActivityRef = null
 	}
 
 	override fun doSomeVibration(timeInMillis: Int) {
