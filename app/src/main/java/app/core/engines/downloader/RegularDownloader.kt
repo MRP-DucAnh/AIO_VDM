@@ -18,7 +18,7 @@ import lib.device.DateTimeUtils.calculateTime
 import lib.device.DateTimeUtils.millisToDateTimeString
 import lib.files.FileSizeFormatter.humanReadableSizeOf
 import lib.networks.DownloaderUtils.getHumanReadableSpeed
-import lib.networks.DownloaderUtils.getMediaPlaybackTimeIfAvailable
+import lib.networks.DownloaderUtils.fetchMediaDuration
 import lib.networks.DownloaderUtils.getFormattedPercentage
 import lib.networks.DownloaderUtils.getHumanReadableFormat
 import lib.networks.DownloaderUtils.getOptimalNumberOfDownloadParts
@@ -286,7 +286,7 @@ class RegularDownloader(
 			logger.d("All download parts completed successfully")
 			downloadDataModel.mediaFilePlaybackDuration.ifEmpty {
 				downloadDataModel.mediaFilePlaybackDuration =
-					getMediaPlaybackTimeIfAvailable(downloadDataModel)
+					fetchMediaDuration(downloadDataModel)
 			}
 
 			if (downloadSettings.downloadPlayNotificationSound) {

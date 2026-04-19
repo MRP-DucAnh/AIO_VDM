@@ -1,5 +1,6 @@
 package lib.networks
 
+import app.core.*
 import app.core.engines.youtube.parser.*
 import kotlinx.coroutines.*
 import lib.networks.HttpClientProvider.okHttpClient
@@ -12,7 +13,6 @@ import java.net.HttpURLConnection.*
 import java.net.URLEncoder.*
 
 object URLUtilityKT {
-
 	private val logger = LogHelperUtils.from(javaClass)
 
 	@JvmStatic
@@ -278,7 +278,7 @@ object URLUtilityKT {
 	}
 
 	@JvmStatic
-	fun removeWwwFromUrl(url: String?): String {
+	suspend fun removeWwwFromUrl(url: String?): String {
 		if (url == null) return ""
 		return try {
 			url.replaceFirst("www.", "")
@@ -289,9 +289,9 @@ object URLUtilityKT {
 	}
 
 	@JvmStatic
-	suspend fun fetchWebPageContent(
-		url: String, retry: Boolean = false, numOfRetry: Int = 0
-	): String? {
+	suspend fun fetchWebPageContent(url: String,
+	                                retry: Boolean = false,
+	                                numOfRetry: Int = 0): String? {
 		return withIOContext {
 			if (retry && numOfRetry > 0) {
 				var index = 0
@@ -340,26 +340,19 @@ object URLUtilityKT {
 	}
 
 	@JvmStatic
-	private fun fetchMobileWebPageContent(
-		url: String, retry: Boolean = false,
-		numOfRetry: Int = 0, timeoutSeconds: Int = 30
+	private suspend fun fetchMobileWebPageContent(
+		url: String,
+		retry: Boolean = false,
+		numOfRetry: Int = 0,
+		timeoutSeconds: Int = 30
 	): String? {
-		val oldMobileUserAgents = listOf(
-			"Mozilla/5.0 (iPhone; CPU iPhone OS 9_3_5 like Mac OS X) AppleWebKit/601.1.46 (KHTML," +
-				" like Gecko) Version/9.0 Mobile/13G36 Safari/601.1",
-			"Mozilla/5.0 (Linux; Android 4.4.2; Nexus 5 Build/KOT49H) AppleWebKit/537.36 (KHTML, " +
-				"like Gecko) Chrome/34.0.1847.114 Mobile Safari/537.36",
-			"Mozilla/5.0 (Linux; U; Android 2.3.6; en-us; GT-I9000 Build/GINGERBREAD) AppleWebKit/533.1 " +
-				"(KHTML, like Gecko) Version/4.0 Mobile Safari/533.1"
-		)
-
+		val oldMobileUserAgents = AIO_MOBILE_AGENTS
 		val client = okHttpClient
 		fun attemptFetch(attempt: Int): String? {
 			val acceptLanguage = "en-US,en;q=0.5"
-			val userAgent = oldMobileUserAgents[attempt % oldMobileUserAgents.size]
-			val mediaTypes = "text/html,application/xhtml+xml,application/xml;q=0.9," +
-				"image/webp,image/apng,image/avif,image/jpeg,image/png,image/gif,image/svg+xml,image/*," +
-				"*/*;q=0.8"
+			val userAgentIndex = attempt % oldMobileUserAgents.size
+			val userAgent = oldMobileUserAgents[userAgentIndex]
+			val mediaTypes = AIO_ALL_MEDIA_TYPES
 
 			val request = Request.Builder()
 				.url(url).header("User-Agent", userAgent)
@@ -368,13 +361,15 @@ object URLUtilityKT {
 				.build()
 
 			return try {
-				client.newCall(request).execute().use { response ->
-					if (response.isSuccessful) {
-						response.body.string().takeIf { it.isNotEmpty() }
-					} else {
-						null
+				client.newCall(request)
+					.execute().use { response ->
+						if (response.isSuccessful) {
+							response.body.string()
+								.takeIf { it.isNotEmpty() }
+						} else {
+							null
+						}
 					}
-				}
 			} catch (error: Exception) {
 				logger.e(error)
 				null
@@ -386,7 +381,7 @@ object URLUtilityKT {
 			val result = attemptFetch(attempt)
 			if (result != null) return result
 			if (retry && attempt < maxAttempts - 1) {
-				Thread.sleep(200L * (attempt + 1))
+				delay(200L * (attempt + 1))
 			}
 		}
 		return null

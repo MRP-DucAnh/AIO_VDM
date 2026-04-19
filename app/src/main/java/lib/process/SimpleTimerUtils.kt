@@ -3,19 +3,13 @@ package lib.process
 import android.os.*
 import java.lang.ref.*
 
-class SimpleTimerUtils(
-	private var millisInFuture: Long,
-	private val countDownInterval: Long
-) {
-
+class SimpleTimerUtils(private var millisInFuture: Long,
+                       private val countDownInterval: Long) {
 	var timeRemaining: Long = millisInFuture
-
 	var isRunning: Boolean = false
-
 	var isPaused: Boolean = false
 
 	private var weakListener: WeakReference<TimerListener>? = null
-
 	private var countDownTimer: CountDownTimer? = null
 
 	private fun createAndStartTimer() {

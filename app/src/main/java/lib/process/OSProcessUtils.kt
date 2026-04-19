@@ -77,8 +77,11 @@ object OSProcessUtils {
 				FLAG_CANCEL_CURRENT or FLAG_IMMUTABLE
 			)
 
-			val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-			alarmManager.set(AlarmManager.RTC, System.currentTimeMillis() + 100, pendingIntent)
+			val systemService = context.getSystemService(Context.ALARM_SERVICE)
+			val alarmManager = systemService as AlarmManager
+			val alarmType = AlarmManager.RTC
+			val currentTimeMillis = System.currentTimeMillis()
+			alarmManager.set(alarmType, currentTimeMillis + 100, pendingIntent)
 
 			if (shouldKillProcess) {
 				Runtime.getRuntime().exit(0)

@@ -8,9 +8,11 @@ object CommonTimeUtils {
 	private val logger = LogHelperUtils.from(javaClass)
 
 	@JvmStatic
-	fun delay(timeInMile: Int, listener: OnTaskFinishListener): CountDownTimer {
+	fun delay(timeInMile: Int,
+	          listener: OnTaskFinishListener): CountDownTimer {
 		val safeTaskRef = WeakReference(listener)
-		return object : CountDownTimer(timeInMile.toLong(), timeInMile.toLong()) {
+		val millisInFuture = timeInMile.toLong()
+		return object : CountDownTimer(millisInFuture, millisInFuture) {
 			override fun onTick(millisUntilFinished: Long) = Unit
 
 			override fun onFinish() {
@@ -20,9 +22,8 @@ object CommonTimeUtils {
 	}
 
 	@JvmStatic
-	fun startCountDown(
-		totalTime: Long, interval: Long,
-		listener: OnCountDownListener
+	fun startCountDown(totalTime: Long, interval: Long,
+	                   listener: OnCountDownListener
 	): CountDownTimer {
 		val safeTaskRef = WeakReference(listener)
 		return object : CountDownTimer(totalTime, interval) {
@@ -37,7 +38,8 @@ object CommonTimeUtils {
 	}
 
 	@JvmStatic
-	fun setInterval(interval: Long, listener: OnIntervalListener): CountDownTimer {
+	fun setInterval(interval: Long,
+	                listener: OnIntervalListener): CountDownTimer {
 		val safeTaskRef = WeakReference(listener)
 		return object : CountDownTimer(Long.MAX_VALUE, interval) {
 			override fun onTick(millisUntilFinished: Long) {
@@ -49,7 +51,8 @@ object CommonTimeUtils {
 	}
 
 	@JvmStatic
-	fun startStopWatch(interval: Long, listener: OnStopWatchListener): CountDownTimer {
+	fun startStopWatch(interval: Long,
+	                   listener: OnStopWatchListener): CountDownTimer {
 		val safeTaskRef = WeakReference(listener)
 		return object : CountDownTimer(Long.MAX_VALUE, interval) {
 			private val startTime: Long = System.currentTimeMillis()

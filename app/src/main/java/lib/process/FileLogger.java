@@ -1,5 +1,6 @@
 package lib.process;
 
+import static java.util.Locale.getDefault;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static lib.texts.CommonTextUtils.removeDuplicateSlashes;
 
@@ -10,7 +11,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
-import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 
 import app.core.AIOApp;
@@ -33,7 +33,7 @@ public final class FileLogger {
 					return null;
 				}
 
-				String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
+				String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", getDefault())
 					.format(System.currentTimeMillis());
 				String fileName = ".aio_crash_log_stream" + timeStamp + ".txt";
 				File crashLogFile = new File(aioConfigDir, fileName);

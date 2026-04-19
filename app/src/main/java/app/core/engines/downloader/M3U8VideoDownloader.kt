@@ -34,7 +34,7 @@ import lib.files.FileSystemUtility.findFileStartingWith
 import lib.files.FileSystemUtility.isFileNameValid
 import lib.files.FileSystemUtility.isVideoByName
 import lib.files.FileSystemUtility.sanitizeFileNameExtreme
-import lib.networks.DownloaderUtils.getMediaPlaybackTimeIfAvailable
+import lib.networks.DownloaderUtils.fetchMediaDuration
 import lib.networks.DownloaderUtils.getFormattedPercentage
 import lib.networks.DownloaderUtils.getHumanReadableFormat
 import lib.networks.DownloaderUtils.renameIfDownloadFileExistsWithSameName
@@ -1307,7 +1307,7 @@ class M3U8VideoDownloader(
 
 				downloadDataModel.mediaFilePlaybackDuration.ifEmpty {
 					downloadDataModel.mediaFilePlaybackDuration =
-						getMediaPlaybackTimeIfAvailable(downloadDataModel)
+						fetchMediaDuration(downloadDataModel)
 				}
 
 
@@ -1705,7 +1705,7 @@ class M3U8VideoDownloader(
 
 		// Update media playback duration if available
 		downloadDataModel.mediaFilePlaybackDuration =
-			getMediaPlaybackTimeIfAvailable(downloadDataModel)
+			fetchMediaDuration(downloadDataModel)
 
 		// Clean up temporary cookie file if present
 		downloadDataModel.videoInfo?.videoCookieTempPath?.let { cookiePath ->

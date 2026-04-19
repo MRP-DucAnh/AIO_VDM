@@ -24,8 +24,8 @@ object DownloaderUtils {
 	private val decimalFormat = DecimalFormat("##.##")
 
 	@JvmStatic
-	fun getFormattedPercentage(model: AIODownload): String {
-		return decimalFormat.format(model.progressPercentage.toDouble())
+	fun getFormattedPercentage(download: AIODownload): String {
+		return decimalFormat.format(download.progressPercentage.toDouble())
 	}
 
 	@JvmStatic fun getFormatted(input: Double): String {
@@ -38,7 +38,7 @@ object DownloaderUtils {
 	}
 
 	@JvmStatic
-	fun getOptimalNumberOfDownloadParts(totalFileLength: Long): Int {
+	suspend fun getOptimalNumberOfDownloadParts(totalFileLength: Long): Int {
 		val mb1 = 1000000
 		val mb5 = (1000000 * 5)
 		val mb10 = (1000000 * 10)
@@ -69,9 +69,9 @@ object DownloaderUtils {
 	}
 
 	@JvmStatic
-	suspend fun getMediaPlaybackTimeIfAvailable(downloadDataModel: AIODownload): String {
+	suspend fun fetchMediaDuration(download: AIODownload): String {
 		return withIOContext {
-			val downloadedFile: DocumentFile = downloadDataModel.getDestinationDocumentFile()
+			val downloadedFile: DocumentFile = download.getDestinationDocumentFile()
 			if (isAudio(downloadedFile) || isVideo(downloadedFile)) {
 				try {
 					if (!isWritableFile(downloadedFile)) return@withIOContext ""
@@ -80,7 +80,8 @@ object DownloaderUtils {
 					retriever.setDataSource(INSTANCE, mediaFileUri)
 
 					val extractCode = METADATA_KEY_DURATION
-					val durationMs = retriever.extractMetadata(extractCode)?.toLongOrNull()
+					val extractMetadata = retriever.extractMetadata(extractCode)
+					val durationMs = extractMetadata?.toLongOrNull()
 					retriever.release()
 
 					val formattedDuration = formatVideoDuration(durationMs)
@@ -94,33 +95,45 @@ object DownloaderUtils {
 	}
 
 	@JvmStatic
-	fun getHumanReadableFormat(fileSizeInByte: Long): String {
-		if (fileSizeInByte < 1024) return "$fileSizeInByte B"
-		val exp = (ln(fileSizeInByte.toDouble()) / ln(1024.0)).toInt()
-		val pre = "KMGTPE"[exp - 1] + "B"
-		return String.format(
-			Locale.US, "%.1f %s", fileSizeInByte / 1024.0.pow(exp.toDouble()), pre
-		)
+	suspend fun getHumanReadableFormat(fileSizeInByte: Long): String {
+		return withIOContext {
+			if (fileSizeInByte < 1024) return@withIOContext "$fileSizeInByte B"
+			val exp = (ln(fileSizeInByte.toDouble()) / ln(1024.0)).toInt()
+			val pre = "KMGTPE"[exp - 1] + "B"
+			return@withIOContext String.format(
+				Locale.US, "%.1f %s",
+				fileSizeInByte / 1024.0.pow(exp.toDouble()), pre
+			)
+		}
 	}
 
 	@JvmStatic
-	fun getHumanReadableSpeed(speedBytesPerSecond: Double): String {
+	suspend fun getHumanReadableSpeed(speedBytesPerSecond: Double): String {
 		val oneKB: Long = 1024
 		val oneMB = oneKB * 1024
 		val oneGB = oneMB * 1024
 		val oneTB = oneGB * 1024
 		val df = decimalFormat
-		return when {
-			speedBytesPerSecond >= oneTB -> df.format(speedBytesPerSecond / oneTB) + "TB/s"
-			speedBytesPerSecond >= oneGB -> df.format(speedBytesPerSecond / oneGB) + "GB/s"
-			speedBytesPerSecond >= oneMB -> df.format(speedBytesPerSecond / oneMB) + "MB/s"
-			speedBytesPerSecond >= oneKB -> df.format(speedBytesPerSecond / oneKB) + "KB/s"
-			else -> df.format(speedBytesPerSecond) + "B/s"
+		return withIOContext {
+			when {
+				speedBytesPerSecond >= oneTB ->
+					df.format(speedBytesPerSecond / oneTB) + "TB/s"
+
+				speedBytesPerSecond >= oneGB ->
+					df.format(speedBytesPerSecond / oneGB) + "GB/s"
+
+				speedBytesPerSecond >= oneMB ->
+					df.format(speedBytesPerSecond / oneMB) + "MB/s"
+
+				speedBytesPerSecond >= oneKB ->
+					df.format(speedBytesPerSecond / oneKB) + "KB/s"
+				else -> df.format(speedBytesPerSecond) + "B/s"
+			}
 		}
 	}
 
 	@JvmStatic
-	fun generateUniqueDownloadFileName(baseFileName: String): String {
+	suspend fun generateUniqueDownloadFileName(baseFileName: String): String {
 		val timestamp = System.currentTimeMillis()
 		val extensionIndex = baseFileName.lastIndexOf('.')
 		return if (extensionIndex != -1) {
@@ -133,7 +146,9 @@ object DownloaderUtils {
 	}
 
 	@JvmStatic
-	suspend fun updateSmartCatalogDownloadDir(download: AIODownload) {
+	suspend fun updateSmartCatalogDownloadDir(
+		download: AIODownload
+	) {
 		withIOContext {
 			if (isSmartDownloadCatalogEnabled(download)) {
 				val fileCategoryName = download.getUpdatedCategoryName()
@@ -158,7 +173,9 @@ object DownloaderUtils {
 	}
 
 	@JvmStatic
-	suspend fun renameIfDownloadFileExistsWithSameName(download: AIODownload) {
+	suspend fun renameIfDownloadFileExistsWithSameName(
+		download: AIODownload
+	) {
 		withIOContext {
 			var index: Int
 			val regex = Regex("^(\\d+)_")
@@ -176,7 +193,9 @@ object DownloaderUtils {
 	}
 
 	@JvmStatic
-	suspend fun validateExistedDownloadedFileName(directory: String, fileName: String): String {
+	suspend fun validateExistedDownloadedFileName(
+		directory: String, fileName: String
+	): String {
 		return withIOContext {
 			var index: Int
 			val regex = Regex("^(\\d+)_")
@@ -196,12 +215,14 @@ object DownloaderUtils {
 	}
 
 	@JvmStatic
-	fun isSmartDownloadCatalogEnabled(downloadModel: AIODownload): Boolean {
+	fun isSmartDownloadCatalogEnabled(
+		downloadModel: AIODownload): Boolean {
 		return downloadModel.config.downloadAutoFolderCatalog
 	}
 
 	@JvmStatic
-	suspend fun generateNetscapeFormattedCookieString(cookieString: String): String {
+	suspend fun generateNetscapeFormattedCookieString(cookieString: String)
+		: String {
 		return withIOContext {
 			val cookies = cookieString.split(";").map { it.trim() }
 			val domain = ""
@@ -227,7 +248,8 @@ object DownloaderUtils {
 	}
 
 	@JvmStatic
-	suspend fun getVideoResolutionFromUrl(videoUrl: String): Pair<Int, Int>? {
+	suspend fun getVideoResolutionFromUrl(videoUrl: String)
+		: Pair<Int, Int>? {
 		return withIOContext {
 			val retriever = MediaMetadataRetriever()
 			return@withIOContext try {
@@ -238,11 +260,12 @@ object DownloaderUtils {
 					logger.d("Video resolution for $videoUrl: ${width}x$height")
 					Pair(width, height)
 				} else {
-					logger.d("Unable to extract video resolution for $videoUrl")
+					logger.e("Video resolution not found for $videoUrl")
 					null
 				}
 			} catch (error: Exception) {
 				logger.e("Error extracting video resolution: ${error.message}", error)
+				logger.d("Video resolution for $videoUrl: null")
 				null
 			} finally {
 				retriever.release()
@@ -257,7 +280,6 @@ object DownloaderUtils {
 				val retriever = MediaMetadataRetriever()
 				retriever.setDataSource(videoUrl, HashMap())
 
-				// Extract duration metadata
 				val durationStr = retriever.extractMetadata(METADATA_KEY_DURATION)
 				val durationMs = durationStr?.toLongOrNull() ?: 0L
 				logger.d("Video duration extracted: ${durationMs}ms")

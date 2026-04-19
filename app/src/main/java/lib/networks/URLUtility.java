@@ -1,6 +1,7 @@
 package lib.networks;
 
 import static java.net.URLEncoder.encode;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import android.os.Build;
 import android.util.Patterns;
@@ -14,7 +15,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -138,7 +138,7 @@ public class URLUtility {
 				}
 			}
 		} catch (Exception error) {
-			logger.e("Error found while getting file name from url:", error);
+			logger.e("Error getting file name from url:", error);
 			return -1;
 		}
 	}
@@ -231,12 +231,7 @@ public class URLUtility {
 			newUrl.append('=');
 
 			if (encode) {
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-					newUrl.append(encode(value, StandardCharsets.UTF_8));
-				} else {
-					//noinspection CharsetObjectCanBeUsed
-					newUrl.append(encode(value, "UTF-8"));
-				}
+				newUrl.append(encode(value, UTF_8));
 			} else newUrl.append(value);
 			return newUrl.toString();
 		} catch (Throwable error) {
@@ -300,7 +295,7 @@ public class URLUtility {
 	@RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
 	public static String encodeURL(@NonNull String url) {
 		try {
-			return encode(url, StandardCharsets.UTF_8);
+			return encode(url, UTF_8);
 		} catch (Exception error) {
 			logger.e("Error found while encoding an url:", error);
 			return "";
@@ -311,7 +306,7 @@ public class URLUtility {
 	@RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
 	public static String decodeURL(@NonNull String url) {
 		try {
-			return URLDecoder.decode(url, StandardCharsets.UTF_8);
+			return URLDecoder.decode(url, UTF_8);
 		} catch (Exception error) {
 			logger.e("Error found while decoding an url:", error);
 			return "";
