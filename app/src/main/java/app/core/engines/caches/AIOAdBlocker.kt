@@ -1,12 +1,10 @@
 package app.core.engines.caches
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import lib.process.LogHelperUtils
+import kotlinx.coroutines.*
+import lib.process.*
 import lib.process.ThreadsUtility.executeInBackground
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import java.io.IOException
+import okhttp3.*
+import java.io.*
 
 /**
  * AIOAdBlocker is responsible for managing a list of hostnames used for ad blocking.
@@ -27,7 +25,7 @@ class AIOAdBlocker {
 		/** Remote URL containing ad-block hostnames (one per line). */
 		private const val GITHUB_RAW_URL =
 			"https://github.com/shibaFoss/AIO-Video-Downloader/raw/refs/" +
-					"heads/master/others/adblock_host.txt"
+				"heads/master/others/adblock_host.txt"
 	}
 
 	/** Set of hostnames currently used for ad blocking. */
@@ -86,7 +84,7 @@ class AIOAdBlocker {
 					return@use null
 				}
 
-				val body = response.body.string()
+				val body = response.body?.string() ?: ""
 				logger.d("Successfully fetched hosts file. Size: ${body.length} bytes")
 
 				val hosts = body.lines()

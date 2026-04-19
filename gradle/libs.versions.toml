@@ -22,6 +22,7 @@ objectbox_android = "5.4.1"
 storage = "2.2.0"
 desugar_jdk_libs_nio = "2.1.5"
 
+jsoup = "1.22.1"
 lottie = "6.7.1"
 glide = "5.0.5"
 circleimageview = "3.1.0"
@@ -61,6 +62,7 @@ objectbox-kotlin = { module = "io.objectbox:objectbox-kotlin", version.ref = "ob
 saf-storage = { module = "com.anggrayudi:storage", version.ref = "storage" }
 desugar-jdk-libs-nio = { module = "com.android.tools:desugar_jdk_libs_nio", version.ref = "desugar_jdk_libs_nio" }
 
+jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 lottie = { module = "com.airbnb.android:lottie", version.ref = "lottie" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 circleimageview = { module = "de.hdodenhof:circleimageview", version.ref = "circleimageview" }
