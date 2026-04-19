@@ -8,7 +8,7 @@ import kotlinx.coroutines.*
 import lib.process.*
 import java.io.*
 
-object VideoFilesUtility {
+object MP4FileUtility {
 	private val logger = LogHelperUtils.from(javaClass)
 
 	const val TMP_MOOV_OPTIMIZED_PREFIX = "moov_optimize_"

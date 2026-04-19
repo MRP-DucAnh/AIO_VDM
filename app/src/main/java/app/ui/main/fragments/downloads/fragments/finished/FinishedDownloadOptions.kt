@@ -45,7 +45,7 @@ import lib.files.FileSystemUtility.isDocumentByName
 import lib.files.FileSystemUtility.isImageByName
 import lib.files.FileSystemUtility.isProgramByName
 import lib.files.FileSystemUtility.isVideoByName
-import lib.files.VideoFilesUtility.moveMoovAtomToStart
+import lib.files.MP4FileUtility.moveMoovAtomToStart
 import lib.networks.URLUtility.isValidURL
 import lib.process.AsyncJobUtils.executeInBackground
 import lib.process.AsyncJobUtils.executeOnMainThread
@@ -809,7 +809,7 @@ class FinishedDownloadOptions(finishedTasksFragment: FinishedTasksFragment?) : O
 	 * 4.  Provides UI feedback via a [WaitingDialog] during processing and a Toast upon completion.
 	 *
 	 * @throws Exception if the file is inaccessible or the `moov` atom cannot be relocated.
-	 * @see lib.files.VideoFilesUtility.moveMoovAtomToStart
+	 * @see lib.files.MP4FileUtility.moveMoovAtomToStart
 	 */
 	fun fixUnseekableMp4s() {
 		logger.d("Fix unseekable MP4 option selected")
