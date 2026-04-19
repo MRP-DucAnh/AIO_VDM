@@ -108,10 +108,8 @@ dependencies {
 	implementation libs.objectbox.android
 	implementation libs.objectbox.kotlin
 
-	implementation libs.jsoup
 	implementation libs.retrofit
 	implementation libs.retrofit.converter.gson
-	implementation libs.okhttp
 
 	implementation libs.lottie
 	implementation libs.glide
@@ -122,6 +120,7 @@ dependencies {
 
 	implementation libs.ytdlp.library
 	implementation libs.ytdlp.ffmpeg
+	implementation libs.ytdlp.aria2c
 	implementation libs.newpipe.extractor
 
 	implementation libs.mp4.iso.parser
