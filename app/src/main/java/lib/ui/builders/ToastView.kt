@@ -27,8 +27,9 @@ class ToastView(context: Context) : Toast(context) {
 	companion object {
 
 		@JvmStatic
-		fun showToast(activityInf: BaseActivityInf?,
-		                      msg: String? = null, msgId: Int = -1) {
+		fun showToast(
+			activityInf: BaseActivityInf?,
+			msg: String? = null, msgId: Int = -1) {
 			if (activityInf == null) return
 			activityInf.getAttachedCoroutineScope().launch {
 				when {

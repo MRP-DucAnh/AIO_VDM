@@ -46,8 +46,8 @@ class VerticalProgressBar
 		}
 	}
 
-	override fun onMeasure(widthMeasureSpec: Int,
-	                       heightMeasureSpec: Int) {
+	override fun onMeasure(
+		widthMeasureSpec: Int, heightMeasureSpec: Int) {
 		val desiredWidth = dpToPx(10)
 		val desiredHeight = dpToPx(200)
 		val width = resolveSize(desiredWidth, widthMeasureSpec)

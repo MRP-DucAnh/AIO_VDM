@@ -14,10 +14,11 @@ import com.aio.*
 import lib.process.*
 import java.lang.ref.*
 
-class PopupBuilder(activityInf: BaseActivityInf?,
-                   private val popupLayoutId: Int = -1,
-                   private val popupContentView: View? = null,
-                   popupAnchorView: View
+class PopupBuilder(
+	activityInf: BaseActivityInf?,
+	private val popupLayoutId: Int = -1,
+	private val popupContentView: View? = null,
+	popupAnchorView: View
 ) {
 	private val logger = LogHelperUtils.from(javaClass)
 	private val weakActivityInf = WeakReference(activityInf)
