@@ -7,9 +7,7 @@ import androidx.core.content.ContextCompat.*
 import androidx.core.net.*
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioSettings
-import app.core.AIOApp.Companion.aioUserProfile
 import app.core.engines.settings.AIOSettings.Companion.AIO_SETTING_DARK_MODE_FILE_NAME
-import app.core.engines.supabase.*
 import app.core.engines.updater.*
 import app.ui.main.fragments.settings.activities.browser.*
 import app.ui.main.fragments.settings.dialogs.*
@@ -91,55 +89,22 @@ class SettingsOnClickLogic(settingsFragment: SettingsFragment) {
 	}
 	
 	/**
-	 * Opens the authentication dialog for user login or new account registration, with region-specific behavior.
+	 * Shows a disabled-state message for account sign-in/registration.
 	 *
-	 * For users in India, this function initiates the phone number-based authentication flow. If the user is
-	 * not already logged in, it presents the `SupabasePhoneNumberLogIn` dialog. Upon successful registration
-	 * or login, the user's profile is updated, and the settings UI is refreshed. If the user is already
-	 * verified, a toast message confirms their logged-in status.
-	 *
-	 * For users outside of India, the feature is disabled. A dialog is shown informing them that login and
-	 * registration are currently available only in India.
-	 *
-	 * @see SupabasePhoneNumberLogIn The authentication component used for the login/registration process.
-	 * @see aioUserProfile For checking the user's current account verification status.
-	 * @see DeviceUtility.isUserFromIndia To determine the user's geographical region.
+	 * Cloud authentication has been removed from the app, so this entry point now provides
+	 * clear feedback to users that the feature is currently unavailable.
 	 */
 	fun showLoginOrRegistrationDialog() {
-		safeSettingsFragmentRef?.let { fragmentRef ->
-			fragmentRef.safeFragmentLayoutRef?.let { fragmentLayoutRef ->
-				fragmentRef.safeMotherActivityRef?.let { motherActivity ->
-					if (DeviceUtility.isUserFromIndia(motherActivity)) {
-						if (!aioUserProfile.isUserAccountVerified) {
-							SupabasePhoneNumberLogIn(
-								baseActivity = motherActivity,
-								onAccountSuccessfullyRegistered = {
-									logger.d("User logged in: ${aioUserProfile.uniqueUserServerId}")
-									fragmentRef.updateUserAccountCard(fragmentLayoutRef)
-								},
-								onAccountRegistrationFailed = {
-									logger.d("Registration failed")
-									fragmentRef.updateUserAccountCard(fragmentLayoutRef)
-								})
-								.initialize()
-								.show()
-						} else {
-							logger.d("Opening user account details activity for id: ${aioUserProfile.uniqueUserServerId}")
-							motherActivity.openActivity(UserAccountDetailsActivity::class.java, true)
-						}
-					} else {
-						logger.d("Login or registration is only available in India")
-						motherActivity.doSomeVibration()
-						MsgDialogUtils.showMessageDialog(
-							baseActivityInf = motherActivity,
-							isTitleVisible = true,
-							titleText = getText(R.string.title_feature_isnt_implemented),
-							messageTextViewCustomize = { it.text = getText(R.string.text_feature_only_available_in_india) },
-							isNegativeButtonVisible = false
-						)
-					}
-				}
-			}
+		safeSettingsFragmentRef?.safeMotherActivityRef?.let { motherActivity ->
+			logger.d("Login/registration is disabled")
+			motherActivity.doSomeVibration()
+			MsgDialogUtils.showMessageDialog(
+				baseActivityInf = motherActivity,
+				isTitleVisible = true,
+				titleText = getText(R.string.title_feature_isnt_implemented),
+				messageTextViewCustomize = { it.text = getText(R.string.text_feature_isnt_available_yet) },
+				isNegativeButtonVisible = false
+			)
 		}
 	}
 	

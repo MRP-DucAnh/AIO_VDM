@@ -5,10 +5,6 @@ import android.view.*
 import android.widget.*
 import androidx.lifecycle.*
 import app.core.bases.*
-import app.core.engines.supabase.*
-import app.core.engines.supabase.SupabaseCloudServer.registerAuthOperationListener
-import app.core.engines.supabase.SupabaseCloudServer.unregisterAuthOperationListener
-import app.core.engines.user_profile.*
 import app.ui.main.*
 import com.aio.*
 import kotlinx.coroutines.*
@@ -42,7 +38,7 @@ import java.lang.ref.*
  * The implementation leverages weak references to safely interact with the parent activity and
  * other components, minimizing the risk of context leaks.
  */
-class SettingsFragment : BaseFragment(), AuthOperationsListener {
+class SettingsFragment : BaseFragment() {
 	
 	/**
 	 * Logger utility for internal debugging, tracing component lifecycles, and
@@ -129,7 +125,6 @@ class SettingsFragment : BaseFragment(), AuthOperationsListener {
 			safeSettingsFragmentRef?.let { fragmentRef ->
 				safeFragmentLayoutRef?.let { layoutRef ->
 					registerSelfReferenceInMotherActivity()
-					registerAuthOperationListener(fragmentRef)
 					hideActualLayout()
 					setupViewsOnClickEvents(fragmentRef, layoutRef)
 				}
@@ -208,39 +203,8 @@ class SettingsFragment : BaseFragment(), AuthOperationsListener {
 	override fun onDestroyView() {
 		logger.d("onDestroyView() called: Cleaning up fragment references")
 		unregisterSelfReferenceInMotherActivity()
-		unregisterAuthOperationListener(safeSettingsFragmentRef)
 		settingsOnClickLogic = null
 		super.onDestroyView()
-	}
-	
-	/**
-	 * Callback triggered when the user's authentication session is removed (i.e., they are logged out).
-	 *
-	 * This method is invoked by the authentication engine when a logout event occurs. It ensures
-	 * the settings UI is updated to reflect the change in authentication state. Specifically, it
-	 * calls [updateUserAccountCard] to switch from displaying user-specific details to showing
-	 * the "Login/Register" prompt.
-	 */
-	override fun onAuthenticationRemoved() {
-		safeFragmentLayoutRef?.let { layoutRef ->
-			updateUserAccountCard(layoutRef)
-		}
-	}
-	
-	/**
-	 * Callback triggered when a user successfully signs in or registers a new account.
-	 *
-	 * This method is part of the [AuthOperationsListener] interface and is invoked by the
-	 * authentication flow upon successful completion. Its primary role is to refresh the
-	 * settings UI to reflect the user's new authenticated state.
-	 *
-	 * It ensures that the user account card is updated to display the user's name and
-	 * replaces the "Login/Register" button with options relevant to a logged-in user.
-	 */
-	override fun onSuccessfulAuthentication() {
-		safeFragmentLayoutRef?.let { layoutRef ->
-			updateUserAccountCard(layoutRef)
-		}
 	}
 	
 	/**
@@ -308,7 +272,6 @@ class SettingsFragment : BaseFragment(), AuthOperationsListener {
 			val clickActions = mapOf(
 				// Application settings
 				R.id.btn_user_info to { settingsOnClickLogic?.showUsernameEditor() },
-				R.id.btn_login_register_to_cloud to { settingsOnClickLogic?.showLoginOrRegistrationDialog() },
 				R.id.btn_default_download_location to { settingsOnClickLogic?.showDownloadLocationPicker() },
 				R.id.btn_language_picker to { settingsOnClickLogic?.showLanguageChanger() },
 				R.id.btn_dark_mode_ui to { settingsOnClickLogic?.togglesDarkModeUISettings() },
@@ -405,16 +368,11 @@ class SettingsFragment : BaseFragment(), AuthOperationsListener {
 	 */
 	fun updateUserAccountCard(fragmentLayout: View) {
 		safeMotherActivityRef?.activityScope?.launch(Dispatchers.Main) {
-			fragmentLayout.findViewById<TextView>(R.id.txt_connect_to_cloud).let {
-				if (AIOUserProfileManager.getAIOUserProfile().isUserAccountVerified) {
-					it.text = getText(R.string.title_view_account_details)
-					it.setLeftSideDrawable(R.drawable.ic_button_account)
-					it.setRightSideDrawable(R.drawable.ic_button_arrow_next, true)
-				} else {
-					it.text = getText(R.string.title_sign_in_register)
-					it.setCompoundDrawables(null, null, null, null)
-					it.setLeftSideDrawable(R.drawable.ic_button_connect)
-				}
+			fragmentLayout.findViewById<View>(R.id.btn_user_info)?.let {
+				ViewUtility.hideView(it, false)
+			}
+			fragmentLayout.findViewById<View>(R.id.btn_login_register_to_cloud)?.let {
+				ViewUtility.hideView(it, false)
 			}
 		}
 	}

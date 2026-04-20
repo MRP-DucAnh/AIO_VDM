@@ -1221,7 +1221,7 @@
     },
     {
       "id": "12:7569874744703568408",
-      "lastPropertyId": "16:7690956402719196767",
+      "lastPropertyId": "17:781794872842907328",
       "name": "AIOUserProfile",
       "properties": [
         {
@@ -1304,6 +1304,11 @@
           "id": "16:7690956402719196767",
           "name": "supabaseAppMetadata",
           "type": 9
+        },
+        {
+          "id": "17:781794872842907328",
+          "name": "lastTimeUpdatedWithSupabase",
+          "type": 6
         }
       ],
       "relations": []

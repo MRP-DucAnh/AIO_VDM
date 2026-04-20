@@ -615,7 +615,6 @@ class DownloadSystem : AIOTimerListener, DownloadSysInf, DownloadTaskListener {
 			// Handle completed downloads
 			if (downloadDataModel.isComplete && downloadDataModel.status == COMPLETE) {
 				logger.d("Download completed: ${downloadDataModel.fileName}")
-				aioBackend.saveDownloadLog(downloadDataModel)
 
 				removeFromActiveDownloadDataModelsList(downloadDataModel)
 

@@ -83,7 +83,7 @@ class AIOCrashHandler : Thread.UncaughtExceptionHandler {
 			}
 
 			// Save crash information for later inspection
-			aioBackend.saveAppCrashedInfo(stackTrace)
+//			aioBackend.saveAppCrashedInfo(stackTrace)
 
 			// Mark crash state in settings
 			aioSettings.hasAppCrashedRecently = true

@@ -242,18 +242,18 @@
 			Contains server URL, application ID, and client key
 			Used for cloud backup and data synchronization
 		-->
-		<meta-data
-			android:name="com.parse.SERVER_URL"
-			android:value="@string/text_back4app_server_url" />
-		
-		<meta-data
-			android:name="com.parse.APPLICATION_ID"
-			android:value="@string/text_back4app_app_id" />
-		
-		<meta-data
-			android:name="com.parse.CLIENT_KEY"
-			android:value="@string/text_back4app_client_key" />
-	
+<!--		<meta-data-->
+<!--			android:name="com.parse.SERVER_URL"-->
+<!--			android:value="@string/text_back4app_server_url" />-->
+<!--		-->
+<!--		<meta-data-->
+<!--			android:name="com.parse.APPLICATION_ID"-->
+<!--			android:value="@string/text_back4app_app_id" />-->
+<!--		-->
+<!--		<meta-data-->
+<!--			android:name="com.parse.CLIENT_KEY"-->
+<!--			android:value="@string/text_back4app_client_key" />-->
+<!--	-->
 	</application>
 	
 	<!--

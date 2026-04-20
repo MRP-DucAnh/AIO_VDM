@@ -122,7 +122,6 @@ public class UserFeedbackActivity extends BaseActivity {
 				return;
 			}
 
-			INSTANCE.getAIOBackend().saveUserFeedback(messageToSend);
 			showToast(this, getString(R.string.title_feedbacks_sent_successfully), -1);
 			resetFormFields();
 		});

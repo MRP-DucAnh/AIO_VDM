@@ -9,7 +9,6 @@ import app.core.AIOApp.Companion.aioSettings
 import app.core.AIOApp.Companion.internalDataFolder
 import app.core.bases.*
 import app.core.bases.language.*
-import app.core.engines.backend.*
 import app.core.engines.browser.bookmarks.*
 import app.core.engines.browser.history.*
 import app.core.engines.caches.*
@@ -18,8 +17,6 @@ import app.core.engines.downloader.DownloadModelsDBManager.getAllDownloadsWithRe
 import app.core.engines.objectbox.*
 import app.core.engines.objectbox.ObjectBoxManager.initializeObjectBoxDB
 import app.core.engines.settings.*
-import app.core.engines.supabase.*
-import app.core.engines.supabase.SupabaseCloudServer.initializeSupabaseClient
 import app.core.engines.user_profile.*
 import app.core.engines.youtube.*
 import com.aio.*
@@ -108,7 +105,7 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 		 *
 		 * @see LogHelperUtils for its impact on logging verbosity.
 		 */
-		var IS_DEBUG_MODE_ON = BuildConfig.IS_DEBUG_MODE_ON
+		var IS_DEBUG_MODE_ON = true
 		
 		/**
 		 * A global flag to control the cloud backup and synchronization feature.
@@ -406,7 +403,6 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 		 *
 		 * @see AppUsageTimer
 		 */
-		val aioUsageTimer: AppUsageTimer by lazy { AppUsageTimer() }
 	}
 	
 	/**
@@ -452,9 +448,7 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 		
 		INSTANCE = this
 		initializeObjectBoxDB(INSTANCE)
-		initializeSupabaseClient()
-		aioBackend.initParseBackend()
-		
+
 		startupManager.apply {
 			initializeCriticalServices()
 			initializePriorityServices()
@@ -723,7 +717,6 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 			logger.d("[Startup] Loading user profile from database...")
 			aioUserProfile = AIOUserProfileDBManager.loadSettingsFromDB()
 			aioUserProfile.updateInStorage()
-			SupabaseCloudServer.observeSupabaseAuthState(applicationScope)
 		} catch (error: Exception) {
 			logger.e(
 				"[Startup] Failed to load user profile from database, " +
@@ -942,7 +935,6 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 	 */
 	private fun startAppUISessionTracking() {
 		logger.d("Starting application usage tracking system")
-		executeOnMainThread { aioUsageTimer.startTracking() }
 	}
 	
 	/**

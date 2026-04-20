@@ -17,9 +17,6 @@ plugins {
 
 	// ObjectBox database plugin: generates database schema and entity bindings.
 	alias(libs.plugins.objectbox.db)
-
-	// Kotlin serialization plugin used by Supabase client libraries.
-	alias(libs.plugins.supabase.serialization)
 }
 
 /**
@@ -83,12 +80,12 @@ android {
 	 */
 
 	// Loads signing credentials from an external, non-committed properties file.
-	def keystoreProps = new Properties()
-
-	// Reads keystore passwords and aliases from disk.
-	file("${rootProject.projectDir}/others/release_keystore.properties").withInputStream {
-		keystoreProps.load(it)
-	}
+//	def keystoreProps = new Properties()
+//
+//	// Reads keystore passwords and aliases from disk.
+//	file("${rootProject.projectDir}/others/release_keystore.properties").withInputStream {
+//		keystoreProps.load(it)
+//	}
 
 	/**
 	 * Defines keystores used to sign debug and release builds.
@@ -98,24 +95,24 @@ android {
 
 		debug {
 			// Keystore file used for signing debug builds.
-			storeFile rootProject.file("others/release_signature.jks")
-
-			// Keystore file password.
-			storePassword keystoreProps["STORE_PASSWORD"]
-
-			// Alias of the signing key.
-			keyAlias keystoreProps["KEY_ALIAS"]
-
-			// Password for the signing key.
-			keyPassword keystoreProps["KEY_PASSWORD"]
+//			storeFile rootProject.file("others/release_signature.jks")
+//
+//			// Keystore file password.
+//			storePassword keystoreProps["STORE_PASSWORD"]
+//
+//			// Alias of the signing key.
+//			keyAlias keystoreProps["KEY_ALIAS"]
+//
+//			// Password for the signing key.
+//			keyPassword keystoreProps["KEY_PASSWORD"]
 		}
 
 		release {
 			// Keystore file used for signing release builds.
-			storeFile rootProject.file("others/release_signature.jks")
-			storePassword keystoreProps["STORE_PASSWORD"]
-			keyAlias keystoreProps["KEY_ALIAS"]
-			keyPassword keystoreProps["KEY_PASSWORD"]
+//			storeFile rootProject.file("others/release_signature.jks")
+//			storePassword keystoreProps["STORE_PASSWORD"]
+//			keyAlias keystoreProps["KEY_ALIAS"]
+//			keyPassword keystoreProps["KEY_PASSWORD"]
 		}
 	}
 
@@ -284,9 +281,7 @@ dependencies {
 	implementation libs.saf.storage                   // Storage Access Framework helper utilities
 	implementation libs.parse                         // Structured data parsing utilities
 
-	// Backend & networking (BOM-managed versions)
-	implementation platform(libs.supabase.bom)                 // Bill of Materials for aligned versions
-	implementation(libs.postgrest.kt)                 // Kotlin client for PostgREST APIs
+	// Backend & networking
 	implementation(libs.ktor.client.android)          // Ktor HTTP client for Android
 
 	// Video downloading and extraction libraries

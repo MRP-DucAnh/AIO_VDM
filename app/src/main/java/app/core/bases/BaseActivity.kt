@@ -33,7 +33,6 @@ import app.core.AIOApp.Companion.downloadSystem
 import app.core.bases.dialogs.*
 import app.core.bases.interfaces.*
 import app.core.bases.language.*
-import app.core.engines.backend.AIOSelfDestruct.shouldSelfDestructApplication
 import app.core.engines.services.*
 import app.core.engines.updater.*
 import app.ui.main.*
@@ -425,7 +424,6 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf {
 			// Handle self-destruct mode if enabled for security purposes
 			// Provides automatic cleanup for sensitive applications
 			logger.d("Checking self-destruct activation status for security")
-			shouldSelfDestructApplication()
 		} ?: logger.d("safeBaseActivityRef is null — skipping onResume tasks due to invalid context")
 	}
 	

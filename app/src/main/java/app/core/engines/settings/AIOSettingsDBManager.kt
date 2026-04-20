@@ -4,7 +4,6 @@ import app.core.engines.objectbox.*
 import app.core.engines.settings.AIOSettingsDBManager.APP_SETTINGS_DB_ID
 import app.core.engines.settings.AIOSettingsDBManager.createDefaultSettingsObject
 import app.core.engines.settings.AIOSettingsDBManager.saveSettingsInDB
-import app.core.engines.supabase.*
 import io.objectbox.*
 import lib.process.*
 
@@ -179,11 +178,6 @@ object AIOSettingsDBManager {
 		try {
 			if (settings.downloadDataModelDBId < 0) {
 				settings.downloadDataModelDBId = APP_SETTINGS_DB_ID
-				logger.d("Saving setting to cloud: ${settings.convertClassToJSON()}")
-				SupabaseCloudServer.updateDataModelToSupabase(
-					dataModelName = AIOSettings::class.java.simpleName,
-					dataModelJsonString = settings.convertClassToJSON()
-				)
 			}
 			getSettingsObjectBox().put(settings)
 			logger.d("Settings saved successfully to ObjectBox database id:${settings.id}")
