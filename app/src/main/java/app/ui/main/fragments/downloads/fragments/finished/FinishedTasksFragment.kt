@@ -14,7 +14,7 @@ import app.core.AIOTimer.AIOTimerListener
 import app.core.bases.BaseFragment
 import app.core.engines.downloader.DownloadDataModel
 import app.core.engines.settings.AIOSettings.Companion.SYSTEM_GALLERY
-import app.ui.main.MotherActivity
+import app.ui.main.MotherActivityVideo
 import app.ui.main.fragments.downloads.DownloadsFragment
 import app.ui.main.guides.GuidePlatformPicker
 import com.aio.R
@@ -36,8 +36,8 @@ class FinishedTasksFragment : BaseFragment(), FinishedTasksClickEvents, AIOTimer
 	private var lastCheckedFinishedTasks = 0
 	var finishedTasksListAdapter: FinishedTasksListAdapter? = null
 
-	val safeMotherActivityRef: MotherActivity?
-		get() = safeBaseActivityRef as? MotherActivity
+	val safeMotherActivityRef: MotherActivityVideo?
+		get() = safeBaseActivityVideoRef as? MotherActivityVideo
 
 	val safeFinishTasksFragment: FinishedTasksFragment?
 		get() = safeBaseFragmentRef as? FinishedTasksFragment

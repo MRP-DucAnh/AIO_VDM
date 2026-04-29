@@ -7,7 +7,7 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
-import app.ui.main.MotherActivity
+import app.ui.main.MotherActivityVideo
 import app.ui.main.fragments.browser.suggestions.SuggestionWatcher
 import com.aio.R
 import com.bumptech.glide.Glide
@@ -32,7 +32,7 @@ class BrowserFragmentTop(val browserFragment: BrowserFragment) {
 	private val logger = LogHelperUtils.from(javaClass)
 
 	// Safe reference to the hosting activity
-	val safeMotherActivityRef = browserFragment.safeBaseActivityRef!! as MotherActivity
+	val safeMotherActivityRef = browserFragment.safeBaseActivityVideoRef!! as MotherActivityVideo
 
 	// Current active WebView instance
 	val currentWebView by lazy { browserFragment.browserFragmentBody.webviewEngine.currentWebView }

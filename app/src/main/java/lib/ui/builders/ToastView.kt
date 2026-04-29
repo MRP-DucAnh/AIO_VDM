@@ -9,7 +9,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.view.ContextThemeWrapper
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import app.core.bases.interfaces.BaseActivityInf
 import com.aio.R
 import kotlinx.coroutines.launch
@@ -66,9 +66,9 @@ class ToastView(context: Context) : Toast(context) {
 
 		@SuppressLint("InflateParams")
 		private fun configureToastView(
-			activity: BaseActivity,
-			toastMessage: CharSequence?,
-			duration: Int
+            activity: BaseActivityVideo,
+            toastMessage: CharSequence?,
+            duration: Int
 		): ToastView {
 			val themedCtx = ContextThemeWrapper(activity, R.style.style_application)
 			val inflater = LayoutInflater.from(themedCtx)

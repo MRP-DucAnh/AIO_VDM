@@ -11,7 +11,7 @@ import app.core.AIOApp.Companion.IS_ULTIMATE_VERSION_UNLOCKED
 import app.core.AIOApp.Companion.aioFavicons
 import app.core.AIOApp.Companion.aioSettings
 import app.core.AIOApp.Companion.downloadSystem
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import app.core.engines.downloader.DownloadDataModel
 import app.core.engines.settings.AIOSettings.Companion.PRIVATE_FOLDER
 import app.core.engines.settings.AIOSettings.Companion.SYSTEM_GALLERY
@@ -19,7 +19,7 @@ import app.core.engines.video_parser.parsers.VideoFormat
 import app.core.engines.video_parser.parsers.VideoFormatsUtils.parseSize
 import app.core.engines.video_parser.parsers.VideoInfo
 import app.core.engines.video_parser.parsers.VideoThumbGrabber.startParsingVideoThumbUrl
-import app.ui.others.information.IntentInterceptActivity
+import app.ui.others.information.IntentInterceptActivityVideo
 import com.aio.R
 import lib.device.AppVersionUtility.versionName
 import lib.device.DateTimeUtils.formatVideoDuration
@@ -59,25 +59,25 @@ import java.lang.ref.WeakReference
  *
  * This dialog ensures a smooth and informative experience for users when selecting and downloading video content.
  *
- * @param baseActivity The parent activity that hosts this dialog; used for context and UI operations
+ * @param baseActivityVideo The parent activity that hosts this dialog; used for context and UI operations
  * @param videoInfo Contains video metadata (title, thumbnail, duration) and a list of available formats for selection
  * @param errorCallBack Callback invoked if initialization fails or an unexpected error occurs
  * @param onDialogClose Callback invoked whenever the dialog is closed, either by user action or programmatically
  * @param closeActivityOnSuccessfulDownload Whether to automatically close the parent activity after a successful download
  */
 class VideoResolutionPicker(
-	private val baseActivity: BaseActivity?,
-	private val videoInfo: VideoInfo,
-	private val errorCallBack: () -> Unit = {},
-	private val onDialogClose: () -> Unit = {},
-	private val closeActivityOnSuccessfulDownload: Boolean = false
+    private val baseActivityVideo: BaseActivityVideo?,
+    private val videoInfo: VideoInfo,
+    private val errorCallBack: () -> Unit = {},
+    private val onDialogClose: () -> Unit = {},
+    private val closeActivityOnSuccessfulDownload: Boolean = false
 ) {
 
 	/** Logger instance for debug messages and error tracking within this dialog class */
 	private val logger = LogHelperUtils.from(javaClass)
 
 	/** Weak reference to the parent activity to avoid memory leaks */
-	private val safeBaseActivityRef = WeakReference(baseActivity).get()
+	private val safeBaseActivityRef = WeakReference(baseActivityVideo).get()
 
 	/** Builder for creating and managing the resolution picker dialog */
 	private val dialogBuilder = DialogBuilder(safeBaseActivityRef)
@@ -160,7 +160,7 @@ class VideoResolutionPicker(
 
 	/**
 	 * Closes the resolution picker dialog and safely finishes the parent activity
-	 * if it is of type [IntentInterceptActivity]. Logs actions and errors.
+	 * if it is of type [IntentInterceptActivityVideo]. Logs actions and errors.
 	 */
 	fun close() {
 		safeBaseActivityRef?.let { safeBaseActivityRef ->
@@ -169,7 +169,7 @@ class VideoResolutionPicker(
 				dialogBuilder.close()
 				try {
 					// Special handling for IntentInterceptActivity
-					val condition = safeBaseActivityRef is IntentInterceptActivity
+					val condition = safeBaseActivityRef is IntentInterceptActivityVideo
 					if (condition) {
 						logger.d("Parent activity is IntentInterceptActivity, finishing activity")
 						safeBaseActivityRef.finish()
@@ -707,7 +707,7 @@ class VideoResolutionPicker(
 							val msgId = R.string.title_download_added_successfully
 							showToast(activityInf = safeBaseActivityRef, msgId = msgId)
 							if (closeActivityOnSuccessfulDownload) {
-								baseActivity?.closeActivityWithFadeAnimation(true)
+								baseActivityVideo?.closeActivityWithFadeAnimation(true)
 							}
 						})
 					} else {

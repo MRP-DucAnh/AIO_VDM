@@ -69,7 +69,7 @@ import androidx.core.graphics.scale
 import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import app.core.AIOApp.Companion.INSTANCE
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import app.core.engines.settings.AIOSettings.Companion.AIO_SETTING_DARK_MODE_FILE_NAME
 import com.aio.R
 import com.bumptech.glide.Glide
@@ -1673,7 +1673,7 @@ object ViewUtility {
 	fun Int.dpToPx(): Int = (this * Resources.getSystem().displayMetrics.density).toInt()
 
 	@JvmStatic
-	fun changesSystemTheme(activity: BaseActivity) {
+	fun changesSystemTheme(activity: BaseActivityVideo) {
 		val tempFile = File(INSTANCE.filesDir, AIO_SETTING_DARK_MODE_FILE_NAME)
 		when (tempFile.exists()) {
 			true -> {

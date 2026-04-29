@@ -5,8 +5,8 @@ import android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
 import android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP
 import android.view.View.INVISIBLE
 import android.widget.TextView
-import app.core.bases.BaseActivity
-import app.ui.main.MotherActivity
+import app.core.bases.BaseActivityVideo
+import app.ui.main.MotherActivityVideo
 import com.aio.R
 import com.airbnb.lottie.LottieAnimationView
 import kotlinx.coroutines.delay
@@ -16,7 +16,7 @@ import lib.process.LogHelperUtils
 import lib.ui.ActivityAnimator.animActivityFade
 import lib.ui.ViewUtility.hideView
 
-class OpeningActivity : BaseActivity() {
+class OpeningActivityVideo : BaseActivityVideo() {
 	
 	private val logger = LogHelperUtils.from(javaClass)
 	
@@ -61,7 +61,7 @@ class OpeningActivity : BaseActivity() {
 		getActivity()?.let { activity ->
 			Intent(
 				activity,
-				MotherActivity::class.java
+				MotherActivityVideo::class.java
 			).apply {
 				flags = FLAG_ACTIVITY_CLEAR_TOP or FLAG_ACTIVITY_SINGLE_TOP
 				startActivity(this)

@@ -9,7 +9,7 @@ import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.TextView
 import app.core.AIOApp.Companion.aioFavicons
-import app.ui.main.MotherActivity
+import app.ui.main.MotherActivityVideo
 import app.ui.main.fragments.browser.BrowserFragment
 import app.ui.main.fragments.browser.BrowserFragmentBody
 import app.ui.main.fragments.browser.BrowserFragmentTop
@@ -37,7 +37,7 @@ class WebTabListAdapter(
 
 	val browserFragmentTop: BrowserFragmentTop = browserFragment.browserFragmentTop
 	val browserFragmentBody: BrowserFragmentBody = browserFragment.browserFragmentBody
-	val motherActivity: MotherActivity = browserFragment.safeMotherActivityRef
+	val motherActivity: MotherActivityVideo = browserFragment.safeMotherActivityRef
 	val leftSideNavigation = motherActivity.sideNavigation
 
 	override fun getCount(): Int {
@@ -100,11 +100,11 @@ class WebTabListAdapter(
 	 *
 	 * @property position The tab's position in the adapter.
 	 * @property layoutView The root layout view for the tab item.
-	 * @property safeMotherActivityRef Reference to the [MotherActivity].
+	 * @property safeMotherActivityRef Reference to the [MotherActivityVideo].
 	 */
 	data class ViewHolder(
 		val position: Int, val layoutView: View,
-		val safeMotherActivityRef: MotherActivity
+		val safeMotherActivityRef: MotherActivityVideo
 	) {
 
 		var itemClickableContainer: View = layoutView.findViewById(R.id.browser_tab_info)

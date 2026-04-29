@@ -1,12 +1,12 @@
 package app.ui.main.fragments.settings.activities.browser
 
 import android.view.View
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import com.aio.R
 import lib.process.LogHelperUtils
 import java.lang.ref.WeakReference
 
-class AdvBrowserSettingsActivity : BaseActivity() {
+class AdvBrowserSettingsActivityVideo : BaseActivityVideo() {
 
 	private val logger = LogHelperUtils.from(javaClass)
 
@@ -28,7 +28,7 @@ class AdvBrowserSettingsActivity : BaseActivity() {
 		closeActivityWithFadeAnimation(true)
 	}
 
-	private fun initializeViewClickListeners(safeActivityRef: AdvBrowserSettingsActivity) {
+	private fun initializeViewClickListeners(safeActivityRef: AdvBrowserSettingsActivityVideo) {
 		safeActivityRef.findViewById<View>(R.id.btn_left_actionbar).setOnClickListener {
 			onBackPressActivity()
 		}

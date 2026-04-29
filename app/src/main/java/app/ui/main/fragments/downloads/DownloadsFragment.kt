@@ -9,7 +9,7 @@ import app.core.bases.BaseFragment
 import app.core.engines.settings.AIOSettings.Companion.PRIVATE_FOLDER
 import app.core.engines.settings.AIOSettings.Companion.SYSTEM_GALLERY
 import app.core.engines.video_parser.dialogs.VideoLinkPasteEditor
-import app.ui.main.MotherActivity
+import app.ui.main.MotherActivityVideo
 import app.ui.main.fragments.downloads.fragments.active.ActiveTasksFragment
 import app.ui.main.fragments.downloads.fragments.finished.FinishedTasksFragment
 import com.aio.R
@@ -28,7 +28,7 @@ open class DownloadsFragment : BaseFragment() {
 	private val logger = LogHelperUtils.from(javaClass)
 
 	// Weak reference to the host activity to avoid memory leaks
-	private val safeMotherActivityRef by lazy { WeakReference(safeBaseActivityRef as MotherActivity).get() }
+	private val safeMotherActivityRef by lazy { WeakReference(safeBaseActivityVideoRef as MotherActivityVideo).get() }
 
 	// Weak reference to this fragment instance for safe usage across contexts
 	private val safeDownloadFragmentRef by lazy { WeakReference(this).get() }
@@ -228,7 +228,7 @@ open class DownloadsFragment : BaseFragment() {
 			adapter.setFilter { it.globalSettings.defaultDownloadLocation == SYSTEM_GALLERY }
 			isShowingPrivateFiles = false
 		} else {
-			authenticate(safeBaseActivityRef) { ok ->
+			authenticate(safeBaseActivityVideoRef) { ok ->
 				if (ok) {
 					adapter.setFilter { it.globalSettings.defaultDownloadLocation == PRIVATE_FOLDER }
 					isShowingPrivateFiles = true

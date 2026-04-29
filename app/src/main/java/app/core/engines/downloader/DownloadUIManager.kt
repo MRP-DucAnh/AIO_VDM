@@ -12,7 +12,7 @@ import android.widget.TextView
 import androidx.appcompat.view.ContextThemeWrapper
 import androidx.core.view.children
 import app.core.AIOApp
-import app.ui.main.MotherActivity
+import app.ui.main.MotherActivityVideo
 import app.ui.main.fragments.downloads.fragments.active.ActiveTasksFragment
 import app.ui.main.fragments.downloads.fragments.finished.FinishedTasksFragment
 import com.aio.R
@@ -25,7 +25,7 @@ class DownloadUIManager(private val downloadSystem: DownloadSystem) {
 
 	private val logger = LogHelperUtils.from(javaClass)
 
-	var safeMotherActivity: MotherActivity? = null
+	var safeMotherActivity: MotherActivityVideo? = null
 	var activeTasksFragment: ActiveTasksFragment? = null
 	var finishedTasksFragment: FinishedTasksFragment? = null
 	var loadingDownloadModelTextview: TextView? = null

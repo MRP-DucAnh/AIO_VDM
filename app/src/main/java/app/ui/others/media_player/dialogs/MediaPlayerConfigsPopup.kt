@@ -2,7 +2,7 @@ package app.ui.others.media_player.dialogs
 
 import android.view.View
 import androidx.media3.common.util.UnstableApi
-import app.ui.others.media_player.MediaPlayerActivity
+import app.ui.others.media_player.MediaPlayerActivityVideo
 import com.aio.R
 import com.aio.R.layout
 import lib.process.LogHelperUtils
@@ -11,7 +11,7 @@ import lib.ui.builders.PopupBuilder
 import java.lang.ref.WeakReference
 
 /**
- * Popup dialog for configuring media playback settings in [MediaPlayerActivity].
+ * Popup dialog for configuring media playback settings in [MediaPlayerActivityVideo].
  *
  * This class creates and manages a popup containing various player configuration options
  * such as playback speed, repeat mode, subtitle tracks, and background playback.
@@ -19,17 +19,17 @@ import java.lang.ref.WeakReference
  * It uses a [WeakReference] to prevent memory leaks and a [PopupBuilder]
  * to construct and display the dialog dynamically.
  *
- * @constructor Accepts a nullable [MediaPlayerActivity] reference.
- * @property mediaPlayerActivity Optional instance of the parent [MediaPlayerActivity].
+ * @constructor Accepts a nullable [MediaPlayerActivityVideo] reference.
+ * @property mediaPlayerActivity Optional instance of the parent [MediaPlayerActivityVideo].
  */
 @UnstableApi
-class MediaPlayerConfigsPopup(private val mediaPlayerActivity: MediaPlayerActivity?) {
+class MediaPlayerConfigsPopup(private val mediaPlayerActivity: MediaPlayerActivityVideo?) {
 
 	/** Logger instance scoped to this class for consistent debug and error output. */
 	private val logger = LogHelperUtils.from(javaClass)
 
 	/**
-	 * Weak reference to the associated [MediaPlayerActivity].
+	 * Weak reference to the associated [MediaPlayerActivityVideo].
 	 * Prevents memory leaks if the activity is destroyed.
 	 */
 	private val safePlayerActivityRef = WeakReference(mediaPlayerActivity).get()
@@ -68,7 +68,7 @@ class MediaPlayerConfigsPopup(private val mediaPlayerActivity: MediaPlayerActivi
 	}
 
 	/**
-	 * Initializes [PopupBuilder] with layout and anchor view from [MediaPlayerActivity].
+	 * Initializes [PopupBuilder] with layout and anchor view from [MediaPlayerActivityVideo].
 	 *
 	 * Logs setup progress and error conditions (e.g., null activity reference).
 	 */
@@ -120,7 +120,7 @@ class MediaPlayerConfigsPopup(private val mediaPlayerActivity: MediaPlayerActivi
 	 * @param playerActivity The media player activity instance
 	 * @return The appropriate View to anchor the popup to
 	 */
-	private fun getPopupAnchorView(playerActivity: MediaPlayerActivity): View {
+	private fun getPopupAnchorView(playerActivity: MediaPlayerActivityVideo): View {
 		val currentOrientation = getCurrentOrientation(playerActivity)
 		return if (currentOrientation.contains("landscape", true))
 			playerActivity.configButtonLand else playerActivity.configButton

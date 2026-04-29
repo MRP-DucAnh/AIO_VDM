@@ -112,7 +112,7 @@ open class AIOLanguage {
 	 * lifecycle, leading to a seamless user experience. It handles null activity references
 	 * gracefully by logging an error and invoking a failure callback.
 	 *
-	 * @param baseActivity The reference to the current activity, required to apply the locale
+	 * @param baseActivityVideo The reference to the current activity, required to apply the locale
 	 *   and trigger the recreation process. If `null`, the operation is aborted.
 	 * @param afterApplyingLanguage An optional lambda function that is executed immediately after the
 	 *   language change process has been successfully initiated.
@@ -120,11 +120,11 @@ open class AIOLanguage {
 	 *   fails, for instance, due to a `null` activity reference. It receives an error message.
 	 */
 	fun applyUserSelectedLanguage(
-		baseActivity: BaseActivity?,
+		baseActivityVideo: BaseActivityVideo?,
 		afterApplyingLanguage: () -> Unit = {},
 		onLanguageChangeFailed: (String) -> Unit = {}
 	) {
-		if (baseActivity?.getActivity() == null) {
+		if (baseActivityVideo?.getActivity() == null) {
 			val errorMessage = "skipped — activity reference is null"
 			logger.d(errorMessage)
 			onLanguageChangeFailed.invoke(errorMessage)
@@ -136,9 +136,9 @@ open class AIOLanguage {
 		val locale = Locale.forLanguageTag(languageCode)
 		
 		logger.d("Initiating language change to: $languageCode")
-		baseActivity.getActivity()?.let { safeActivityRef ->
+		baseActivityVideo.getActivity()?.let { safeActivityRef ->
 			// Apply the locale technically through the locale management system
-			baseActivity.getActivity()?.setLanguageLocale(locale)
+			baseActivityVideo.getActivity()?.setLanguageLocale(locale)
 			logger.d("Language applied successfully. System locale set to: $locale")
 			afterApplyingLanguage()
 		}

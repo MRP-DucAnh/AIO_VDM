@@ -12,7 +12,7 @@ import android.net.Uri
 import android.webkit.MimeTypeMap.getSingleton
 import androidx.core.content.FileProvider.getUriForFile
 import androidx.documentfile.provider.DocumentFile
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import com.aio.R
 import lib.texts.CommonTextUtils.getText
 import lib.ui.builders.ToastView.Companion.showToast
@@ -100,7 +100,7 @@ object ShareUtility {
 			if (openFileIntent.resolveActivity(safeContextRef.packageManager) != null) {
 				safeContextRef.startActivity(openFileIntent)
 			} else {
-				if (safeContextRef is BaseActivity) {
+				if (safeContextRef is BaseActivityVideo) {
 					showToast(
 						activityInf = safeContextRef,
 						msgId = R.string.title_no_app_found_to_open_this_file
@@ -188,13 +188,13 @@ object ShareUtility {
 	/**
 	 * Opens an APK file for installation using the system package installer.
 	 *
-	 * @param baseActivity The activity context to use.
+	 * @param baseActivityVideo The activity context to use.
 	 * @param apkFile The APK file to install.
 	 * @param authority The FileProvider authority declared in manifest.
 	 */
 	@JvmStatic
-	fun openApkFile(baseActivity: BaseActivity?, apkFile: File, authority: String) {
-		WeakReference(baseActivity).get()?.let { safeContextRef ->
+	fun openApkFile(baseActivityVideo: BaseActivityVideo?, apkFile: File, authority: String) {
+		WeakReference(baseActivityVideo).get()?.let { safeContextRef ->
 			val intent = Intent(ACTION_VIEW).apply {
 				flags = Intent.FLAG_ACTIVITY_NEW_TASK or FLAG_GRANT_READ_URI_PERMISSION
 				val apkUri: Uri = getUriForFile(safeContextRef, authority, apkFile)

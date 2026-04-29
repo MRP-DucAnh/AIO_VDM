@@ -13,8 +13,6 @@ import lib.device.AppVersionUtility.versionName
 import lib.process.*
 import lib.texts.CommonTextUtils.fromHtmlStringToSpanned
 import lib.ui.*
-import lib.ui.ViewUtility.setLeftSideDrawable
-import lib.ui.ViewUtility.setRightSideDrawable
 import java.lang.ref.*
 
 /**
@@ -31,7 +29,7 @@ import java.lang.ref.*
  *   and updates the UI when they change.
  * - **Interaction Delegation**: Offloads the logic for handling click events to the
  *   [SettingsOnClickLogic] class to maintain a clean separation of concerns.
- * - **Lifecycle Coordination**: Registers itself with the parent [MotherActivity] to enable
+ * - **Lifecycle Coordination**: Registers itself with the parent [MotherActivityVideo] to enable
  *   communication and ensures proper cleanup to prevent memory leaks.
  * - **Information Display**: Shows dynamic data like the application's version name and code.
  *
@@ -68,14 +66,14 @@ class SettingsFragment : BaseFragment() {
 	val safeSettingsFragmentRef get() = weakReferenceOfSettingsFragment.get()
 	
 	/**
-	 * A weakly-referenced and lazily-initialized instance of the parent [MotherActivity].
+	 * A weakly-referenced and lazily-initialized instance of the parent [MotherActivityVideo].
 	 *
 	 * This provides a safe way to access the hosting activity's properties and methods
 	 * without creating a strong reference, which could lead to context leaks. The
 	 * reference is obtained by casting `safeBaseActivityRef` and is only created
 	 * upon first access.
 	 */
-	val safeMotherActivityRef get() = safeBaseActivityRef as? MotherActivity
+	val safeMotherActivityRef get() = safeBaseActivityVideoRef as? MotherActivityVideo
 	
 	/**
 	 * Manages all user click interactions within the settings UI.
@@ -108,7 +106,7 @@ class SettingsFragment : BaseFragment() {
 	 *
 	 * This method serves as the primary entry point for initializing the UI. It orchestrates
 	 * critical setup tasks, including:
-	 * - Registering the fragment with its parent [MotherActivity] to enable communication.
+	 * - Registering the fragment with its parent [MotherActivityVideo] to enable communication.
 	 * - Displaying dynamic information, such as the application's version.
 	 * - Attaching all necessary click listeners to the interactive UI elements by delegating
 	 *   to [setupViewsOnClickEvents].
@@ -208,10 +206,10 @@ class SettingsFragment : BaseFragment() {
 	}
 	
 	/**
-	 * Establishes a communication link with the parent [MotherActivity].
+	 * Establishes a communication link with the parent [MotherActivityVideo].
 	 *
 	 * This function registers a weak reference of this `SettingsFragment` instance with the
-	 * hosting [MotherActivity]. This allows the activity to access the fragment's
+	 * hosting [MotherActivityVideo]. This allows the activity to access the fragment's
 	 * public properties and methods, facilitating inter-component communication (e.g.,
 	 * for coordinating UI updates or handling back-press events).
 	 *
@@ -231,7 +229,7 @@ class SettingsFragment : BaseFragment() {
 	}
 	
 	/**
-	 * Clears this fragment's reference from the parent [MotherActivity].
+	 * Clears this fragment's reference from the parent [MotherActivityVideo].
 	 *
 	 * This is a critical cleanup step, typically called during `onDestroyView`, to prevent memory
 	 * leaks. By setting the `settingsFragment` property in the activity to `null`, it breaks

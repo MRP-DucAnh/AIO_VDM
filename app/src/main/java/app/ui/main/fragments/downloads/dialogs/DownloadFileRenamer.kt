@@ -5,7 +5,7 @@ import android.widget.EditText
 import androidx.documentfile.provider.DocumentFile.fromFile
 import app.core.AIOApp.Companion.downloadSystem
 import app.core.engines.downloader.DownloadDataModel
-import app.ui.main.MotherActivity
+import app.ui.main.MotherActivityVideo
 import com.aio.R
 import com.aio.R.id
 import com.aio.R.layout
@@ -43,9 +43,9 @@ import java.lang.ref.WeakReference
  * @param oneDone Callback invoked after a successful rename operation.
  */
 class DownloadFileRenamer(
-	val motherActivity: MotherActivity?,
-	var downloadDataModel: DownloadDataModel,
-	val oneDone: () -> Unit
+    val motherActivity: MotherActivityVideo?,
+    var downloadDataModel: DownloadDataModel,
+    val oneDone: () -> Unit
 ) {
 
 	// Safe reference to the activity to prevent memory leaks

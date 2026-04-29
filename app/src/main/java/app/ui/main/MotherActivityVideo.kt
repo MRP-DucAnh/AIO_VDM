@@ -20,7 +20,7 @@ import app.ui.main.fragments.downloads.*
 import app.ui.main.fragments.downloads.intercepter.*
 import app.ui.main.fragments.home.*
 import app.ui.main.fragments.settings.*
-import app.ui.others.media_player.MediaPlayerActivity.Companion.INTENT_EXTRA_SOURCE_ORIGIN
+import app.ui.others.media_player.MediaPlayerActivityVideo.Companion.INTENT_EXTRA_SOURCE_ORIGIN
 import com.aio.*
 import kotlinx.coroutines.*
 import lib.device.IntentUtility.getIntentDataURI
@@ -48,7 +48,7 @@ import java.lang.ref.*
  * - Manages back press behavior
  * - Coordinates between fragments
  */
-class MotherActivity : BaseActivity() {
+class MotherActivityVideo : BaseActivityVideo() {
 	
 	private val logger = LogHelperUtils.from(javaClass)
 	
@@ -497,7 +497,7 @@ class MotherActivity : BaseActivity() {
 	 */
 	private fun showVideoResolutionPicker(
 		clipboardText: String,
-		safeMotherActivityRef: MotherActivity
+		safeMotherActivityRef: MotherActivityVideo
 	) {
 		logger.d("Showing video resolution picker for URL: $clipboardText")
 		if (URLUtility.isValidURL(clipboardText)) {
@@ -528,7 +528,7 @@ class MotherActivity : BaseActivity() {
 							logger.d("Successfully parsed title: $resultedTitle")
 							executeOnMainThread {
 								SingleResolutionPrompter(
-									baseActivity = safeMotherActivityRef,
+									baseActivityVideo = safeMotherActivityRef,
 									singleResolutionName = getString(R.string.title_high_quality),
 									extractedVideoLink = clipboardText,
 									currentWebUrl = clipboardText,
@@ -559,7 +559,7 @@ class MotherActivity : BaseActivity() {
 	 * Shows invalid URL error toast
 	 * @param safeMotherActivity The activity reference
 	 */
-	private fun invalidUrlErrorToast(safeMotherActivity: MotherActivity) {
+	private fun invalidUrlErrorToast(safeMotherActivity: MotherActivityVideo) {
 		logger.d("Showing invalid URL error toast")
 		safeMotherActivity.doSomeVibration(50)
 		ToastView.showToast(
@@ -573,7 +573,7 @@ class MotherActivity : BaseActivity() {
 	 * @param safeActivity The activity reference
 	 * @param userEnteredUrl The URL to parse
 	 */
-	private fun startParingVideoURL(safeActivity: MotherActivity, userEnteredUrl: String) {
+	private fun startParingVideoURL(safeActivity: MotherActivityVideo, userEnteredUrl: String) {
 		logger.d("Starting video URL parsing for: $userEnteredUrl")
 		val videoInterceptor = SharedVideoURLIntercept(safeActivity)
 		videoInterceptor.interceptIntentURI(userEnteredUrl)

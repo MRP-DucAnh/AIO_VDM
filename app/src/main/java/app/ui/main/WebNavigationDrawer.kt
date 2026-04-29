@@ -27,7 +27,7 @@ import java.lang.ref.WeakReference
  * - Maintains the list of active web views
  * - Coordinates tab switching and lifecycle events
  */
-class WebNavigationDrawer(motherActivity: MotherActivity?) {
+class WebNavigationDrawer(motherActivity: MotherActivityVideo?) {
 
 	private val logger = LogHelperUtils.from(javaClass)
 

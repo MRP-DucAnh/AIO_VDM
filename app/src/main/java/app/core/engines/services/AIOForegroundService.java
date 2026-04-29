@@ -15,7 +15,7 @@ import androidx.annotation.Nullable;
 
 import com.aio.R;
 
-import app.ui.main.MotherActivity;
+import app.ui.main.MotherActivityVideo;
 
 /**
  * AIOForegroundService is a persistent foreground service that ensures
@@ -127,7 +127,7 @@ public class AIOForegroundService extends Service {
      * @return a Notification object to be shown in the foreground.
      */
     private Notification getCustomNotification() {
-        Intent notificationIntent = new Intent(this, MotherActivity.class);
+        Intent notificationIntent = new Intent(this, MotherActivityVideo.class);
         int flags = PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE;
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, flags);
 

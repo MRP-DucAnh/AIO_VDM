@@ -9,7 +9,7 @@ import app.core.AIOApp.Companion.downloadSystem
 import app.core.AIOTimer.AIOTimerListener
 import app.core.bases.BaseFragment
 import app.core.engines.downloader.DownloadDataModel
-import app.ui.main.MotherActivity
+import app.ui.main.MotherActivityVideo
 import app.ui.main.fragments.downloads.DownloadsFragment
 import com.aio.R
 import java.lang.ref.WeakReference
@@ -18,8 +18,8 @@ open class ActiveTasksFragment : BaseFragment(), AIOTimerListener {
 
 	private val fragmentWeakRef = WeakReference(this)
 
-	val safeMotherActivityRef: MotherActivity?
-		get() = safeBaseActivityRef as? MotherActivity
+	val safeMotherActivityRef: MotherActivityVideo?
+		get() = safeBaseActivityVideoRef as? MotherActivityVideo
 
 	val safeActiveTasksFragmentRef: ActiveTasksFragment?
 		get() = safeBaseFragmentRef as? ActiveTasksFragment

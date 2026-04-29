@@ -29,9 +29,9 @@ import java.lang.ref.*
  * button is clicked. If the user cancels or dismisses the dialog without applying,
  * the setting reverts to its original value to prevent unintended changes.
  *
- * @param baseActivity The [BaseActivity] context required for dialog creation and UI interactions.
+ * @param baseActivityVideo The [BaseActivityVideo] context required for dialog creation and UI interactions.
  */
-class DownloadLocationSelector(baseActivity: BaseActivity) {
+class DownloadLocationSelector(baseActivityVideo: BaseActivityVideo) {
 	
 	/** Logger for logging events within this class. */
 	private val logger = LogHelperUtils.from(javaClass)
@@ -43,14 +43,14 @@ class DownloadLocationSelector(baseActivity: BaseActivity) {
 	 * or toasts) without creating a strong circular reference that could prevent the activity from
 	 * being garbage collected.
 	 */
-	private val weakReferenceOfBaseActivity = WeakReference(baseActivity)
+	private val weakReferenceOfBaseActivity = WeakReference(baseActivityVideo)
 	
 	/**
-	 * A weak reference to the [BaseActivity] to prevent memory leaks.
+	 * A weak reference to the [BaseActivityVideo] to prevent memory leaks.
 	 * This provides a safe, nullable way to access the activity context,
 	 * for UI operations like showing dialogs or toasts.
 	 */
-	private val safeBaseActivityRef
+	private val safeBaseActivityVideoRef
 		get() = weakReferenceOfBaseActivity.get()
 	
 	/**
@@ -83,7 +83,7 @@ class DownloadLocationSelector(baseActivity: BaseActivity) {
 	 */
 	private val dialog by lazy {
 		logger.d("Initializing Download Location dialog")
-		DialogBuilder(safeBaseActivityRef).apply {
+		DialogBuilder(safeBaseActivityVideoRef).apply {
 			setView(R.layout.dialog_default_location_1)
 			setCancelable(true)
 			
@@ -108,9 +108,9 @@ class DownloadLocationSelector(baseActivity: BaseActivity) {
 						aioSettings.defaultDownloadLocation = SYSTEM_GALLERY
 						updateRadioButtons(privateRadio, galleryRadio)
 					} else {
-						safeBaseActivityRef?.doSomeVibration()
+						safeBaseActivityVideoRef?.doSomeVibration()
 						MsgDialogUtils.getMessageDialog(
-							baseActivityInf = safeBaseActivityRef,
+							baseActivityInf = safeBaseActivityVideoRef,
 							titleText = getText(R.string.title_permission_needed),
 							isTitleVisible = true,
 							isNegativeButtonVisible = false,
@@ -122,7 +122,7 @@ class DownloadLocationSelector(baseActivity: BaseActivity) {
 								CoroutineScope(Dispatchers.Main).launch {
 									msgDialogBuilder.close()
 									delay(500)
-									safeBaseActivityRef?.let {
+									safeBaseActivityVideoRef?.let {
 										FileSystemUtility.openAllFilesAccessSettings(it)
 									}
 								}
@@ -135,9 +135,9 @@ class DownloadLocationSelector(baseActivity: BaseActivity) {
 					logger.d("Apply clicked, saving setting")
 					hasSettingApplied = true
 					aioSettings.updateInStorage()
-					safeBaseActivityRef?.doSomeVibration()
+					safeBaseActivityVideoRef?.doSomeVibration()
 					ToastView.showToast(
-						activityInf = safeBaseActivityRef,
+						activityInf = safeBaseActivityVideoRef,
 						msgId = R.string.title_setting_applied
 					)
 					close()

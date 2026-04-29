@@ -19,7 +19,6 @@ import app.core.engines.objectbox.ObjectBoxManager.initializeObjectBoxDB
 import app.core.engines.settings.*
 import app.core.engines.user_profile.*
 import app.core.engines.youtube.*
-import com.aio.*
 import com.anggrayudi.storage.file.DocumentFileCompat.fromPublicFolder
 import com.anggrayudi.storage.file.PublicDirectory.*
 import com.dslplatform.json.*
@@ -768,7 +767,7 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 	 * interaction with the Android framework.
 	 *
 	 * @see AIOLifeCycle The custom, simplified lifecycle callback interface used.
-	 * @see BaseActivity.clearWeakActivityReference for the implementation of the cleanup logic.
+	 * @see BaseActivityVideo.clearWeakActivityReference for the implementation of the cleanup logic.
 	 * @see Application.registerActivityLifecycleCallbacks for the underlying Android API.
 	 */
 	private fun startActivityLifecycleManagement() {
@@ -899,7 +898,7 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 	 * with UI components and activity contexts.
 	 *
 	 * @see AIOLifeCycle The custom interface for observing activity lifecycle events.
-	 * @see BaseActivity.clearWeakActivityReference The specific cleanup method called on
+	 * @see BaseActivityVideo.clearWeakActivityReference The specific cleanup method called on
 	 *     activity destruction.
 	 * @see Application.registerActivityLifecycleCallbacks The underlying Android framework API used.
 	 */
@@ -914,7 +913,7 @@ class AIOApp : LocaleApplicationImpl(), LifecycleObserver {
 				 */
 				override fun onActivityDestroyed(activity: Activity) {
 					logger.d("Activity lifecycle: ${activity.javaClass.simpleName} destroyed")
-					if (activity is BaseActivity) {
+					if (activity is BaseActivityVideo) {
 						activity.clearWeakActivityReference()
 					}
 				}

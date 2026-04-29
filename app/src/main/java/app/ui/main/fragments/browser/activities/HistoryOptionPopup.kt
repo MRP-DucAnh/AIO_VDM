@@ -56,15 +56,15 @@ import java.util.Date
  * @param historyModel The HistoryModel instance representing the selected history item
  * @param listView The View that serves as anchor for the popup positioning
  *
- * @see HistoryActivity for the parent activity implementation
+ * @see HistoryActivityVideo for the parent activity implementation
  * @see HistoryModel for the data model structure
  * @see PopupBuilder for the UI presentation layer
  * @see BookmarkModel for bookmark integration
  */
 class HistoryOptionPopup(
-	private val historyActivity: HistoryActivity?,
-	private val historyModel: HistoryModel,
-	private val listView: View
+    private val historyActivity: HistoryActivityVideo?,
+    private val historyModel: HistoryModel,
+    private val listView: View
 ) {
 
 	/**
@@ -240,7 +240,7 @@ class HistoryOptionPopup(
 	 * This operation delegates to the HistoryActivity's item click handler
 	 * to maintain consistent navigation behavior.
 	 *
-	 * @see HistoryActivity.onHistoryItemClick for the actual navigation logic
+	 * @see HistoryActivityVideo.onHistoryItemClick for the actual navigation logic
 	 */
 	private fun openHistoryInBrowser() {
 		logger.d("Opening history URL in browser: $historyUrl")
@@ -257,7 +257,7 @@ class HistoryOptionPopup(
 	 * 4. Updates the history list adapter if changes are made
 	 *
 	 * @see UpdateHistoryDialog for the editing interface
-	 * @see HistoryActivity.updateHistoryListAdapter for UI refresh
+	 * @see HistoryActivityVideo.updateHistoryListAdapter for UI refresh
 	 */
 	private fun editHistoryInfo() {
 		safeHistoryActivityRef?.let { activityRef ->

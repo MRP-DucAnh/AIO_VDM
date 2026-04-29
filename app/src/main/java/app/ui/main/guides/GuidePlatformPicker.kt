@@ -5,7 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import app.ui.main.fragments.home.HomeFragment.FaviconViewHolder
 import com.aio.R
 import lib.process.LogHelperUtils
@@ -21,13 +21,13 @@ import java.lang.ref.WeakReference
  * and shows the appropriate guide when a platform is selected. It tracks user
  * interactions with the guide system.
  *
- * @param baseActivity The parent activity that will host this dialog
+ * @param baseActivityVideo The parent activity that will host this dialog
  */
-class GuidePlatformPicker(private val baseActivity: BaseActivity?) {
+class GuidePlatformPicker(private val baseActivityVideo: BaseActivityVideo?) {
 	private val logger = LogHelperUtils.from(javaClass)
 
 	// Weak reference to parent activity to prevent memory leaks
-	private val safeBaseActivityRef = WeakReference(baseActivity).get()
+	private val safeBaseActivityRef = WeakReference(baseActivityVideo).get()
 
 	// Dialog builder for creating and managing the platform picker dialog
 	private val dialogBuilder: DialogBuilder = DialogBuilder(safeBaseActivityRef)

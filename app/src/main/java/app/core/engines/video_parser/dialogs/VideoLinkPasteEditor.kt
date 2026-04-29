@@ -4,7 +4,7 @@ import android.view.View
 import android.widget.EditText
 import app.core.engines.video_parser.parsers.SupportedURLs.isSocialMediaUrl
 import app.core.engines.video_parser.parsers.VideoThumbGrabber.startParsingVideoThumbUrl
-import app.ui.main.MotherActivity
+import app.ui.main.MotherActivityVideo
 import app.ui.main.fragments.browser.webengine.SingleResolutionPrompter
 import app.ui.main.fragments.downloads.intercepter.SharedVideoURLIntercept
 import com.aio.R
@@ -36,9 +36,9 @@ import java.lang.ref.WeakReference
  * @property autoStart Whether parsing should begin automatically on show.
  */
 class VideoLinkPasteEditor(
-	val motherActivity: MotherActivity,
-	val passOnUrl: String? = null,
-	val autoStart: Boolean = false
+    val motherActivity: MotherActivityVideo,
+    val passOnUrl: String? = null,
+    val autoStart: Boolean = false
 ) {
 	private val logger = LogHelperUtils.from(javaClass)
 
@@ -166,7 +166,7 @@ class VideoLinkPasteEditor(
 								logger.d("Extracted title: $resultedTitle")
 								executeOnMainThread {
 									SingleResolutionPrompter(
-										baseActivity = motherActivity,
+										baseActivityVideo = motherActivity,
 										singleResolutionName = getText(R.string.title_high_quality),
 										extractedVideoLink = userGivenURL,
 										currentWebUrl = userGivenURL,
@@ -206,7 +206,7 @@ class VideoLinkPasteEditor(
 	/**
 	 * Triggers interception for direct video URLs.
 	 */
-	private fun startParingVideoURL(safeActivity: MotherActivity) {
+	private fun startParingVideoURL(safeActivity: MotherActivityVideo) {
 		logger.d("Intercepting direct video URL: $userGivenURL")
 		close()
 		val videoInterceptor = SharedVideoURLIntercept(safeActivity)

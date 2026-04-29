@@ -8,7 +8,7 @@ import app.core.AIOApp.Companion.aioHistory
 import app.core.AIOApp.Companion.aioTimer
 import app.core.AIOKeyStrings.ACTIVITY_RESULT_KEY
 import app.core.AIOTimer.AIOTimerListener
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import app.core.engines.browser.history.HistoryModel
 import app.ui.main.fragments.browser.activities.HistoryAdapter.OnHistoryItemClick
 import app.ui.main.fragments.browser.activities.HistoryAdapter.OnHistoryItemLongClick
@@ -24,7 +24,7 @@ import lib.ui.builders.ToastView.Companion.showToast
 import java.lang.ref.WeakReference
 
 /**
- * [HistoryActivity] is responsible for displaying and managing
+ * [HistoryActivityVideo] is responsible for displaying and managing
  * the user's browsing history within the application.
  *
  * Features:
@@ -34,7 +34,7 @@ import java.lang.ref.WeakReference
  * - Provides a "Load More" button for paginated history loading.
  * - Shows a confirmation dialog for deleting all history.
  */
-class HistoryActivity : BaseActivity(),
+class HistoryActivityVideo : BaseActivityVideo(),
 	AIOTimerListener, OnHistoryItemClick, OnHistoryItemLongClick {
 
 	private val logger = LogHelperUtils.from(javaClass)

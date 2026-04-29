@@ -23,14 +23,14 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Date;
 
-import app.core.bases.BaseActivity;
+import app.core.bases.BaseActivityVideo;
 import app.core.engines.browser.history.HistoryModel;
 import app.core.engines.caches.AIOFavicons;
 import lib.device.DateTimeUtils;
 import lib.process.LogHelperUtils;
 
 /**
- * {@code HistoryAdapter} is a custom adapter for displaying browsing history inside a {@link HistoryActivity}.
+ * {@code HistoryAdapter} is a custom adapter for displaying browsing history inside a {@link HistoryActivityVideo}.
  * <p>
  * It provides:
  * <ul>
@@ -43,7 +43,7 @@ import lib.process.LogHelperUtils;
 public class HistoryAdapter extends BaseAdapter {
 
     private final LogHelperUtils logger = LogHelperUtils.from(getClass());
-    private final WeakReference<BaseActivity> safeBaseActivityRef;
+    private final WeakReference<BaseActivityVideo> safeBaseActivityRef;
     private final OnHistoryItemClick onHistoryItemClick;
     private final OnHistoryItemLongClick onHistoryItemLongClick;
 
@@ -60,11 +60,11 @@ public class HistoryAdapter extends BaseAdapter {
     /**
      * Constructs a {@link HistoryAdapter}.
      *
-     * @param historyActivity        The associated {@link HistoryActivity}.
+     * @param historyActivity        The associated {@link HistoryActivityVideo}.
      * @param onHistoryItemClick     Callback for handling item clicks.
      * @param onHistoryItemLongClick Callback for handling item long clicks.
      */
-    public HistoryAdapter(@Nullable HistoryActivity historyActivity,
+    public HistoryAdapter(@Nullable HistoryActivityVideo historyActivity,
                           @Nullable OnHistoryItemClick onHistoryItemClick,
                           @Nullable OnHistoryItemLongClick onHistoryItemLongClick) {
         this.safeBaseActivityRef = new WeakReference<>(historyActivity);
@@ -103,7 +103,7 @@ public class HistoryAdapter extends BaseAdapter {
      */
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-        BaseActivity activity = this.safeBaseActivityRef.get();
+        BaseActivityVideo activity = this.safeBaseActivityRef.get();
         if (activity == null) {
             logger.d("BaseActivity reference is null, returning empty view.");
             return convertView != null ? convertView : new View(parent.getContext());

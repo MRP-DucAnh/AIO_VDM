@@ -37,9 +37,9 @@ import java.lang.ref.WeakReference
  * - Provides debug logging via [LogHelperUtils].
  */
 class BookmarkOptionPopup(
-	private val bookmarksActivity: BookmarksActivity,
-	private val bookmarkModel: BookmarkModel,
-	private val listView: View
+    private val bookmarksActivity: BookmarksActivityVideo,
+    private val bookmarkModel: BookmarkModel,
+    private val listView: View
 ) : DefaultLifecycleObserver {
 
 	private val logger = LogHelperUtils.from(javaClass)

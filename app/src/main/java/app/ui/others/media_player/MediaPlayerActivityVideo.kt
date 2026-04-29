@@ -62,7 +62,7 @@ import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioTimer
 import app.core.AIOApp.Companion.downloadSystem
 import app.core.AIOTimer.AIOTimerListener
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import app.core.engines.downloader.DownloadDataModel
 import app.core.engines.downloader.DownloadDataModel.Companion.DOWNLOAD_MODEL_ID_KEY
 import app.core.engines.downloader.DownloadURLHelper.getFileInfoFromSever
@@ -302,7 +302,7 @@ import kotlin.math.abs
  * @see MediaItem
  */
 @UnstableApi
-class MediaPlayerActivity : BaseActivity(), AIOTimerListener, Listener {
+class MediaPlayerActivityVideo : BaseActivityVideo(), AIOTimerListener, Listener {
 
 	/**
 	 * Logger instance for tracking events and errors in the MediaPlayerActivity.
@@ -318,7 +318,7 @@ class MediaPlayerActivity : BaseActivity(), AIOTimerListener, Listener {
 	 * This lazy delegate ensures the activity reference is only obtained when needed
 	 * and provides a safe way to access activity context without early initialization.
 	 */
-	private val activity by lazy { this@MediaPlayerActivity }
+	private val activity by lazy { this@MediaPlayerActivityVideo }
 
 	/**
 	 * Weak reference to the activity for preventing memory leaks.

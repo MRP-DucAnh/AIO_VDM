@@ -19,8 +19,8 @@ import java.lang.ref.WeakReference
  * and applies changes to the given [HistoryModel].
  */
 class UpdateHistoryDialog(
-	private val historyActivity: HistoryActivity,
-	private val onApply: (Boolean) -> Unit = {}
+    private val historyActivity: HistoryActivityVideo,
+    private val onApply: (Boolean) -> Unit = {}
 ) {
 	private val logger = LogHelperUtils.from(javaClass)
 

@@ -49,7 +49,7 @@ public class FinishedTasksListAdapter extends BaseAdapter {
     public FinishedTasksListAdapter(@NonNull FinishedTasksFragment fragment) {
         try {
             weakRefFinishedFrag = new WeakReference<>(fragment);
-            layoutInflater = from(fragment.getSafeBaseActivityRef());
+            layoutInflater = from(fragment.getSafeBaseActivityVideoRef());
             downloadSystem = AIOApp.INSTANCE.getDownloadManager();
             rebuildCache();
         } catch (Exception error) {

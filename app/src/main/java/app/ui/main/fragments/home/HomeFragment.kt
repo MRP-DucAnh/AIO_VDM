@@ -35,13 +35,13 @@ import app.core.engines.downloader.DownloadDataModel.Companion.THUMB_EXTENSION
 import app.core.engines.settings.AIOSettings
 import app.core.engines.settings.AIOSettings.Companion.PRIVATE_FOLDER
 import app.core.engines.video_parser.dialogs.VideoLinkPasteEditor
-import app.ui.main.MotherActivity
-import app.ui.main.fragments.browser.activities.BookmarksActivity
-import app.ui.main.fragments.browser.activities.HistoryActivity
+import app.ui.main.MotherActivityVideo
+import app.ui.main.fragments.browser.activities.BookmarksActivityVideo
+import app.ui.main.fragments.browser.activities.HistoryActivityVideo
 import app.ui.main.fragments.browser.webengine.WebViewEngine
 import app.ui.main.guides.GuidePlatformPicker
-import app.ui.others.media_player.MediaPlayerActivity
-import app.ui.others.media_player.MediaPlayerActivity.Companion.INTENT_EXTRA_MEDIA_FILE_PATH
+import app.ui.others.media_player.MediaPlayerActivityVideo
+import app.ui.others.media_player.MediaPlayerActivityVideo.Companion.INTENT_EXTRA_MEDIA_FILE_PATH
 import com.aio.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -113,7 +113,7 @@ class HomeFragment : BaseFragment(), AIOTimer.AIOTimerListener {
 
 	// Weak references to prevent memory leaks
 	private val safeMotherActivityRef by lazy {
-		WeakReference(safeBaseActivityRef as MotherActivity).get()
+		WeakReference(safeBaseActivityVideoRef as MotherActivityVideo).get()
 	}
 
 	private val safeHomeFragmentRef by lazy {
@@ -391,7 +391,7 @@ class HomeFragment : BaseFragment(), AIOTimer.AIOTimerListener {
 	private fun setupUrlEditor(
 		container: View,
 		editText: EditText,
-		activity: MotherActivity
+		activity: MotherActivityVideo
 	) {
 		container.setOnClickListener {
 			editText.focusable
@@ -409,7 +409,7 @@ class HomeFragment : BaseFragment(), AIOTimer.AIOTimerListener {
 	private fun setupDownloadButton(
 		button: View,
 		editText: EditText,
-		activity: MotherActivity
+		activity: MotherActivityVideo
 	) {
 		editText.setOnEditorActionListener { _, actionId, _ ->
 			if (actionId == EditorInfo.IME_ACTION_DONE ||
@@ -495,7 +495,7 @@ class HomeFragment : BaseFragment(), AIOTimer.AIOTimerListener {
 	private fun setupHistoryButton(button: View) {
 		button.setOnClickListener {
 			safeMotherActivityRef?.let { motherActivity ->
-				val input = Intent(motherActivity, HistoryActivity::class.java)
+				val input = Intent(motherActivity, HistoryActivityVideo::class.java)
 				motherActivity.resultLauncher.launch(input)
 			}
 		}
@@ -508,7 +508,7 @@ class HomeFragment : BaseFragment(), AIOTimer.AIOTimerListener {
 	private fun setupBookmarksButton(button: View) {
 		button.setOnClickListener {
 			safeMotherActivityRef?.let { motherActivity ->
-				val input = Intent(motherActivity, BookmarksActivity::class.java)
+				val input = Intent(motherActivity, BookmarksActivityVideo::class.java)
 				motherActivity.resultLauncher.launch(input)
 			}
 		}
@@ -702,9 +702,9 @@ class HomeFragment : BaseFragment(), AIOTimer.AIOTimerListener {
 	 * @param webviewEngine The webview engine instance
 	 */
 	private fun handleFallbackBrowserNavigation(
-		activity: MotherActivity,
-		url: String,
-		webviewEngine: WebViewEngine
+        activity: MotherActivityVideo,
+        url: String,
+        webviewEngine: WebViewEngine
 	) {
 		activity.sideNavigation?.addNewBrowsingTab(url, webviewEngine)
 		activity.openBrowserFragment()
@@ -863,7 +863,7 @@ class HomeFragment : BaseFragment(), AIOTimer.AIOTimerListener {
 		 */
 		fun setOnClickEvent(
 			downloadDataModel: DownloadDataModel,
-			safeMotherActivityRef: MotherActivity?
+			safeMotherActivityRef: MotherActivityVideo?
 		) {
 			val activityRef = safeMotherActivityRef
 			if (activityRef == null) return
@@ -978,14 +978,14 @@ class HomeFragment : BaseFragment(), AIOTimer.AIOTimerListener {
 		@OptIn(UnstableApi::class)
 		private fun playTheMedia(
 			downloadDataModel: DownloadDataModel,
-			safeMotherActivityRef: MotherActivity?
+			safeMotherActivityRef: MotherActivityVideo?
 		) {
 			safeMotherActivityRef?.let { _ ->
 				downloadDataModel.let { downloadDataModel ->
 					val downloadedFileName = downloadDataModel.fileName
 					if (isVideoByName(downloadedFileName) || isAudioByName(downloadedFileName)) {
 						safeMotherActivityRef.startActivity(
-							Intent(safeMotherActivityRef, MediaPlayerActivity::class.java).apply {
+							Intent(safeMotherActivityRef, MediaPlayerActivityVideo::class.java).apply {
 								flags = FLAG_ACTIVITY_CLEAR_TOP or FLAG_ACTIVITY_SINGLE_TOP
 								putExtra(DOWNLOAD_MODEL_ID_KEY, downloadDataModel.downloadId)
 								putExtra(
@@ -1005,7 +1005,7 @@ class HomeFragment : BaseFragment(), AIOTimer.AIOTimerListener {
 		 * Opens the downloaded file using appropriate application.
 		 * Handles APK files specially with proper installation flow.
 		 */
-		fun openFile(safeMotherActivityRef: MotherActivity, downloadDataModel: DownloadDataModel) {
+		fun openFile(safeMotherActivityRef: MotherActivityVideo, downloadDataModel: DownloadDataModel) {
 			val extensions = listOf("apk").toTypedArray()
 			val downloadedFile = downloadDataModel.getDestinationFile()
 			if (endsWithExtension(downloadDataModel.fileName, extensions)) {

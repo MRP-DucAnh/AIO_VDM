@@ -17,7 +17,7 @@ import app.core.engines.downloader.DownloadStatus.DOWNLOADING
 import app.core.engines.downloader.DownloadTaskInf
 import app.core.engines.settings.AIOSettings.Companion.PRIVATE_FOLDER
 import app.core.engines.video_parser.dialogs.VideoLinkPasteEditor
-import app.ui.main.MotherActivity
+import app.ui.main.MotherActivityVideo
 import app.ui.main.fragments.downloads.dialogs.DownloadFileRenamer
 import app.ui.main.fragments.downloads.dialogs.DownloadInfoTracker
 import com.aio.R
@@ -57,7 +57,7 @@ import lib.ui.builders.ToastView.Companion.showToast
 import java.io.File
 import java.lang.ref.WeakReference
 
-class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
+class ActiveTasksOptions(private val motherActivity: MotherActivityVideo?) {
 
 	private val logger = LogHelperUtils.from(javaClass)
 	private val activityWeakRef = motherActivity?.let { WeakReference(it) }
@@ -65,7 +65,7 @@ class ActiveTasksOptions(private val motherActivity: MotherActivity?) {
 	private var dialogBuilder: DialogBuilder? = DialogBuilder(getSafeActivity())
 	private var downloadDataModel: DownloadDataModel? = null
 
-	private fun getSafeActivity(): MotherActivity? = activityWeakRef?.get()
+	private fun getSafeActivity(): MotherActivityVideo? = activityWeakRef?.get()
 
 	fun show(downloadModel: DownloadDataModel?) {
 		val dialogBuilder = dialogBuilder

@@ -9,7 +9,7 @@ import android.widget.TextView
 import app.core.engines.video_parser.parsers.SupportedURLs.isM3U8Url
 import app.core.engines.video_parser.parsers.VideoInfo
 import app.core.engines.video_parser.parsers.VideoThumbGrabber.getCurrentOgImage
-import app.ui.main.MotherActivity
+import app.ui.main.MotherActivityVideo
 import app.ui.main.fragments.browser.webengine.M3U8InfoExtractor.InfoCallback
 import app.ui.main.fragments.downloads.intercepter.SharedVideoURLIntercept
 import com.aio.R
@@ -45,7 +45,7 @@ class ExtractedLinksAdapter(
 	private val logger = LogHelperUtils.from(javaClass)
 
 	/**
-	 * Weak reference to the parent [MotherActivity] from the [WebViewEngine].
+	 * Weak reference to the parent [MotherActivityVideo] from the [WebViewEngine].
 	 * Helps prevent memory leaks by avoiding direct strong references to the activity.
 	 */
 	private val safeMotherActivityRef = WeakReference(webviewEngine.safeMotherActivityRef).get()
@@ -125,7 +125,7 @@ class ExtractedLinksAdapter(
 		private val webviewEngine: WebViewEngine,
 		private val position: Int,
 		private val layoutView: View,
-		private val safeMotherActivity: MotherActivity?
+		private val safeMotherActivity: MotherActivityVideo?
 	) {
 		private val logger = LogHelperUtils.from(javaClass)
 		private val m3U8InfoExtractor = M3U8InfoExtractor()
@@ -376,7 +376,7 @@ class ExtractedLinksAdapter(
 						// Multi-resolution: show shared intercept dialog
 						executeOnMainThread {
 							SharedVideoURLIntercept(
-								baseActivity = safeMotherActivity,
+								baseActivityVideo = safeMotherActivity,
 								userGivenVideoInfo = VideoInfo(
 									videoTitle = videoTitle,
 									videoUrlReferer = currentWebUrl,
@@ -394,7 +394,7 @@ class ExtractedLinksAdapter(
 							logger.d("Showing single-resolution M3U8 download prompt")
 							extractedLinksDialog.close()
 							SingleResolutionPrompter(
-								baseActivity = safeMotherActivity,
+								baseActivityVideo = safeMotherActivity,
 								singleResolutionName = videoUrlInfo.fileResolution,
 								extractedVideoLink = videoUrlInfo.fileUrl,
 								thumbnailUrlProvided = currentWebpageVideoThumb.ifEmpty { null },

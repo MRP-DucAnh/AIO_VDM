@@ -16,7 +16,7 @@ import app.core.engines.settings.AIOSettings.Companion.PRIVATE_FOLDER
 import app.core.engines.settings.AIOSettings.Companion.SYSTEM_GALLERY
 import app.core.engines.video_parser.parsers.SupportedURLs.isFacebookUrl
 import app.core.engines.video_parser.parsers.VideoThumbGrabber.startParsingVideoThumbUrl
-import app.ui.main.MotherActivity
+import app.ui.main.MotherActivityVideo
 import com.aio.R
 import lib.device.DateTimeUtils.formatVideoDuration
 import lib.device.DateTimeUtils.millisToDateTimeString
@@ -46,17 +46,17 @@ import java.io.File
 import java.lang.ref.WeakReference
 
 class RegularDownloadPrompter(
-	private val motherActivity: MotherActivity,
-	private val singleResolutionName: String,
-	private val extractedVideoLink: String,
-	private val currentWebUrl: String? = null,
-	private val videoCookie: String? = null,
-	private var videoTitle: String? = null,
-	private val videoUrlReferer: String? = null,
-	private val isFromSocialMedia: Boolean = false,
-	private val dontParseFBTitle: Boolean = false,
-	private val thumbnailUrlProvided: String? = null,
-	private val videoFileDuration: Long = 0L
+    private val motherActivity: MotherActivityVideo,
+    private val singleResolutionName: String,
+    private val extractedVideoLink: String,
+    private val currentWebUrl: String? = null,
+    private val videoCookie: String? = null,
+    private var videoTitle: String? = null,
+    private val videoUrlReferer: String? = null,
+    private val isFromSocialMedia: Boolean = false,
+    private val dontParseFBTitle: Boolean = false,
+    private val thumbnailUrlProvided: String? = null,
+    private val videoFileDuration: Long = 0L
 ) {
 	private val logger = LogHelperUtils.from(javaClass)
 	private val safeMotherActivity = WeakReference(motherActivity).get()

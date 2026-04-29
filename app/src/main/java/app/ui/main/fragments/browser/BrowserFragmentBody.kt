@@ -11,8 +11,8 @@ import app.core.AIOKeyStrings.DONT_PARSE_URL_ANYMORE
 import app.core.engines.video_parser.parsers.SupportedURLs.isSocialMediaUrl
 import app.core.engines.video_parser.parsers.SupportedURLs.isYouTubeUrl
 import app.core.engines.video_parser.parsers.VideoThumbGrabber.startParsingVideoThumbUrl
-import app.ui.main.MotherActivity
-import app.ui.main.MotherActivity.SharedViewModel
+import app.ui.main.MotherActivityVideo
+import app.ui.main.MotherActivityVideo.SharedViewModel
 import app.ui.main.fragments.browser.webengine.SingleResolutionPrompter
 import app.ui.main.fragments.browser.webengine.WebViewEngine
 import app.ui.main.fragments.downloads.intercepter.SharedVideoURLIntercept
@@ -37,7 +37,7 @@ import lib.ui.builders.WaitingDialog
 class BrowserFragmentBody(val browserFragment: BrowserFragment) {
 
     /** Reference to the parent activity. */
-    val safeMotherActivityRef = browserFragment.safeBaseActivityRef!! as MotherActivity
+    val safeMotherActivityRef = browserFragment.safeBaseActivityVideoRef!! as MotherActivityVideo
 
     /** WebView engine responsible for rendering and managing webpages. */
     var webviewEngine = WebViewEngine(browserFragment)
@@ -163,7 +163,7 @@ class BrowserFragmentBody(val browserFragment: BrowserFragment) {
                     if (!resultedTitle.isNullOrEmpty() && !isParsingTitleFromUrlAborted) {
                         executeOnMainThread {
                             SingleResolutionPrompter(
-                                baseActivity = safeMotherActivityRef,
+                                baseActivityVideo = safeMotherActivityRef,
                                 singleResolutionName = getText(R.string.title_high_quality),
                                 extractedVideoLink = intentURL,
                                 currentWebUrl = intentURL,

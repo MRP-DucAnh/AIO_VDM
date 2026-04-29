@@ -7,15 +7,15 @@ import kotlinx.coroutines.*
  * Defines the core contract for base activities within the application.
  *
  * This interface outlines the essential lifecycle callbacks, UI management functions,
- * and utility methods that all activities extending from [BaseActivity] must implement or have access to.
+ * and utility methods that all activities extending from [BaseActivityVideo] must implement or have access to.
  * It enforces a consistent structure for handling layout inflation, lifecycle events,
  * navigation, permissions, and other common tasks, promoting a standardized and robust
  * architecture across the app's activities.
  *
- * Implementations of this interface, such as [BaseActivity], provide the concrete logic
+ * Implementations of this interface, such as [BaseActivityVideo], provide the concrete logic
  * for these operations, simplifying activity development and ensuring predictable behavior.
  *
- * @see BaseActivity
+ * @see BaseActivityVideo
  */
 interface BaseActivityInf {
 	
@@ -53,13 +53,13 @@ interface BaseActivityInf {
 	 * Called when the activity is no longer in the foreground, but is still visible (for example, if another
 	 * activity is placed on top of it). This corresponds to the `onPause` lifecycle event.
 	 *
-	 * Implement this method in [BaseActivity] to release any resources that are not needed while the
+	 * Implement this method in [BaseActivityVideo] to release any resources that are not needed while the
 	 * activity is paused, such as stopping animations or other ongoing actions that may consume CPU.
 	 * It's also a good place to commit unsaved changes to persistent data, as the process hosting your
 	 * activity can be killed after this method returns.
 	 *
 	 * @see onResumeActivity
-	 * @see BaseActivity.onPause
+	 * @see BaseActivityVideo.onPause
 	 */
 	fun onPauseActivity()
 	
@@ -194,9 +194,9 @@ interface BaseActivityInf {
 	/**
 	 * Retrieves the instance of the BaseActivity this interface is attached to.
 	 *
-	 * @return The [BaseActivity] instance, or null if the context is not available or not a BaseActivity.
+	 * @return The [BaseActivityVideo] instance, or null if the context is not available or not a BaseActivity.
 	 */
-	fun getActivity(): BaseActivity?
+	fun getActivity(): BaseActivityVideo?
 	
 	/**
 	 * Triggers a simple haptic feedback vibration.

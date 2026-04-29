@@ -14,7 +14,7 @@ import app.core.AIOApp.Companion.aioBookmark
 import app.core.AIOApp.Companion.aioTimer
 import app.core.AIOKeyStrings.ACTIVITY_RESULT_KEY
 import app.core.AIOTimer.AIOTimerListener
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import app.core.engines.browser.bookmarks.BookmarkModel
 import app.ui.main.fragments.browser.activities.BookmarkAdapter.OnBookmarkItemClick
 import app.ui.main.fragments.browser.activities.BookmarkAdapter.OnBookmarkItemLongClick
@@ -56,7 +56,7 @@ import java.lang.ref.WeakReference
  * - Uses BookmarkAdapter for efficient list view management
  * - Follows observer pattern for user interaction callbacks
  */
-class BookmarksActivity : BaseActivity(),
+class BookmarksActivityVideo : BaseActivityVideo(),
 	AIOTimerListener, OnBookmarkItemClick, OnBookmarkItemLongClick {
 
 	/** Logger instance for tracking activity lifecycle events and user interactions */

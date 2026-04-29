@@ -126,7 +126,7 @@ class SettingsOnClickLogic(settingsFragment: SettingsFragment) {
 		logger.d("Download Location Picker - Initiating directory selection dialog")
 		safeSettingsFragmentRef?.safeMotherActivityRef?.let { activity ->
 			// Create and display the download location selector
-			DownloadLocationSelector(baseActivity = activity).show()
+			DownloadLocationSelector(baseActivityVideo = activity).show()
 		} ?: logger.d("Picker failed: Activity null - Cannot show dialog without valid activity context")
 	}
 	
@@ -661,7 +661,7 @@ class SettingsOnClickLogic(settingsFragment: SettingsFragment) {
 		logger.d("Opening Advanced Settings For Browser")
 		this@SettingsOnClickLogic.safeSettingsFragmentRef?.safeMotherActivityRef
 			?.openActivity(
-				targetActivity = AdvBrowserSettingsActivity::class.java,
+				targetActivity = AdvBrowserSettingsActivityVideo::class.java,
 				shouldAnimate = true
 			) ?: run { logger.d("Failed: null activity") }
 	}
@@ -686,7 +686,7 @@ class SettingsOnClickLogic(settingsFragment: SettingsFragment) {
 	fun openUserFeedbackActivity() {
 		logger.d("Opening User Feedback Activity")
 		safeSettingsFragmentRef?.safeMotherActivityRef?.openActivity(
-			UserFeedbackActivity::class.java, shouldAnimate = false
+			UserFeedbackActivityVideo::class.java, shouldAnimate = false
 		) ?: run { logger.d("Failed: null activity") }
 	}
 	
@@ -695,7 +695,7 @@ class SettingsOnClickLogic(settingsFragment: SettingsFragment) {
 	 */
 	fun openApplicationInformation() {
 		logger.d("Opening Application Info in system settings")
-		val safeBaseActivityRef = this@SettingsOnClickLogic.safeSettingsFragmentRef?.safeBaseActivityRef
+		val safeBaseActivityRef = this@SettingsOnClickLogic.safeSettingsFragmentRef?.safeBaseActivityVideoRef
 		safeBaseActivityRef?.openAppInfoSetting() ?: run { logger.d("Failed: null activity") }
 	}
 	
@@ -704,7 +704,7 @@ class SettingsOnClickLogic(settingsFragment: SettingsFragment) {
 	 */
 	fun showPrivacyPolicyActivity() {
 		logger.d("Opening Privacy Policy in browser")
-		val safeBaseActivityRef = this@SettingsOnClickLogic.safeSettingsFragmentRef?.safeBaseActivityRef
+		val safeBaseActivityRef = this@SettingsOnClickLogic.safeSettingsFragmentRef?.safeBaseActivityVideoRef
 		safeBaseActivityRef?.let { activityRef ->
 			try {
 				val urlResId = R.string.text_aio_official_privacy_policy_url
@@ -725,7 +725,7 @@ class SettingsOnClickLogic(settingsFragment: SettingsFragment) {
 	 */
 	fun showTermsConditionActivity() {
 		logger.d("Opening Terms & Conditions in browser")
-		val safeBaseActivityRef = this@SettingsOnClickLogic.safeSettingsFragmentRef?.safeBaseActivityRef
+		val safeBaseActivityRef = this@SettingsOnClickLogic.safeSettingsFragmentRef?.safeBaseActivityVideoRef
 		safeBaseActivityRef?.let { activityRef ->
 			try {
 				val urlResId = R.string.text_aio_official_terms_conditions_url
@@ -747,7 +747,7 @@ class SettingsOnClickLogic(settingsFragment: SettingsFragment) {
 	 */
 	fun checkForNewApkVersion() {
 		logger.d("Check for APK update")
-		this@SettingsOnClickLogic.safeSettingsFragmentRef?.safeBaseActivityRef?.let { activityRef ->
+		this@SettingsOnClickLogic.safeSettingsFragmentRef?.safeBaseActivityVideoRef?.let { activityRef ->
 			ThreadsUtility.executeInBackground(codeBlock = {
 				var waitingDialog: WaitingDialog? = null
 				ThreadsUtility.executeOnMain {
@@ -813,7 +813,7 @@ class SettingsOnClickLogic(settingsFragment: SettingsFragment) {
 	 */
 	fun restartApplication() {
 		logger.d("Show restart dialog")
-		this@SettingsOnClickLogic.safeSettingsFragmentRef?.safeBaseActivityRef?.let { safeMotherActivityRef ->
+		this@SettingsOnClickLogic.safeSettingsFragmentRef?.safeBaseActivityVideoRef?.let { safeMotherActivityRef ->
 			val msgResId = R.string.text_cation_msg_of_restarting_application
 			getMessageDialog(
 				baseActivityInf = safeMotherActivityRef,

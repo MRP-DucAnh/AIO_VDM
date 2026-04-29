@@ -6,7 +6,7 @@ import android.text.method.LinkMovementMethod
 import android.widget.TextView
 import app.core.engines.downloader.DownloadDataModel
 import app.core.engines.downloader.DownloadInfoHTMLUtils.buildDownloadInfoHtmlString
-import app.ui.main.MotherActivity
+import app.ui.main.MotherActivityVideo
 import com.aio.R
 import lib.process.SimpleTimerUtils
 import lib.ui.builders.DialogBuilder
@@ -18,7 +18,7 @@ import java.lang.ref.WeakReference
  *
  * @param motherActivity The reference to the host activity to create UI elements.
  */
-class DownloadInfoTracker(motherActivity: MotherActivity?) {
+class DownloadInfoTracker(motherActivity: MotherActivityVideo?) {
     
     /** Weak reference to the host activity to avoid memory leaks */
     private val safeMotherActivityRef = WeakReference(motherActivity).get()

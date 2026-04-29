@@ -1,7 +1,7 @@
 package app.ui.main.guides
 
 import android.view.View
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import com.aio.R
 import lib.process.LogHelperUtils
 import lib.ui.ViewUtility.setViewOnClickListener
@@ -15,13 +15,13 @@ import java.lang.ref.WeakReference
  * the process of downloading YouTube content with the AIO App. It safely references
  * the hosting activity, handles dialog lifecycle events, and manages user interactions.
  *
- * @param baseActivity The parent activity hosting this guide dialog.
+ * @param baseActivityVideo The parent activity hosting this guide dialog.
  */
-class YTDownloadGuide(private val baseActivity: BaseActivity?) {
+class YTDownloadGuide(private val baseActivityVideo: BaseActivityVideo?) {
 	private val logger = LogHelperUtils.from(javaClass)
 
 	// Holds a safe reference to the parent activity to prevent memory leaks.
-	private val safeBaseActivityRef = WeakReference(baseActivity).get()
+	private val safeBaseActivityRef = WeakReference(baseActivityVideo).get()
 
 	// Builds and manages the tutorial dialog.
 	private val dialogBuilder: DialogBuilder = DialogBuilder(safeBaseActivityRef)

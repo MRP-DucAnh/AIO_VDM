@@ -2,7 +2,7 @@ package app.ui.main.fragments.browser.webengine
 
 import android.view.View
 import app.core.AIOApp.Companion.IS_ULTIMATE_VERSION_UNLOCKED
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import app.core.engines.video_parser.parsers.SupportedURLs.isYouTubeUrl
 import app.ui.main.guides.GuidePlatformPicker
 import com.aio.R
@@ -19,16 +19,16 @@ import java.lang.ref.WeakReference
  * - If the app is not in the ultimate version and the URL is a YouTube URL, the guide is not shown.
  * - Otherwise, the dialog presents a button to open the `GuidePlatformPicker` for manual help.
  *
- * @property baseActivity The activity context used for showing the dialog.
+ * @property baseActivityVideo The activity context used for showing the dialog.
  * @property webviewEngine The current instance of [WebViewEngine] tied to the web session.
  */
 class NoVideoFoundDialog(
-	val baseActivity: BaseActivity,
-	val webviewEngine: WebViewEngine
+    val baseActivityVideo: BaseActivityVideo,
+    val webviewEngine: WebViewEngine
 ) {
 	
 	/** A weak reference to avoid leaking the activity context. */
-	private val safeBaseActivity = WeakReference(baseActivity).get()
+	private val safeBaseActivity = WeakReference(baseActivityVideo).get()
 	
 	/** Builder instance for constructing and controlling the dialog. */
 	private val dialogBuilder: DialogBuilder = DialogBuilder(safeBaseActivity)

@@ -6,7 +6,7 @@
 	android:layout_height="match_parent"
 	android:background="@drawable/ic_background_gradient"
 	android:orientation="vertical"
-	tools:context="app.ui.others.information.UserFeedbackActivity"
+	tools:context="app.ui.others.information.UserFeedbackActivityVideo"
 	tools:ignore="UseCompatTextViewDrawableXml,UseAppTint"
 	>
 	

@@ -101,7 +101,7 @@ import kotlin.toString
  * @see LanguageAwareActivity For localization and language switching capabilities
  * @see BaseActivityInf For the interface defining common activity operations
  */
-abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf {
+abstract class BaseActivityVideo : LocaleActivityImpl(), BaseActivityInf {
 	
 	/**
 	 * Logger instance for debugging, tracing lifecycle events, and monitoring application behavior.
@@ -122,7 +122,7 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf {
 	 *
 	 * @see WeakReference For the Java weak reference mechanism used
 	 */
-	private var weakReferenceOfActivity: WeakReference<BaseActivity>? = null
+	private var weakReferenceOfActivity: WeakReference<BaseActivityVideo>? = null
 	
 	val activityScope get() = lifecycleScope
 	
@@ -417,7 +417,7 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf {
 			// Register base-activity at download UI manager for proper UI updates
 			// Ensures download progress and status are properly displayed
 			logger.d("Registering base-activity at download ui manager for UI coordination")
-			(activity as? MotherActivity)?.let { motherActivity ->
+			(activity as? MotherActivityVideo)?.let { motherActivity ->
 				downloadSystem.downloadsUIManager.safeMotherActivity = motherActivity
 			}
 			
@@ -484,7 +484,7 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf {
 			vibrator?.cancel()
 		}
 		
-		if (getActivity() as? MotherActivity != null) {
+		if (getActivity() as? MotherActivityVideo != null) {
 			val downloadUIManager = downloadSystem.downloadsUIManager
 			downloadUIManager.safeMotherActivity = null
 		}
@@ -1016,7 +1016,7 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf {
 	 *         is not currently active (destroyed or not initialized). Callers should
 	 *         always check for null before using the returned activity.
 	 */
-	override fun getActivity(): BaseActivity? {
+	override fun getActivity(): BaseActivityVideo? {
 		logger.d("getActivity() called — returning current activity reference")
 		return weakReferenceOfActivity?.get()
 	}
@@ -1201,7 +1201,7 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf {
 						logger.d("Delayed permission check triggered after 1000ms")
 						
 						// Skip permission check for OpeningActivity to avoid overwhelming new users
-						if (activity is OpeningActivity) {
+						if (activity is OpeningActivityVideo) {
 							logger.d(
 								"Activity is OpeningActivity — " +
 									"skipping permission request to improve first-run experience"
@@ -1561,7 +1561,7 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf {
 	 * to avoid annoying users and appears at appropriate times.
 	 *
 	 * @see isBatteryOptimizationIgnored For checking current battery optimization status
-	 * @see MotherActivity The main activity context required for showing the dialog
+	 * @see MotherActivityVideo The main activity context required for showing the dialog
 	 */
 	fun requestForDisablingBatteryOptimization() {
 		logger.d("requestForDisablingBatteryOptimization() called")
@@ -1581,7 +1581,7 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf {
 		}
 		
 		// Guard clause: Only show in main activity context for proper UI presentation
-		if (getActivity() !is MotherActivity) {
+		if (getActivity() !is MotherActivityVideo) {
 			logger.d("Skipping — current activity is not MotherActivity")
 			return
 		}
@@ -1711,10 +1711,10 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf {
 	 * update package if available. It efficiently uses background threads for CPU-intensive
 	 * operations like hash calculation while maintaining responsive UI performance.
 	 *
-	 * @param baseActivity The activity context used for UI operations and dialog presentation.
+	 * @param baseActivityVideo The activity context used for UI operations and dialog presentation.
 	 *        Required for showing the update dialog to users when a valid update is found.
 	 */
-	private suspend fun performUpdateCheck(baseActivity: BaseActivity) {
+	private suspend fun performUpdateCheck(baseActivityVideo: BaseActivityVideo) {
 		val updater = AIOUpdater().apply { logger.d("AIOUpdater initialized") }
 		
 		// Early return if no update available to avoid unnecessary processing
@@ -1733,7 +1733,7 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf {
 		
 		// If valid update found, show the update dialog to user on main thread
 		updateResult?.let { (apkFile, updateInfo) ->
-			showUpdateDialog(baseActivity, apkFile, updateInfo)
+			showUpdateDialog(baseActivityVideo, apkFile, updateInfo)
 		}
 	}
 	
@@ -1854,7 +1854,7 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf {
 	 *        and other details to present to the user for update decision.
 	 */
 	private suspend fun showUpdateDialog(
-		activity: BaseActivity,
+		activity: BaseActivityVideo,
 		apkFile: File, updateInfo: AIOUpdater.UpdateInfo
 	) {
 		ThreadsUtility.executeOnMain(codeBlock = {
@@ -1866,7 +1866,7 @@ abstract class BaseActivity : LocaleActivityImpl(), BaseActivityInf {
 			}
 			
 			// Only show dialog on MotherActivity (main activity) for consistent UX
-			if (activity is MotherActivity) {
+			if (activity is MotherActivityVideo) {
 				UpdaterDialog(
 					weakReferenceOfActivity = WeakReference(activity),
 					latestVersionApkFile = apkFile,

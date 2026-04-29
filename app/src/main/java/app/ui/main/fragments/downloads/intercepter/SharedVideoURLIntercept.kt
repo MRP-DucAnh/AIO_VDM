@@ -34,28 +34,28 @@ import java.lang.ref.*
  * automatically detecting supported formats, retrieving metadata, and offering
  * download or playback options to the user.
  *
- * @param baseActivity The [BaseActivity] context used to manage UI components, dialogs, and lifecycle events.
+ * @param baseActivityVideo The [BaseActivityVideo] context used to manage UI components, dialogs, and lifecycle events.
  * @param userGivenVideoInfo Optional pre-filled [VideoInfo] containing basic metadata such as title or duration.
  * @param onOpeningBuiltInBrowser Optional callback invoked when the user chooses to open the video link in browser.
  * @param closeActivityOnSuccessfulDownload A flag indicating whether the current activity should automatically close
  *                                          once a download is successfully initiated or completed.
  */
 class SharedVideoURLIntercept(
-	private val baseActivity: BaseActivity?,
-	private val userGivenVideoInfo: VideoInfo? = null,
-	private val onOpeningBuiltInBrowser: (() -> Unit?)? = null,
-	private val closeActivityOnSuccessfulDownload: Boolean = false
+    private val baseActivityVideo: BaseActivityVideo?,
+    private val userGivenVideoInfo: VideoInfo? = null,
+    private val onOpeningBuiltInBrowser: (() -> Unit?)? = null,
+    private val closeActivityOnSuccessfulDownload: Boolean = false
 ) {
 	
 	/** Logger instance for recording debug and error messages related to video interception. */
 	private val logger = LogHelperUtils.from(javaClass)
 	
 	/**
-	 * Holds a weak reference to the associated [BaseActivity] to prevent memory leaks.
+	 * Holds a weak reference to the associated [BaseActivityVideo] to prevent memory leaks.
 	 * This ensures the class can access context-related resources safely without
 	 * keeping the activity in memory unnecessarily.
 	 */
-	private var safeBaseActivityRef = WeakReference(baseActivity).get()
+	private var safeBaseActivityVideoRef = WeakReference(baseActivityVideo).get()
 	
 	/**
 	 * Flag indicating whether a video interception or extraction process
@@ -135,7 +135,7 @@ class SharedVideoURLIntercept(
 		
 		interceptWaitingDialog = WaitingDialog(
 			isCancelable = false,
-			baseActivityInf = safeBaseActivityRef,
+			baseActivityInf = safeBaseActivityVideoRef,
 			loadingMessage = getText(R.string.title_analyzing_url_please_wait),
 			dialogCancelListener = {
 				logger.d("User canceled the waiting dialog manually")
@@ -213,9 +213,9 @@ class SharedVideoURLIntercept(
 					logger.d("URL not supported by yt-dlp: $targetVideoUrl")
 					ThreadsUtility.executeOnMain {
 						waitingDialog.close()
-						safeBaseActivityRef?.doSomeVibration(50)
+						safeBaseActivityVideoRef?.doSomeVibration(50)
 						showToast(
-							activityInf = safeBaseActivityRef,
+							activityInf = safeBaseActivityVideoRef,
 							msgId = R.string.title_unsupported_video_link
 						)
 						openInBuiltInBrowser(targetVideoUrl)
@@ -249,7 +249,7 @@ class SharedVideoURLIntercept(
 	private suspend fun startAnalyzingVideoUrl(videoUrl: String) {
 		logger.d("Analyzing video URL: $videoUrl")
 		
-		safeBaseActivityRef?.let { safeBaseActivityRef ->
+		safeBaseActivityVideoRef?.let { safeBaseActivityRef ->
 			// Step 1: Handle YouTube URLs separately
 			val ytStreamInfo = if (isYouTubeUrl(videoUrl)) {
 				logger.d("YouTube URL detected — fetching stream info")
@@ -316,7 +316,7 @@ class SharedVideoURLIntercept(
 					// Step 6: Show available resolutions in picker dialog
 					logger.d("Displaying resolution picker — total formats: ${videoInfo.videoFormats.size}")
 					VideoResolutionPicker(
-						baseActivity = safeBaseActivityRef,
+						baseActivityVideo = safeBaseActivityRef,
 						videoInfo = videoInfo,
 						onDialogClose = { safelyCloseBaseActivity() },
 						closeActivityOnSuccessfulDownload = closeActivityOnSuccessfulDownload,
@@ -426,7 +426,7 @@ class SharedVideoURLIntercept(
 		
 		// Step 1: Build and display the message dialog
 		showMessageDialog(
-			baseActivityInf = safeBaseActivityRef,
+			baseActivityInf = safeBaseActivityVideoRef,
 			isNegativeButtonVisible = false,
 			messageTextViewCustomize = {
 				it.setText(msgResId)
@@ -451,7 +451,7 @@ class SharedVideoURLIntercept(
 	 * Attempts to open the provided URL using the app's built-in browser.
 	 *
 	 * This method first verifies the validity of the URL, then checks whether the current
-	 * activity context supports in-app browser operations (i.e., is a [MotherActivity]).
+	 * activity context supports in-app browser operations (i.e., is a [MotherActivityVideo]).
 	 * If so, it opens the target URL in a new browser tab within the app’s internal webview.
 	 *
 	 * In case of any unexpected errors or if the internal browser cannot be used, it
@@ -468,10 +468,10 @@ class SharedVideoURLIntercept(
 	private fun openInBuiltInBrowser(targetUrl: String) {
 		logger.d("Request received to open URL in built-in browser: $targetUrl")
 		
-		safeBaseActivityRef?.let { safeBaseActivityRef ->
+		safeBaseActivityVideoRef?.let { safeBaseActivityRef ->
 			try {
 				// Step 1: Ensure the activity is capable of handling browser operations
-				if (safeBaseActivityRef is MotherActivity) {
+				if (safeBaseActivityRef is MotherActivityVideo) {
 					logger.d("Activity confirmed as MotherActivity, proceeding with in-app browser launch")
 					
 					val browserFragment = safeBaseActivityRef.browserFragment
@@ -523,10 +523,10 @@ class SharedVideoURLIntercept(
 	private fun openInSystemBrowser(urlFromIntent: String) {
 		logger.d("Attempting to open URL in system browser: $urlFromIntent")
 		
-		openLinkInSystemBrowser(urlFromIntent, safeBaseActivityRef) {
+		openLinkInSystemBrowser(urlFromIntent, safeBaseActivityVideoRef) {
 			logger.d("System browser failed to open URL, showing error toast")
 			showToast(
-				activityInf = safeBaseActivityRef,
+				activityInf = safeBaseActivityVideoRef,
 				msgId = R.string.title_failed_open_the_video
 			)
 		}
@@ -544,9 +544,9 @@ class SharedVideoURLIntercept(
 	 */
 	private fun showInvalidUrlToast() {
 		logger.d("Displaying invalid URL toast to user")
-		safeBaseActivityRef?.doSomeVibration(50)
+		safeBaseActivityVideoRef?.doSomeVibration(50)
 		showToast(
-			activityInf = safeBaseActivityRef,
+			activityInf = safeBaseActivityVideoRef,
 			msgId = R.string.title_invalid_url
 		)
 	}
@@ -577,7 +577,7 @@ class SharedVideoURLIntercept(
 	}
 	
 	/**
-	 * Safely closes the current activity if it’s an [IntentInterceptActivity].
+	 * Safely closes the current activity if it’s an [IntentInterceptActivityVideo].
 	 *
 	 * This ensures that the interception flow terminates gracefully without
 	 * leaving unnecessary activities in the back stack. It executes on the
@@ -589,10 +589,10 @@ class SharedVideoURLIntercept(
 		executeOnMainThread {
 			try {
 				// Close only if the base activity was started as an intercept intent
-				val shouldClose = safeBaseActivityRef is IntentInterceptActivity
+				val shouldClose = safeBaseActivityVideoRef is IntentInterceptActivityVideo
 				if (shouldClose) {
 					logger.d("Base activity is IntentInterceptActivity — finishing activity")
-					safeBaseActivityRef?.finish()
+					safeBaseActivityVideoRef?.finish()
 				} else {
 					logger.d("Base activity is not an intercept activity — skipping close")
 				}

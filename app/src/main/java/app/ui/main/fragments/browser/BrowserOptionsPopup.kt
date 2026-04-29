@@ -10,11 +10,11 @@ import androidx.core.net.toUri
 import app.core.AIOApp.Companion.aioBookmark
 import app.core.engines.browser.bookmarks.BookmarkModel
 import app.core.engines.video_parser.dialogs.VideoLinkPasteEditor
-import app.ui.main.MotherActivity
-import app.ui.main.fragments.browser.activities.BookmarksActivity
-import app.ui.main.fragments.browser.activities.HistoryActivity
+import app.ui.main.MotherActivityVideo
+import app.ui.main.fragments.browser.activities.BookmarksActivityVideo
+import app.ui.main.fragments.browser.activities.HistoryActivityVideo
 import app.ui.main.guides.GuidePlatformPicker
-import app.ui.others.information.UserFeedbackActivity
+import app.ui.others.information.UserFeedbackActivityVideo
 import com.aio.R
 import lib.networks.URLUtility
 import lib.networks.URLUtilityKT.normalizeEncodedUrl
@@ -36,7 +36,7 @@ import java.util.Date
 class BrowserOptionsPopup(val browserFragment: BrowserFragment) {
 
 	// Safe reference to the parent activity hosting the fragment
-	private val safeMotherActivityRef = browserFragment.safeBaseActivityRef!! as MotherActivity
+	private val safeMotherActivityRef = browserFragment.safeBaseActivityVideoRef!! as MotherActivityVideo
 
 	// Builder instance used to show and configure the popup UI
 	private lateinit var popupBuilder: PopupBuilder
@@ -298,7 +298,7 @@ class BrowserOptionsPopup(val browserFragment: BrowserFragment) {
 	 */
 	private fun openBookmarkActivity() {
 		close()
-		val input = Intent(safeMotherActivityRef, BookmarksActivity::class.java)
+		val input = Intent(safeMotherActivityRef, BookmarksActivityVideo::class.java)
 		safeMotherActivityRef.resultLauncher.launch(input)
 	}
 
@@ -307,7 +307,7 @@ class BrowserOptionsPopup(val browserFragment: BrowserFragment) {
 	 */
 	private fun openHistoryActivity() {
 		close()
-		val input = Intent(safeMotherActivityRef, HistoryActivity::class.java)
+		val input = Intent(safeMotherActivityRef, HistoryActivityVideo::class.java)
 		safeMotherActivityRef.resultLauncher.launch(input)
 	}
 
@@ -316,7 +316,7 @@ class BrowserOptionsPopup(val browserFragment: BrowserFragment) {
 	 */
 	private fun openFeedbackActivity() {
 		close()
-		safeMotherActivityRef.openActivity(UserFeedbackActivity::class.java, false)
+		safeMotherActivityRef.openActivity(UserFeedbackActivityVideo::class.java, false)
 	}
 
 	/**

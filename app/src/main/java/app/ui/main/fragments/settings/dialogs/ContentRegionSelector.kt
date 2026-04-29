@@ -18,10 +18,10 @@ import java.lang.ref.*
  * It dynamically generates radio buttons for all supported regions and
  * applies the selected region to the application settings.
  */
-class ContentRegionSelector(val baseActivity: BaseActivity) {
+class ContentRegionSelector(val baseActivityVideo: BaseActivityVideo) {
 	
 	private val logger = LogHelperUtils.from(javaClass)
-	private val weakReferenceOfActivity = WeakReference(baseActivity)
+	private val weakReferenceOfActivity = WeakReference(baseActivityVideo)
 	private val safeBaseActivityRef get() = weakReferenceOfActivity.get()
 	
 	private val contentRegionSelectionDialog by lazy {

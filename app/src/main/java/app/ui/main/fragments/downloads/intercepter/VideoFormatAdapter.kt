@@ -7,7 +7,7 @@ import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.TextView
 import app.core.AIOApp.Companion.IS_ULTIMATE_VERSION_UNLOCKED
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import app.core.engines.video_parser.parsers.SupportedURLs.isYouTubeUrl
 import app.core.engines.video_parser.parsers.VideoFormat
 import app.core.engines.video_parser.parsers.VideoFormatsUtils.cleanFileSize
@@ -26,23 +26,23 @@ import java.lang.ref.WeakReference
  * Each list item represents a specific video format (resolution, file size, etc.).
  * Selecting an item highlights it and triggers a callback to handle the selection.
  *
- * @param baseActivity Weak reference to the [BaseActivity] context.
+ * @param baseActivityVideo Weak reference to the [BaseActivityVideo] context.
  * @param videoInfo Metadata containing details about the video and its source URL.
  * @param videoFormats List of all available [VideoFormat] options.
  * @param onVideoFormatClick Callback executed when a user selects a format.
  */
 open class VideoFormatAdapter(
-	private val baseActivity: BaseActivity?,
-	private val videoInfo: VideoInfo,
-	private val videoFormats: List<VideoFormat>,
-	private val onVideoFormatClick: () -> Unit
+    private val baseActivityVideo: BaseActivityVideo?,
+    private val videoInfo: VideoInfo,
+    private val videoFormats: List<VideoFormat>,
+    private val onVideoFormatClick: () -> Unit
 ) : BaseAdapter() {
 
 	/** Logger instance for debugging and event tracking within the adapter */
 	private val logger = LogHelperUtils.from(javaClass)
 
 	/** Weak reference to the activity to prevent memory leaks */
-	private val safeBaseActivityRef = WeakReference(baseActivity).get()
+	private val safeBaseActivityRef = WeakReference(baseActivityVideo).get()
 
 	/** Stores the index of the currently selected video format in the list */
 	open var selectedPosition: Int = -1

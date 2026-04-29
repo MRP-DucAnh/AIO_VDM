@@ -15,9 +15,9 @@ import android.widget.LinearLayout.LayoutParams.MATCH_PARENT
 import app.core.AIOApp.Companion.aioFavicons
 import app.core.AIOApp.Companion.aioHistory
 import app.core.AIOApp.Companion.aioSettings
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import app.core.engines.browser.history.HistoryModel
-import app.ui.main.MotherActivity
+import app.ui.main.MotherActivityVideo
 import com.aio.R
 import com.bumptech.glide.Glide
 import lib.networks.URLUtilityKT.normalizeEncodedUrl
@@ -181,7 +181,7 @@ class BrowserWebChromeClient(val webviewEngine: WebViewEngine) : WebChromeClient
 
 		try {
 			// Get a reference to the hosting MotherActivity
-			val motherActivity = webView?.context as MotherActivity
+			val motherActivity = webView?.context as MotherActivityVideo
 
 			// Process the title only if it is not null
 			title?.let { titleText ->
@@ -279,9 +279,9 @@ class BrowserWebChromeClient(val webviewEngine: WebViewEngine) : WebChromeClient
 			fileUploadCallback?.onReceiveValue(null)
 			fileUploadCallback = filePathCallback
 
-			val baseActivity = webView?.context as BaseActivity
-			baseActivity.scopedStorageHelper?.openFilePicker(allowMultiple = true)
-			baseActivity.scopedStorageHelper?.onFileSelected = { _, files ->
+			val baseActivityVideo = webView?.context as BaseActivityVideo
+			baseActivityVideo.scopedStorageHelper?.openFilePicker(allowMultiple = true)
+			baseActivityVideo.scopedStorageHelper?.onFileSelected = { _, files ->
 				val uris = files.map { it.uri }.toTypedArray()
 				if (uris.isEmpty()) fileUploadCallback?.onReceiveValue(null)
 				else fileUploadCallback?.onReceiveValue(uris)

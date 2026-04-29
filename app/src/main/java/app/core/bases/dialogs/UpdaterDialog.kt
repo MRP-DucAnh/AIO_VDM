@@ -5,7 +5,7 @@ import android.text.Html.FROM_HTML_MODE_COMPACT
 import android.text.method.LinkMovementMethod
 import android.view.View
 import android.widget.TextView
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import app.core.engines.updater.AIOUpdater.UpdateInfo
 import com.aio.R
 import lib.device.ShareUtility.openApkFile
@@ -40,9 +40,9 @@ import java.lang.ref.WeakReference
  * which could confuse users and create inconsistent application state.
  */
 class UpdaterDialog(
-	private val weakReferenceOfActivity: WeakReference<BaseActivity>?,
-	private val latestVersionApkFile: File,
-	private val versionInfo: UpdateInfo
+    private val weakReferenceOfActivity: WeakReference<BaseActivityVideo>?,
+    private val latestVersionApkFile: File,
+    private val versionInfo: UpdateInfo
 ) {
 
 	/**
@@ -58,7 +58,7 @@ class UpdaterDialog(
 	 * (during memory pressure or configuration changes). This property acts as a safe gateway
 	 * that automatically handles the null case without crashing.
 	 */
-	private val safeBaseActivityRef: BaseActivity?
+	private val safeBaseActivityVideoRef: BaseActivityVideo?
 		get() = weakReferenceOfActivity?.get()
 
 	/**
@@ -68,7 +68,7 @@ class UpdaterDialog(
 	 * across the app and abstracts away the complexity of DialogFragment management,
 	 * especially important for handling orientation changes properly.
 	 */
-	private val dialogBuilder: DialogBuilder = DialogBuilder(safeBaseActivityRef)
+	private val dialogBuilder: DialogBuilder = DialogBuilder(safeBaseActivityVideoRef)
 
 	/**
 	 * Initializes the dialog content and behavior when the object is created.
@@ -80,7 +80,7 @@ class UpdaterDialog(
 	 * 4. Sets up click handling for the installation action
 	 */
 	init {
-		safeBaseActivityRef?.let { activity ->
+		safeBaseActivityVideoRef?.let { activity ->
 			logger.d("Building update dialog for version ${versionInfo.latestVersion}")
 
 			// Non-cancelable prevents users from accidentally dismissing during critical update flow
@@ -128,11 +128,11 @@ class UpdaterDialog(
 				logger.d("User initiated update installation")
 				close() // Clean up dialog before proceeding to system installer
 
-				safeBaseActivityRef?.let { activity ->
+				safeBaseActivityVideoRef?.let { activity ->
 					// Generate content URI through FileProvider for secure APK access
 					val authority = "${activity.packageName}.provider"
 					openApkFile(activity, latestVersionApkFile, authority)
-				} ?: showToast(safeBaseActivityRef, msgId = R.string.title_something_went_wrong)
+				} ?: showToast(safeBaseActivityVideoRef, msgId = R.string.title_something_went_wrong)
 			}
 		}
 	}

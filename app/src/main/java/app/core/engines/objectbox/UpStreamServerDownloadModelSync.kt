@@ -17,7 +17,7 @@ class UpStreamServerDownloadModelSync {
 	 */
 	private val logger = LogHelperUtils.from(javaClass)
 	
-	fun uploadUserDetailsToSever(baseActivity: BaseActivity) {
+	fun uploadUserDetailsToSever(baseActivityVideo: BaseActivityVideo) {
 		ThreadsUtility.executeInBackground(codeBlock = {
 			AIOApp.downloadSystem.prefetchedEntireDownloadModels.ifEmpty {
 				DownloadModelsDBManager.getAllDownloadsWithRelationsAssembled()
@@ -29,7 +29,7 @@ class UpStreamServerDownloadModelSync {
 		})
 	}
 	
-	fun downStreamSyncFromServer(baseActivity: BaseActivity) {
+	fun downStreamSyncFromServer(baseActivityVideo: BaseActivityVideo) {
 		ThreadsUtility.executeInBackground(
 			timeOutInMilli = 5000,
 			codeBlock = {
@@ -59,8 +59,8 @@ class UpStreamServerDownloadModelSync {
 						logger.d("No DownloadModel found on server for this installation")
 					}
 					AIOApp.downloadSystem.parseDownloadDataModelsAndSync(onComplete = {
-						if (baseActivity is MotherActivity) {
-							baseActivity.downloadFragment
+						if (baseActivityVideo is MotherActivityVideo) {
+							baseActivityVideo.downloadFragment
 								?.finishedTasksFragment
 								?.finishedTasksListAdapter
 								?.notifyDataSetChangedOnSort(true)

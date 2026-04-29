@@ -6,7 +6,7 @@
 	android:layout_height="match_parent"
 	android:background="@drawable/ic_background_gradient"
 	android:orientation="vertical"
-	tools:context="app.ui.main.fragments.settings.activities.browser.AdvBrowserSettingsActivity"
+	tools:context="app.ui.main.fragments.settings.activities.browser.AdvBrowserSettingsActivityVideo"
 	tools:ignore="UseCompatTextViewDrawableXml,UseAppTint,VisualLintBounds">
 
 	<!-- Top action bar with back button and title -->

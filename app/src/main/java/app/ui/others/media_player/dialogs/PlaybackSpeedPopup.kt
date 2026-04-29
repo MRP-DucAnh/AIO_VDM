@@ -5,7 +5,7 @@ import android.widget.CheckBox
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import app.ui.others.media_player.MediaPlayerActivity
+import app.ui.others.media_player.MediaPlayerActivityVideo
 import com.aio.R
 import com.aio.R.layout
 import lib.process.LogHelperUtils
@@ -13,7 +13,7 @@ import lib.ui.builders.PopupBuilder
 import java.lang.ref.WeakReference
 
 /**
- * Popup dialog for configuring playback speed in [MediaPlayerActivity].
+ * Popup dialog for configuring playback speed in [MediaPlayerActivityVideo].
  *
  * This class creates and manages a popup that allows users to select different
  * playback speed multipliers (0.25x to 2.0x) for media playback.
@@ -27,14 +27,14 @@ import java.lang.ref.WeakReference
  */
 @UnstableApi
 class PlaybackSpeedPopup(
-	private val mediaPlayerActivity: MediaPlayerActivity?,
-	private val anchorView: View
+    private val mediaPlayerActivity: MediaPlayerActivityVideo?,
+    private val anchorView: View
 ) {
 	/** Logger instance for debugging and tracking playback speed changes. */
 	private val logger = LogHelperUtils.from(javaClass)
 
 	/**
-	 * Weak reference to the associated [MediaPlayerActivity].
+	 * Weak reference to the associated [MediaPlayerActivityVideo].
 	 * Prevents memory leaks if the activity is destroyed.
 	 */
 	private val safePlayerActivityRef = WeakReference(mediaPlayerActivity).get()

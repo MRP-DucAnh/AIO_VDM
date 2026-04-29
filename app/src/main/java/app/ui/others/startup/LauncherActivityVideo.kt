@@ -4,14 +4,14 @@ import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
 import android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP
 import app.core.AIOApp.Companion.aioSettings
-import app.core.bases.BaseActivity
-import app.ui.main.MotherActivity
-import app.ui.others.information.UserFeedbackActivity
-import app.ui.others.information.UserFeedbackActivity.FROM_CRASH_HANDLER
-import app.ui.others.information.UserFeedbackActivity.WHERE_DIS_YOU_COME_FROM
+import app.core.bases.BaseActivityVideo
+import app.ui.main.MotherActivityVideo
+import app.ui.others.information.UserFeedbackActivityVideo
+import app.ui.others.information.UserFeedbackActivityVideo.FROM_CRASH_HANDLER
+import app.ui.others.information.UserFeedbackActivityVideo.WHERE_DIS_YOU_COME_FROM
 import lib.ui.ActivityAnimator.animActivityFade
 
-class LauncherActivity : BaseActivity() {
+class LauncherActivityVideo : BaseActivityVideo() {
 	
 	override fun onRenderingLayout(): Int {
 		return -1
@@ -33,7 +33,7 @@ class LauncherActivity : BaseActivity() {
 			
 			Intent(
 				activity,
-				UserFeedbackActivity::class.java
+				UserFeedbackActivityVideo::class.java
 			).apply {
 				flags = FLAG_ACTIVITY_CLEAR_TOP or FLAG_ACTIVITY_SINGLE_TOP
 				putExtra(
@@ -51,7 +51,7 @@ class LauncherActivity : BaseActivity() {
 		getActivity()?.let { activity ->
 			Intent(
 				activity,
-				MotherActivity::class.java
+				MotherActivityVideo::class.java
 			).apply {
 				flags = FLAG_ACTIVITY_CLEAR_TOP or FLAG_ACTIVITY_SINGLE_TOP
 				startActivity(this)
@@ -65,7 +65,7 @@ class LauncherActivity : BaseActivity() {
 		getActivity()?.let { activity ->
 			Intent(
 				activity,
-				OpeningActivity::class.java
+				OpeningActivityVideo::class.java
 			).apply {
 				flags = FLAG_ACTIVITY_CLEAR_TOP or FLAG_ACTIVITY_SINGLE_TOP
 				startActivity(this)

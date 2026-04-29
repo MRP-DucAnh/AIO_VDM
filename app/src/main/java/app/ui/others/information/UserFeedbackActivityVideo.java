@@ -2,7 +2,6 @@ package app.ui.others.information;
 
 import static android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP;
 import static android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP;
-import static app.core.AIOApp.INSTANCE;
 import static lib.device.DeviceInfoUtils.getDeviceInformation;
 import static lib.process.CommonTimeUtils.delay;
 import static lib.ui.MsgDialogUtils.showMessageDialog;
@@ -19,8 +18,8 @@ import androidx.appcompat.content.res.AppCompatResources;
 
 import com.aio.R;
 
-import app.core.bases.BaseActivity;
-import app.ui.main.MotherActivity;
+import app.core.bases.BaseActivityVideo;
+import app.ui.main.MotherActivityVideo;
 import lib.process.LogHelperUtils;
 import lib.ui.builders.DialogBuilder;
 
@@ -29,7 +28,7 @@ import lib.ui.builders.DialogBuilder;
  * Users can report problems such as app crashes, no sound in videos, etc.
  * The activity also collects user email and custom messages.
  */
-public class UserFeedbackActivity extends BaseActivity {
+public class UserFeedbackActivityVideo extends BaseActivityVideo {
 
 	public static final String WHERE_DIS_YOU_COME_FROM = "WHERE_DIS_YOU_COME_FROM";
 	public static final int FROM_CRASH_HANDLER = 12;
@@ -239,7 +238,7 @@ public class UserFeedbackActivity extends BaseActivity {
 
 				delay(200, () -> {
 					try {
-						Intent activityIntent = new Intent(getActivity(), MotherActivity.class);
+						Intent activityIntent = new Intent(getActivity(), MotherActivityVideo.class);
 						int flags = FLAG_ACTIVITY_CLEAR_TOP | FLAG_ACTIVITY_SINGLE_TOP;
 						activityIntent.setFlags(flags);
 						startActivity(activityIntent);

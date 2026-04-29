@@ -13,7 +13,7 @@
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
 	android:background="@drawable/ic_background_gradient"
-	tools:context="app.ui.others.media_player.MediaPlayerActivity"
+	tools:context="app.ui.others.media_player.MediaPlayerActivityVideo"
 	tools:ignore="UseAppTint">
 
 	<!-- ============================================================

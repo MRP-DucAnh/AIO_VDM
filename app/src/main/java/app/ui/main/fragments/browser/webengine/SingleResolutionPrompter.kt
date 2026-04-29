@@ -10,7 +10,7 @@ import app.core.AIOApp.Companion.IS_ULTIMATE_VERSION_UNLOCKED
 import app.core.AIOApp.Companion.aioFavicons
 import app.core.AIOApp.Companion.aioSettings
 import app.core.AIOApp.Companion.downloadSystem
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import app.core.engines.downloader.DownloadDataModel
 import app.core.engines.settings.AIOSettings.Companion.PRIVATE_FOLDER
 import app.core.engines.settings.AIOSettings.Companion.SYSTEM_GALLERY
@@ -18,7 +18,7 @@ import app.core.engines.video_parser.parsers.SupportedURLs.isFacebookUrl
 import app.core.engines.video_parser.parsers.VideoFormat
 import app.core.engines.video_parser.parsers.VideoInfo
 import app.core.engines.video_parser.parsers.VideoThumbGrabber.startParsingVideoThumbUrl
-import app.ui.others.information.IntentInterceptActivity
+import app.ui.others.information.IntentInterceptActivityVideo
 import com.aio.R
 import lib.device.DateTimeUtils.formatVideoDuration
 import lib.device.IntentUtility.openLinkInSystemBrowser
@@ -43,7 +43,7 @@ import java.lang.ref.WeakReference
  * A dialog prompter that shows single resolution download options for videos.
  * Handles video metadata display, thumbnail loading, and download initiation.
  *
- * @property baseActivity The parent activity reference
+ * @property baseActivityVideo The parent activity reference
  * @property isDialogCancelable Whether the dialog can be canceled by the user.
  * @property singleResolutionName The resolution name to display (e.g. "720p")
  * @property extractedVideoLink The direct video URL to download
@@ -59,25 +59,25 @@ import java.lang.ref.WeakReference
  * successful download or not.
  */
 class SingleResolutionPrompter(
-	private val baseActivity: BaseActivity,
-	private val isDialogCancelable: Boolean = true,
-	private val singleResolutionName: String,
-	private val extractedVideoLink: String,
-	private val currentWebUrl: String? = null,
-	private val videoCookie: String? = null,
-	private var videoTitle: String? = null,
-	private val videoUrlReferer: String? = null,
-	private val isSocialMediaUrl: Boolean = false,
-	private val dontParseFBTitle: Boolean = false,
-	private val thumbnailUrlProvided: String? = null,
-	private val isDownloadFromBrowser: Boolean = false,
-	private val closeActivityOnSuccessfulDownload: Boolean = false,
-	private val videoFileDuration: Long = 0L
+    private val baseActivityVideo: BaseActivityVideo,
+    private val isDialogCancelable: Boolean = true,
+    private val singleResolutionName: String,
+    private val extractedVideoLink: String,
+    private val currentWebUrl: String? = null,
+    private val videoCookie: String? = null,
+    private var videoTitle: String? = null,
+    private val videoUrlReferer: String? = null,
+    private val isSocialMediaUrl: Boolean = false,
+    private val dontParseFBTitle: Boolean = false,
+    private val thumbnailUrlProvided: String? = null,
+    private val isDownloadFromBrowser: Boolean = false,
+    private val closeActivityOnSuccessfulDownload: Boolean = false,
+    private val videoFileDuration: Long = 0L
 ) {
 	private val logger = LogHelperUtils.from(javaClass)
 
 	// Weak reference to prevent memory leaks
-	private val safeBaseActivity = WeakReference(baseActivity).get()
+	private val safeBaseActivity = WeakReference(baseActivityVideo).get()
 
 	// Dialog builder for the resolution prompt
 	private val dialogBuilder: DialogBuilder = DialogBuilder(safeBaseActivity)
@@ -495,7 +495,7 @@ class SingleResolutionPrompter(
 							close()
 
 							if (closeActivityOnSuccessfulDownload) {
-								baseActivity.closeActivityWithFadeAnimation(true)
+								baseActivityVideo.closeActivityWithFadeAnimation(true)
 							}
 						}
 					}
@@ -520,7 +520,7 @@ class SingleResolutionPrompter(
 		executeOnMainThread {
 			try {
 				// Special handling for IntentInterceptActivity
-				val condition = safeBaseActivity is IntentInterceptActivity
+				val condition = safeBaseActivity is IntentInterceptActivityVideo
 				if (condition) safeBaseActivity.finish()
 			} catch (error: Exception) {
 				logger.e("Error closing activity: ${error.message}", error)

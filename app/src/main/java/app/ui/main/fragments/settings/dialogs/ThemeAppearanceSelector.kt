@@ -4,7 +4,7 @@ import android.view.View
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import app.core.AIOApp.Companion.aioSettings
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import com.aio.R
 import lib.process.LogHelperUtils
 import lib.ui.builders.DialogBuilder
@@ -17,13 +17,13 @@ import java.lang.ref.WeakReference
  * Handles UI binding, persistence of selection, and optional callbacks
  * when a theme is applied. Keeps logs minimal but informative.
  */
-class ThemeAppearanceSelector(private val baseActivity: BaseActivity) {
+class ThemeAppearanceSelector(private val baseActivityVideo: BaseActivityVideo) {
 
 	/** Logger for short lifecycle tracking. */
 	private val logger = LogHelperUtils.from(javaClass)
 
 	/** Prevents memory leaks by holding a weak reference. */
-	private val safeBaseActivityRef by lazy { WeakReference(baseActivity).get() }
+	private val safeBaseActivityRef by lazy { WeakReference(baseActivityVideo).get() }
 
 	/** Builds the theme selection dialog with appropriate layout. */
 	private val themeDialog by lazy {

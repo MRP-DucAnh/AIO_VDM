@@ -26,8 +26,8 @@ import java.lang.ref.WeakReference
  *   dialog.show(bookmarkModel)
  */
 class UpdateBookmarkDialog(
-	private val bookmarkActivity: BookmarksActivity,
-	private val onApply: (Boolean) -> Unit = {}
+    private val bookmarkActivity: BookmarksActivityVideo,
+    private val onApply: (Boolean) -> Unit = {}
 ) {
 	private val logger = LogHelperUtils.from(javaClass)
 

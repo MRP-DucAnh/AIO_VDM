@@ -18,18 +18,18 @@ import androidx.media3.common.util.UnstableApi
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.aioFavicons
 import app.core.AIOApp.Companion.downloadSystem
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import app.core.engines.downloader.DownloadDataModel
 import app.core.engines.downloader.DownloadDataModel.Companion.DOWNLOAD_MODEL_ID_KEY
 import app.core.engines.downloader.DownloadDataModel.Companion.THUMB_EXTENSION
 import app.core.engines.settings.AIOSettings.Companion.PRIVATE_FOLDER
 import app.core.engines.video_parser.dialogs.VideoLinkPasteEditor
 import app.core.engines.video_parser.parsers.SupportedURLs.isYouTubeUrl
-import app.ui.main.MotherActivity
+import app.ui.main.MotherActivityVideo
 import app.ui.main.fragments.downloads.dialogs.DownloadFileRenamer
 import app.ui.main.fragments.downloads.dialogs.DownloadInfoTracker
-import app.ui.others.media_player.MediaPlayerActivity
-import app.ui.others.media_player.MediaPlayerActivity.Companion.INTENT_EXTRA_MEDIA_FILE_PATH
+import app.ui.others.media_player.MediaPlayerActivityVideo
+import app.ui.others.media_player.MediaPlayerActivityVideo.Companion.INTENT_EXTRA_MEDIA_FILE_PATH
 import app.ui.others.media_player.dialogs.Mp4ToAudioConverterDialog.showMp4ToAudioConverterDialog
 import com.aio.R
 import com.bumptech.glide.Glide
@@ -75,7 +75,7 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 
 	private val logger = LogHelperUtils.from(javaClass)
 	private val fragmentWeakRef: WeakReference<FinishedTasksFragment>?
-	private val activityWeakRef: WeakReference<BaseActivity>?
+	private val activityWeakRef: WeakReference<BaseActivityVideo>?
 
 	private var dialogBuilder: DialogBuilder? = null
 	private var downloadModel: DownloadDataModel? = null
@@ -87,7 +87,7 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 		this.activityWeakRef = safeActivity?.let { WeakReference(it) }
 	}
 
-	private fun getSafeActivity(): BaseActivity? = activityWeakRef?.get()
+	private fun getSafeActivity(): BaseActivityVideo? = activityWeakRef?.get()
 	private fun getSafeFragment(): FinishedTasksFragment? = fragmentWeakRef?.get()
 
 	fun initialize() {
@@ -187,7 +187,7 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 			return
 		}
 
-		val mediaPlayerClass = MediaPlayerActivity::class.java
+		val mediaPlayerClass = MediaPlayerActivityVideo::class.java
 		val downloadedFilePath = dataModel.getDestinationFile().path
 
 		val intent = Intent(activityRef, mediaPlayerClass)
@@ -338,7 +338,7 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 		if (fragmentRef == null) return
 		if (activityRef == null) return
 		if (dataModel == null) return
-		if (activityRef !is MotherActivity) return
+		if (activityRef !is MotherActivityVideo) return
 
 		val fileRenamer = DownloadFileRenamer(activityRef, dataModel) {
 			activityRef.getAttachedCoroutineScope().launch {
@@ -361,7 +361,7 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 		if (fragmentRef == null) return
 		if (activityRef == null) return
 		if (dataModel == null) return
-		if (activityRef !is MotherActivity) return
+		if (activityRef !is MotherActivityVideo) return
 
 		val websiteLink = dataModel.siteReferrer.ifEmpty { dataModel.fileURL }
 		if (websiteLink.isEmpty()) {
@@ -411,7 +411,7 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 		if (fragmentRef == null) return
 		if (activityRef == null) return
 		if (dataModel == null) return
-		if (activityRef !is MotherActivity) return
+		if (activityRef !is MotherActivityVideo) return
 
 		this@FinishedDownloadOptions.close()
 		val msgResID = R.string.title_moving_to_private_folder_wait
@@ -435,7 +435,7 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 		fun onSuccessInstructions() {
 			val safeFragment = getSafeFragment() ?: return
 			val safeActivity = getSafeActivity() ?: return
-			if (safeActivity !is MotherActivity) return
+			if (safeActivity !is MotherActivityVideo) return
 
 			val adapter = safeFragment.finishedTasksListAdapter
 			val homeFragment = safeActivity.homeFragment
@@ -457,7 +457,7 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 	fun moveToGallery() {
 		val dataModel = downloadModel
 		val fragmentRef = getSafeFragment()
-		val activityRef = getSafeActivity() as? MotherActivity
+		val activityRef = getSafeActivity() as? MotherActivityVideo
 
 		if (fragmentRef == null) return
 		if (activityRef == null) return
@@ -486,7 +486,7 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 
 		fun onSuccessInstructions() {
 			val safeFragment = getSafeFragment() ?: return
-			val safeActivity = getSafeActivity() as? MotherActivity ?: return
+			val safeActivity = getSafeActivity() as? MotherActivityVideo ?: return
 
 			val adapter = safeFragment.finishedTasksListAdapter
 			val homeFragment = safeActivity.homeFragment
@@ -513,7 +513,7 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 		if (fragmentRef == null) return
 		if (activityRef == null) return
 		if (dataModel == null) return
-		if (activityRef !is MotherActivity) return
+		if (activityRef !is MotherActivityVideo) return
 
 		this@FinishedDownloadOptions.close()
 
@@ -623,7 +623,7 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 		if (fragmentRef == null) return
 		if (activityRef == null) return
 		if (dataModel == null) return
-		if (activityRef !is MotherActivity) return
+		if (activityRef !is MotherActivityVideo) return
 
 		this@FinishedDownloadOptions.close()
 
@@ -635,7 +635,7 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 		this@FinishedDownloadOptions.close()
 		val activityRef = getSafeActivity()
 		if (activityRef == null) return
-		if (activityRef !is MotherActivity) return
+		if (activityRef !is MotherActivityVideo) return
 		showMp4ToAudioConverterDialog(activityRef, downloadModel)
 	}
 
@@ -647,7 +647,7 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 		if (fragmentRef == null) return
 		if (activityRef == null) return
 		if (dataModel == null) return
-		if (activityRef !is MotherActivity) return
+		if (activityRef !is MotherActivityVideo) return
 
 		this@FinishedDownloadOptions.close()
 		val fileUrl = dataModel.fileURL.ifEmpty { dataModel.siteReferrer }
@@ -890,7 +890,7 @@ class FinishedDownloadOptions(finishedFragment: FinishedTasksFragment?) : OnClic
 	}
 
 	private fun loadBitmapWithGlide(imageView: ImageView?,
-		activity: BaseActivity?, filePath: String, defaultThumb: Int) {
+                                    activity: BaseActivityVideo?, filePath: String, defaultThumb: Int) {
 		if (imageView == null || activity == null) return
 		executeOnMainThread {
 			try {

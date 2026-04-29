@@ -10,11 +10,11 @@ import java.lang.ref.WeakReference
 
 abstract class BaseFragment : Fragment() {
 
-	private var weakReferenceOfActivity: WeakReference<BaseActivity>? = null
+	private var weakReferenceOfActivity: WeakReference<BaseActivityVideo>? = null
 	private var weakReferenceOfBaseFragment: WeakReference<BaseFragment>? = null
 	private var _fragmentLayout: View? = null
 
-	open val safeBaseActivityRef: BaseActivity?
+	open val safeBaseActivityVideoRef: BaseActivityVideo?
 		get() = weakReferenceOfActivity?.get()
 
 	open val safeBaseFragmentRef: BaseFragment?
@@ -35,7 +35,7 @@ abstract class BaseFragment : Fragment() {
 
 	override fun onAttach(context: Context) {
 		super.onAttach(context)
-		weakReferenceOfActivity = WeakReference(context as BaseActivity)
+		weakReferenceOfActivity = WeakReference(context as BaseActivityVideo)
 		weakReferenceOfBaseFragment = WeakReference(this)
 	}
 

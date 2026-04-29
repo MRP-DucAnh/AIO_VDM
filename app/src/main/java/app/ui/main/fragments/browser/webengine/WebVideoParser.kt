@@ -61,7 +61,7 @@ object WebVideoParser {
 						videoGrabberButton.setOnClickListener {
 							if (isSocialMediaUrl(webpageUrl)) {
 								SingleResolutionPrompter(
-									baseActivity = browserFragment.safeMotherActivityRef,
+									baseActivityVideo = browserFragment.safeMotherActivityRef,
 									singleResolutionName = getText(R.string.title_high_quality),
 									extractedVideoLink = webpageUrl,
 									currentWebUrl = webpageUrl,

@@ -6,7 +6,7 @@
 	android:layout_height="match_parent"
 	android:background="@drawable/ic_background_gradient"
 	android:orientation="vertical"
-	tools:context="app.ui.main.fragments.browser.activities.BookmarksActivity"
+	tools:context="app.ui.main.fragments.browser.activities.BookmarksActivityVideo"
 	tools:ignore="UseCompatTextViewDrawableXml,UseAppTint,VisualLintBounds">
 
 	<!-- Top action bar with navigation and action buttons -->

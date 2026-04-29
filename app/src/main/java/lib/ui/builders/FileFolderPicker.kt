@@ -1,25 +1,25 @@
 package lib.ui.builders
 
 import android.widget.TextView
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import com.aio.R
 import lib.process.LogHelperUtils
 import lib.texts.CommonTextUtils.getText
 import java.lang.ref.WeakReference
 
 class FileFolderPicker(
-	private val baseActivity: BaseActivity?,
-	private val isCancellable: Boolean = true,
-	private val isFolderPickerOnly: Boolean = true,
-	private val isFilePickerOnly: Boolean = false,
-	private val isMultiSelection: Boolean = false,
-	private val titleText: String = getText(R.string.title_file_folder_picker),
-	private val positiveButtonText: String = getText(R.string.title_select),
-	private val onUserAbortedProcess: () -> Unit = {},
-	private val onFileSelection: (List<String>) -> Unit = {}) {
+    private val baseActivityVideo: BaseActivityVideo?,
+    private val isCancellable: Boolean = true,
+    private val isFolderPickerOnly: Boolean = true,
+    private val isFilePickerOnly: Boolean = false,
+    private val isMultiSelection: Boolean = false,
+    private val titleText: String = getText(R.string.title_file_folder_picker),
+    private val positiveButtonText: String = getText(R.string.title_select),
+    private val onUserAbortedProcess: () -> Unit = {},
+    private val onFileSelection: (List<String>) -> Unit = {}) {
 
 	private val logger = LogHelperUtils.from(javaClass)
-	private val activityWeakReference = WeakReference(baseActivity)
+	private val activityWeakReference = WeakReference(baseActivityVideo)
 	private var hasUserAbortedTheProcess = false
 	private val selectedFiles = mutableListOf<String>()
 	private var dialogBuilder: DialogBuilder? = null
@@ -72,5 +72,5 @@ class FileFolderPicker(
 		}
 	}
 
-	private fun getSafeBaseActivity(): BaseActivity? = activityWeakReference.get()
+	private fun getSafeBaseActivity(): BaseActivityVideo? = activityWeakReference.get()
 }

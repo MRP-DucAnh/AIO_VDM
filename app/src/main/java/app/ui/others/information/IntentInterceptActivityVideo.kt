@@ -8,10 +8,10 @@ import app.core.AIOApp.Companion.IS_PREMIUM_USER
 import app.core.AIOApp.Companion.IS_ULTIMATE_VERSION_UNLOCKED
 import app.core.AIOApp.Companion.downloadSystem
 import app.core.AIOKeyStrings.DONT_PARSE_URL_ANYMORE
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import app.core.engines.video_parser.parsers.SupportedURLs.isSocialMediaUrl
 import app.core.engines.video_parser.parsers.VideoThumbGrabber.startParsingVideoThumbUrl
-import app.ui.main.MotherActivity
+import app.ui.main.MotherActivityVideo
 import app.ui.main.fragments.browser.webengine.SingleResolutionPrompter
 import app.ui.main.fragments.downloads.intercepter.SharedVideoURLIntercept
 import com.aio.R
@@ -55,11 +55,11 @@ import java.lang.ref.WeakReference
  * Uses WeakReference pattern to prevent memory leaks and ensure proper
  * garbage collection when the activity is destroyed.
  *
- * @see MotherActivity for the main application entry point
+ * @see MotherActivityVideo for the main application entry point
  * @see SharedVideoURLIntercept for generic URL processing
  * @see SingleResolutionPrompter for social media download dialogs
  */
-class IntentInterceptActivity : BaseActivity() {
+class IntentInterceptActivityVideo : BaseActivityVideo() {
 
 	/**
 	 * Logger instance for tracking activity lifecycle and debugging operations.
@@ -203,7 +203,7 @@ class IntentInterceptActivity : BaseActivity() {
 	 * @param intentUrl The URL to be processed and analyzed
 	 * @param activityRef Reference to the current activity for UI operations
 	 */
-	private fun startParsingTheIntentURL(intentUrl: String, activityRef: IntentInterceptActivity) {
+	private fun startParsingTheIntentURL(intentUrl: String, activityRef: IntentInterceptActivityVideo) {
 		logger.d("startParsingTheIntentURL: Premium user detected. Processing URL.")
 
 		// Route to appropriate processor based on URL type
@@ -262,7 +262,7 @@ class IntentInterceptActivity : BaseActivity() {
 					executeOnMainThread {
 						val resolutionName = getText(R.string.title_high_quality).toString()
 						SingleResolutionPrompter(
-							baseActivity = activityRef,
+							baseActivityVideo = activityRef,
 							isDialogCancelable = true,
 							singleResolutionName = resolutionName,
 							extractedVideoLink = intentUrl,
@@ -302,14 +302,14 @@ class IntentInterceptActivity : BaseActivity() {
 	 * @param intentUrl The URL to be processed (non-social media)
 	 */
 	private fun interceptNonSocialMediaUrl(
-		safeActivityRef: IntentInterceptActivity,
-		intentUrl: String
+        safeActivityRef: IntentInterceptActivityVideo,
+        intentUrl: String
 	) {
 		logger.d("interceptNonSocialMediaUrl: Starting interception for URL: $intentUrl")
 
 		// Initialize the generic URL interceptor for non-social media links
 		val interceptor = SharedVideoURLIntercept(
-			baseActivity = safeActivityRef,
+			baseActivityVideo = safeActivityRef,
 			closeActivityOnSuccessfulDownload = true,
 			onOpeningBuiltInBrowser = {
 				logger.d("interceptNonSocialMediaUrl: Opening browser as fallback.")
@@ -367,7 +367,7 @@ class IntentInterceptActivity : BaseActivity() {
 			)
 
 			// Create intent for MotherActivity with necessary flags and extras
-			val targetIntent = Intent(getActivity(), MotherActivity::class.java).apply {
+			val targetIntent = Intent(getActivity(), MotherActivityVideo::class.java).apply {
 				action = originalIntent.action
 				setDataAndType(originalIntent.data, originalIntent.type)
 				putExtras(originalIntent)
@@ -387,7 +387,7 @@ class IntentInterceptActivity : BaseActivity() {
 			logger.e("forwardIntentToMotherActivity: Error occurred while launching MotherActivity", error)
 
 			// Fallback: open MotherActivity with default animation if forwarding fails
-			openActivity(targetActivity = MotherActivity::class.java, shouldAnimate = true)
+			openActivity(targetActivity = MotherActivityVideo::class.java, shouldAnimate = true)
 			closeActivityWithFadeAnimation(shouldAnimate = true)
 			logger.d("forwardIntentToMotherActivity: Fallback - opened MotherActivity and closed current activity.")
 		}

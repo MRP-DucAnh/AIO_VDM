@@ -23,7 +23,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Date;
 
-import app.core.bases.BaseActivity;
+import app.core.bases.BaseActivityVideo;
 import app.core.engines.browser.bookmarks.AIOBookmarks;
 import app.core.engines.browser.bookmarks.BookmarkModel;
 import app.core.engines.caches.AIOFavicons;
@@ -45,7 +45,7 @@ public class BookmarkAdapter extends BaseAdapter {
 	private final LogHelperUtils logger = LogHelperUtils.from(getClass());
 
 	/** Weak reference to the parent activity to prevent memory leaks */
-	private final WeakReference<BaseActivity> safeBaseActivityRef;
+	private final WeakReference<BaseActivityVideo> safeBaseActivityRef;
 
 	/** Callback interface for handling bookmark click events */
 	private final OnBookmarkItemClick onBookmarkItemClick;
@@ -66,7 +66,7 @@ public class BookmarkAdapter extends BaseAdapter {
 	 * @param onBookmarkItemClick     callback for handling click events on bookmark items.
 	 * @param onBookmarkItemLongClick callback for handling long-click events on bookmark items.
 	 */
-	public BookmarkAdapter(@Nullable BookmarksActivity bookmarkActivity,
+	public BookmarkAdapter(@Nullable BookmarksActivityVideo bookmarkActivity,
 						   @Nullable OnBookmarkItemClick onBookmarkItemClick,
 						   @Nullable OnBookmarkItemLongClick onBookmarkItemLongClick) {
 		this.safeBaseActivityRef = new WeakReference<>(bookmarkActivity);
@@ -125,7 +125,7 @@ public class BookmarkAdapter extends BaseAdapter {
 	 */
 	@Override
 	public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-		BaseActivity activity = this.safeBaseActivityRef.get();
+		BaseActivityVideo activity = this.safeBaseActivityRef.get();
 		if (activity == null) {
 			// If activity reference is lost, safely return an existing or empty view
 			logger.d("Activity reference lost. Returning fallback view.");

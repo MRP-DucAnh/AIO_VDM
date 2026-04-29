@@ -5,7 +5,7 @@ import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.BiometricPrompt.AuthenticationResult
 import androidx.core.content.ContextCompat
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import com.aio.R
 import lib.texts.CommonTextUtils.getText
 import lib.ui.builders.ToastView.Companion.showToast
@@ -14,7 +14,7 @@ object SecureFileUtil {
 	private const val KEY_ALIAS = "PrivateFileKey"
 	private const val ANDROID_KEYSTORE = "AndroidKeyStore"
 
-	fun authenticate(activity: BaseActivity?, onResult: (Boolean) -> Unit) {
+	fun authenticate(activity: BaseActivityVideo?, onResult: (Boolean) -> Unit) {
 		if (activity == null) return
 		// Use AndroidX Biometric PromptInfo
 		val promptInfo = BiometricPrompt.PromptInfo.Builder()

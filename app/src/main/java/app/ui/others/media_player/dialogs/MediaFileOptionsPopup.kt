@@ -16,7 +16,7 @@ import androidx.core.net.toUri
 import androidx.media3.common.Format
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.video.VideoFrameMetadataListener
-import app.ui.others.media_player.MediaPlayerActivity
+import app.ui.others.media_player.MediaPlayerActivityVideo
 import app.ui.others.media_player.dialogs.Mp4ToAudioConverterDialog.showMp4ToAudioConverterDialog
 import com.aio.R
 import com.aio.R.layout
@@ -58,13 +58,13 @@ import java.util.Locale
  * - Log all major lifecycle and UI interactions for debugging.
  */
 @UnstableApi
-class MediaFileOptionsPopup(private val mediaPlayerActivity: MediaPlayerActivity?) {
+class MediaFileOptionsPopup(private val mediaPlayerActivity: MediaPlayerActivityVideo?) {
 
 	/** Logger instance scoped to this class for consistent debug and error output. */
 	private val logger = LogHelperUtils.from(javaClass)
 
 	/**
-	 * Weak reference to the associated [MediaPlayerActivity].
+	 * Weak reference to the associated [MediaPlayerActivityVideo].
 	 * Ensures the activity can be garbage-collected if destroyed,
 	 * avoiding potential memory leaks.
 	 */
@@ -223,7 +223,7 @@ class MediaFileOptionsPopup(private val mediaPlayerActivity: MediaPlayerActivity
 	 *
 	 * - If private mode is currently active, it disables it and resets related flags.
 	 * - Otherwise, it enables private session mode by calling
-	 *   [MediaPlayerActivity.enablePrivateSession].
+	 *   [MediaPlayerActivityVideo.enablePrivateSession].
 	 *
 	 * After toggling, it calls [refreshPrivateSession] to update UI indicators
 	 * (like checkboxes or labels) to reflect the current state.
@@ -322,11 +322,11 @@ class MediaFileOptionsPopup(private val mediaPlayerActivity: MediaPlayerActivity
 	 * - Logs success or failure for debugging.
 	 *
 	 * @param bitmap The [Bitmap] to be saved.
-	 * @param activity The [MediaPlayerActivity] instance, used for context and UI updates.
+	 * @param activity The [MediaPlayerActivityVideo] instance, used for context and UI updates.
 	 * @param shouldResumePlayback If true, resumes playback after saving the image.
 	 */
-	private fun saveCurrentVideoFrameBitmap(bitmap: Bitmap, activity: MediaPlayerActivity,
-		shouldResumePlayback: Boolean = false) {
+	private fun saveCurrentVideoFrameBitmap(bitmap: Bitmap, activity: MediaPlayerActivityVideo,
+                                            shouldResumePlayback: Boolean = false) {
 		ThreadsUtility.executeInBackground(codeBlock = {
 			try {
 				val parentDir = getText(string.text_default_aio_download_folder_path)
@@ -358,7 +358,7 @@ class MediaFileOptionsPopup(private val mediaPlayerActivity: MediaPlayerActivity
 	 * Updates the state of the private session checkbox in the popup UI.
 	 *
 	 * This ensures that the visual checkbox accurately reflects
-	 * the current private session setting of the associated [MediaPlayerActivity].
+	 * the current private session setting of the associated [MediaPlayerActivityVideo].
 	 *
 	 * Logs the updated checkbox state for debugging.
 	 */
@@ -374,7 +374,7 @@ class MediaFileOptionsPopup(private val mediaPlayerActivity: MediaPlayerActivity
 	/**
 	 * Opens and displays detailed information about the currently playing media file.
 	 *
-	 * Delegates the actual UI handling to [MediaPlayerActivity.openCurrentMediaFileInfo],
+	 * Delegates the actual UI handling to [MediaPlayerActivityVideo.openCurrentMediaFileInfo],
 	 * which typically displays metadata such as title, duration, resolution, and format.
 	 *
 	 * Includes logging for traceability.
@@ -449,7 +449,7 @@ class MediaFileOptionsPopup(private val mediaPlayerActivity: MediaPlayerActivity
 	/**
 	 * Opens the currently playing media file using an external application.
 	 *
-	 * Delegates the action to [MediaPlayerActivity.openCurrentMediaFile], which
+	 * Delegates the action to [MediaPlayerActivityVideo.openCurrentMediaFile], which
 	 * creates and launches an appropriate intent to view or play the file externally.
 	 *
 	 * Logs the operation for tracking user actions.

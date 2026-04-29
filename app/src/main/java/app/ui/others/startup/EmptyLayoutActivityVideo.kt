@@ -1,6 +1,6 @@
 package app.ui.others.startup
 
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import java.lang.ref.WeakReference
 
 /**
@@ -12,7 +12,7 @@ import java.lang.ref.WeakReference
  * - Handles back press with double-exit logic.
  * - Cleans up references on destruction to prevent leaks.
  */
-class EmptyLayoutActivity : BaseActivity() {
+class EmptyLayoutActivityVideo : BaseActivityVideo() {
 
 	/** Weak self-reference to prevent memory leaks */
 	val safeSelfReference = WeakReference(this)

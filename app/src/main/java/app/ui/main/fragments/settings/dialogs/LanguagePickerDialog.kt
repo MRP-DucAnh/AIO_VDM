@@ -27,17 +27,17 @@ import java.lang.ref.*
  * dialog.show()
  * ```
  *
- * @param baseActivity The host activity for this dialog. It is used for context
+ * @param baseActivityVideo The host activity for this dialog. It is used for context
  *                     and will be restarted when the language is changed.
  */
-class LanguagePickerDialog(baseActivity: BaseActivity) {
+class LanguagePickerDialog(baseActivityVideo: BaseActivityVideo) {
 	
 	/**
 	 * A weak reference to the `BaseActivity` to avoid memory leaks.
 	 * This is used when applying the selected language, as the activity might be
 	 * destroyed before the language change is complete.
 	 */
-	val weakReferenceOfActivity = WeakReference(baseActivity)
+	val weakReferenceOfActivity = WeakReference(baseActivityVideo)
 	
 	/**
 	 * A listener that is invoked after a new language has been selected and applied.
@@ -70,9 +70,9 @@ class LanguagePickerDialog(baseActivity: BaseActivity) {
 	 * Retrieves the activity instance from the provided `baseActivity` property.
 	 * This is a helper function to ensure a consistent way of accessing the activity context.
 	 *
-	 * @return The [BaseActivity] instance, or null if it's not available.
+	 * @return The [BaseActivityVideo] instance, or null if it's not available.
 	 */
-	private fun getActivity(): BaseActivity? {
+	private fun getActivity(): BaseActivityVideo? {
 		return weakReferenceOfActivity.get()?.getActivity()
 	}
 	

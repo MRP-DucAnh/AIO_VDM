@@ -19,9 +19,9 @@ import androidx.documentfile.provider.DocumentFile.fromFile
 import androidx.media3.common.util.UnstableApi
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.engines.downloader.DownloadDataModel.Companion.DOWNLOAD_MODEL_ID_KEY
-import app.ui.main.MotherActivity
-import app.ui.others.media_player.MediaPlayerActivity
-import app.ui.others.media_player.MediaPlayerActivity.Companion.INTENT_EXTRA_MEDIA_FILE_PATH
+import app.ui.main.MotherActivityVideo
+import app.ui.others.media_player.MediaPlayerActivityVideo
+import app.ui.others.media_player.MediaPlayerActivityVideo.Companion.INTENT_EXTRA_MEDIA_FILE_PATH
 import com.aio.R
 import lib.files.FileSystemUtility.isAudio
 import lib.files.FileSystemUtility.isVideo
@@ -205,7 +205,7 @@ class DownloadNotification {
 		} else {
 			// For ongoing downloads: Open main activity to show download progress
 			getActivity(
-				INSTANCE, 0, Intent(INSTANCE, MotherActivity::class.java),
+				INSTANCE, 0, Intent(INSTANCE, MotherActivityVideo::class.java),
 				FLAG_UPDATE_CURRENT or FLAG_IMMUTABLE
 			)
 		}
@@ -252,10 +252,10 @@ class DownloadNotification {
 	private fun getCorrespondingActivity(downloadedFile: DocumentFile) =
 		if (isVideo(downloadedFile) || isAudio(downloadedFile)) {
 			logger.d("File is media → routing to MediaPlayerActivity")
-			MediaPlayerActivity::class.java
+			MediaPlayerActivityVideo::class.java
 		} else {
 			logger.d("File is not media → routing to MotherActivity")
-			MotherActivity::class.java
+			MotherActivityVideo::class.java
 		}
 
 	/**

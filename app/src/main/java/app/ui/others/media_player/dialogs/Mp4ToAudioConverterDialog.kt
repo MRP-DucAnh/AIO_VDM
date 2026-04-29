@@ -6,9 +6,9 @@ import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import app.core.AIOApp.Companion.INSTANCE
 import app.core.AIOApp.Companion.downloadSystem
-import app.core.bases.BaseActivity
+import app.core.bases.BaseActivityVideo
 import app.core.engines.downloader.DownloadDataModel
-import app.ui.others.media_player.MediaPlayerActivity
+import app.ui.others.media_player.MediaPlayerActivityVideo
 import com.aio.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,18 +32,18 @@ object Mp4ToAudioConverterDialog {
 
 	@OptIn(UnstableApi::class)
 	fun showMp4ToAudioConverterDialog(
-		baseActivity: BaseActivity?,
-		downloadModel: DownloadDataModel?
+        baseActivityVideo: BaseActivityVideo?,
+        downloadModel: DownloadDataModel?
 	) {
-		if (baseActivity == null) return
+		if (baseActivityVideo == null) return
 		if (downloadModel == null) return
 
 		logger.d("Initializing MP4 to Audio conversion dialog")
-		val coroutineScope = baseActivity.getAttachedCoroutineScope()
+		val coroutineScope = baseActivityVideo.getAttachedCoroutineScope()
 		val videoToAudioConverter = VideoToAudioConverter()
 		val loadingMessage = getText(R.string.title_converting_audio_progress_0)
 		val waitingDialog = WaitingDialog(
-			baseActivityInf = baseActivity,
+			baseActivityInf = baseActivityVideo,
 			loadingMessage = loadingMessage,
 			isCancelable = false,
 			shouldHideOkayButton = false
@@ -65,8 +65,8 @@ object Mp4ToAudioConverterDialog {
 
 		waitingDialog.show()
 
-		if (baseActivity is MediaPlayerActivity) {
-			baseActivity.pausePlayback()
+		if (baseActivityVideo is MediaPlayerActivityVideo) {
+			baseActivityVideo.pausePlayback()
 		}
 
 		try {
@@ -85,12 +85,12 @@ object Mp4ToAudioConverterDialog {
 						waitingDialog.close()
 
 						FileSystemUtility.addToMediaStore(outputMediaFile)
-						showToast(baseActivity, R.string.title_converted_successfully)
+						showToast(baseActivityVideo, R.string.title_converted_successfully)
 
 						addNewDownloadModelToSystem(downloadModel, outputMediaFile)
 
-						if (baseActivity is MediaPlayerActivity) {
-							baseActivity.resumePlayback()
+						if (baseActivityVideo is MediaPlayerActivityVideo) {
+							baseActivityVideo.resumePlayback()
 						}
 					} catch (error: Exception) {
 						logger.e("Error adding converted file to the system: " +
@@ -119,9 +119,9 @@ object Mp4ToAudioConverterDialog {
 			fun onFailureUIUpdate(errorMessage: String) {
 				coroutineScope.launch(Dispatchers.Main) {
 					waitingDialog.close()
-					showToast(baseActivity, R.string.title_converting_failed)
-					if (baseActivity is MediaPlayerActivity) {
-						baseActivity.resumePlayback()
+					showToast(baseActivityVideo, R.string.title_converting_failed)
+					if (baseActivityVideo is MediaPlayerActivityVideo) {
+						baseActivityVideo.resumePlayback()
 					}
 				}
 			}
@@ -141,9 +141,9 @@ object Mp4ToAudioConverterDialog {
 			logger.e("Unexpected error during conversion: ${error.message}")
 			coroutineScope.launch(Dispatchers.Main) {
 				waitingDialog.close()
-				showToast(baseActivity, R.string.title_something_went_wrong)
-				if (baseActivity is MediaPlayerActivity) {
-					baseActivity.resumePlayback()
+				showToast(baseActivityVideo, R.string.title_something_went_wrong)
+				if (baseActivityVideo is MediaPlayerActivityVideo) {
+					baseActivityVideo.resumePlayback()
 				}
 			}
 		}

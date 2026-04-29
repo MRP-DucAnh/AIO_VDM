@@ -20,9 +20,9 @@ import app.ui.main.fragments.settings.*
  * - Position 2: [DownloadsFragment]
  * - Position 3: [SettingsFragment]
  *
- * @param baseActivity The host activity that will contain the ViewPager2.
+ * @param baseActivityVideo The host activity that will contain the ViewPager2.
  */
-class FragmentsPageAdapter(baseActivity: BaseActivity) : FragmentStateAdapter(baseActivity) {
+class FragmentsPageAdapter(baseActivityVideo: BaseActivityVideo) : FragmentStateAdapter(baseActivityVideo) {
 
 	/**
 	 * Returns the total number of fragments (pages) managed by this adapter.

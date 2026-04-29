@@ -19,7 +19,7 @@ import java.lang.ref.*
  * - Coordinates with MotherActivity for fragment navigation
  * - Maintains visual consistency across tab states
  */
-class MotherBottomTabs(motherActivity: MotherActivity?) {
+class MotherBottomTabs(motherActivity: MotherActivityVideo?) {
 
 	private val logger = LogHelperUtils.from(javaClass)
 

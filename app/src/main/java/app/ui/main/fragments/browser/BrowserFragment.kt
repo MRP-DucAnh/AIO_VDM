@@ -11,8 +11,8 @@ import app.core.AIOApp.Companion.aioTimer
 import app.core.AIOTimer
 import app.core.bases.BaseFragment
 import app.core.engines.video_parser.parsers.SupportedURLs.isYouTubeUrl
-import app.ui.main.MotherActivity
-import app.ui.main.MotherActivity.SharedViewModel
+import app.ui.main.MotherActivityVideo
+import app.ui.main.MotherActivityVideo.SharedViewModel
 import app.ui.main.fragments.browser.webengine.WebVideoParser.analyzeUrl
 import app.ui.main.fragments.browser.webengine.WebViewEngine
 import com.aio.R
@@ -32,7 +32,7 @@ class BrowserFragment : BaseFragment(), AIOTimer.AIOTimerListener {
 	lateinit var browserFragmentBody: BrowserFragmentBody
 	
 	// Reference to the hosting activity
-	lateinit var safeMotherActivityRef: MotherActivity
+	lateinit var safeMotherActivityRef: MotherActivityVideo
 
 	/**
 	 * Provides the layout resource ID for this fragment.
@@ -95,7 +95,7 @@ class BrowserFragment : BaseFragment(), AIOTimer.AIOTimerListener {
 	 * Registers the fragment in the parent MotherActivity for inter-fragment communication.
 	 */
 	private fun registerSelfInMotherActivity() {
-		safeMotherActivityRef = (safeBaseActivityRef as MotherActivity)
+		safeMotherActivityRef = (safeBaseActivityVideoRef as MotherActivityVideo)
 		safeMotherActivityRef.browserFragment = this@BrowserFragment
 		safeMotherActivityRef.sideNavigation?.closeDrawerNavigation()
 	}
